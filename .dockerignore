@@ -1,0 +1,14 @@
+.venv
+.git
+.gitignore
+.env
+*.pyc
+__pycache__
+*.wav
+*.bin
+test_*.py
+run_*.sh
+speak_*.py
+DEPLOY_ANALYSIS.md
+README.md
+hello.py
