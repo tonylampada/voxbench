@@ -29,6 +29,9 @@ RUN --mount=type=secret,id=hf_token \
     export HF_TOKEN=$(cat /run/secrets/hf_token) && \
     python download_models.py
 
+# Force offline mode at runtime - use only cached models
+ENV HF_HUB_OFFLINE=1
+
 # Expose port
 EXPOSE 8877
 

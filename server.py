@@ -29,6 +29,15 @@ def _patched_torch_load(*args, **kwargs):
     return _original_torch_load(*args, **kwargs)
 torch.load = _patched_torch_load
 
+# Patch snapshot_download for offline mode (when HF_HUB_OFFLINE=1)
+if os.environ.get('HF_HUB_OFFLINE') == '1':
+    import huggingface_hub
+    _original_snapshot_download = huggingface_hub.snapshot_download
+    def _patched_snapshot_download(*args, **kwargs):
+        kwargs['local_files_only'] = True
+        return _original_snapshot_download(*args, **kwargs)
+    huggingface_hub.snapshot_download = _patched_snapshot_download
+
 from chatterbox.tts_turbo import ChatterboxTurboTTS
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
@@ -46,12 +55,18 @@ class SpeakRequest(BaseModel):
     lang: str = "en"  # "en" or "pt"
     voice: Optional[str] = None  # voice file name (e.g., "pt_male.flac")
     split_sentences: bool = True
+    exaggeration: Optional[float] = None  # Emotion intensity (0.0-1.0+, default: 0.0 for en, 0.5 for pt)
+    cfg_weight: Optional[float] = None  # Pacing control (0.0-1.0, lower=faster, default: 0.0 for en, 0.5 for pt)
+    temperature: Optional[float] = None  # Sampling randomness (default: 0.8)
 
 
 class TTSRequest(BaseModel):
     text: str
     lang: str = "en"
     voice: Optional[str] = None
+    exaggeration: Optional[float] = None
+    cfg_weight: Optional[float] = None
+    temperature: Optional[float] = None
 
 
 def split_into_sentences(text: str) -> list[str]:
@@ -92,24 +107,71 @@ def get_voice_path(voice: Optional[str]) -> Optional[str]:
     return None
 
 
-def generate_speech(text: str, lang: str, voice: Optional[str] = None) -> np.ndarray:
+def generate_speech(
+    text: str,
+    lang: str,
+    voice: Optional[str] = None,
+    exaggeration: Optional[float] = None,
+    cfg_weight: Optional[float] = None,
+    temperature: Optional[float] = None,
+) -> np.ndarray:
     """Generate speech for given text."""
     voice_path = get_voice_path(voice)
 
+    # Debug output
+    params = []
+    if exaggeration is not None:
+        params.append(f"exag={exaggeration}")
+    if cfg_weight is not None:
+        params.append(f"cfg={cfg_weight}")
+    if temperature is not None:
+        params.append(f"temp={temperature}")
+    if voice_path:
+        params.append(f"voice={voice}")
+    param_str = f" [{', '.join(params)}]" if params else ""
+    print(f"[{lang}]{param_str} {text}")
+
     if lang == "en":
         model = models["en"]
-        wav = model.generate(text, audio_prompt_path=voice_path)
+        kwargs = {
+            "audio_prompt_path": voice_path,
+            "norm_loudness": True,  # -27 LUFS normalization (broadcast standard)
+        }
+        # Turbo defaults: exaggeration=0.0, cfg_weight=0.0, temperature=0.8
+        if exaggeration is not None:
+            kwargs["exaggeration"] = exaggeration
+        if cfg_weight is not None:
+            kwargs["cfg_weight"] = cfg_weight
+        if temperature is not None:
+            kwargs["temperature"] = temperature
+        wav = model.generate(text, **kwargs)
     elif lang == "pt":
         model = models["pt"]
-        wav = model.generate(text, audio_prompt_path=voice_path, language_id="pt")
+        kwargs = {"audio_prompt_path": voice_path, "language_id": "pt"}
+        # Multilingual defaults: exaggeration=0.5, cfg_weight=0.5, temperature=0.8
+        if exaggeration is not None:
+            kwargs["exaggeration"] = exaggeration
+        if cfg_weight is not None:
+            kwargs["cfg_weight"] = cfg_weight
+        if temperature is not None:
+            kwargs["temperature"] = temperature
+        wav = model.generate(text, **kwargs)
     else:
         raise ValueError(f"Unsupported language: {lang}")
 
-    return wav.cpu().numpy().squeeze()
+    audio = wav.cpu().numpy().squeeze()
+
+    # Peak normalize to 0 dB (matches HF demo output)
+    max_val = np.abs(audio).max()
+    if max_val > 0:
+        audio = audio / max_val
+
+    return audio
 
 
 def numpy_to_wav_bytes(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> bytes:
     """Convert numpy audio array to WAV bytes."""
+    # Model already normalizes to -27 LUFS via norm_loudness=True
     audio_int16 = (audio * 32767).astype(np.int16)
 
     buffer = io.BytesIO()
@@ -123,7 +185,14 @@ def numpy_to_wav_bytes(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> byt
     return buffer.read()
 
 
-def generate_audio_stream(text: str, lang: str, voice: Optional[str] = None) -> Generator[bytes, None, None]:
+def generate_audio_stream(
+    text: str,
+    lang: str,
+    voice: Optional[str] = None,
+    exaggeration: Optional[float] = None,
+    cfg_weight: Optional[float] = None,
+    temperature: Optional[float] = None,
+) -> Generator[bytes, None, None]:
     """Generate audio chunks for each sentence, yielding WAV bytes."""
     sentences = split_into_sentences(text)
 
@@ -132,7 +201,7 @@ def generate_audio_stream(text: str, lang: str, voice: Optional[str] = None) -> 
             continue
 
         # Generate audio for this sentence
-        audio = generate_speech(sentence, lang, voice)
+        audio = generate_speech(sentence, lang, voice, exaggeration, cfg_weight, temperature)
         wav_bytes = numpy_to_wav_bytes(audio)
 
         # Yield chunk with length prefix (4 bytes) + WAV data
@@ -148,9 +217,9 @@ async def startup():
     models["en"] = ChatterboxTurboTTS.from_pretrained(device="cpu")
     print("English model loaded!")
 
-    print("Loading Portuguese (Multilingual) model...")
-    models["pt"] = ChatterboxMultilingualTTS.from_pretrained(device="cpu")
-    print("Portuguese model loaded!")
+    # print("Loading Portuguese (Multilingual) model...")
+    # models["pt"] = ChatterboxMultilingualTTS.from_pretrained(device="cpu")
+    # print("Portuguese model loaded!")
 
     # Start audio player thread
     player_thread = threading.Thread(target=audio_player_worker, daemon=True)
@@ -180,7 +249,10 @@ async def speak(request: SpeakRequest):
     for sentence in sentences:
         if not sentence:
             continue
-        wav = generate_speech(sentence, request.lang, request.voice)
+        wav = generate_speech(
+            sentence, request.lang, request.voice,
+            request.exaggeration, request.cfg_weight, request.temperature
+        )
         audio_queue.put((wav, SAMPLE_RATE))
 
     return {
@@ -201,7 +273,10 @@ async def tts(request: TTSRequest):
     if request.lang not in ["en", "pt"]:
         raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
 
-    audio = generate_speech(request.text, request.lang, request.voice)
+    audio = generate_speech(
+        request.text, request.lang, request.voice,
+        request.exaggeration, request.cfg_weight, request.temperature
+    )
     wav_bytes = numpy_to_wav_bytes(audio)
 
     return Response(
@@ -215,13 +290,16 @@ async def tts(request: TTSRequest):
 async def tts_get(
     text: str = Query(..., description="Text to synthesize"),
     lang: str = Query("en", description="Language: 'en' or 'pt'"),
-    voice: Optional[str] = Query(None, description="Voice file name")
+    voice: Optional[str] = Query(None, description="Voice file name"),
+    exaggeration: Optional[float] = Query(None, description="Emotion intensity (0.0-1.0+)"),
+    cfg_weight: Optional[float] = Query(None, description="Pacing control (0.0-1.0, lower=faster)"),
+    temperature: Optional[float] = Query(None, description="Sampling randomness"),
 ):
     """Generate speech and return as WAV binary (GET version)."""
     if lang not in ["en", "pt"]:
         raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
 
-    audio = generate_speech(text, lang, voice)
+    audio = generate_speech(text, lang, voice, exaggeration, cfg_weight, temperature)
     wav_bytes = numpy_to_wav_bytes(audio)
 
     return Response(
@@ -247,7 +325,10 @@ async def tts_stream(request: TTSRequest):
         raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
 
     return StreamingResponse(
-        generate_audio_stream(request.text, request.lang, request.voice),
+        generate_audio_stream(
+            request.text, request.lang, request.voice,
+            request.exaggeration, request.cfg_weight, request.temperature
+        ),
         media_type="application/octet-stream",
         headers={"X-Audio-Format": "wav", "X-Sample-Rate": str(SAMPLE_RATE)}
     )
@@ -257,7 +338,10 @@ async def tts_stream(request: TTSRequest):
 async def tts_stream_get(
     text: str = Query(..., description="Text to synthesize"),
     lang: str = Query("en", description="Language: 'en' or 'pt'"),
-    voice: Optional[str] = Query(None, description="Voice file name")
+    voice: Optional[str] = Query(None, description="Voice file name"),
+    exaggeration: Optional[float] = Query(None, description="Emotion intensity (0.0-1.0+)"),
+    cfg_weight: Optional[float] = Query(None, description="Pacing control (0.0-1.0, lower=faster)"),
+    temperature: Optional[float] = Query(None, description="Sampling randomness"),
 ):
     """
     Generate speech and stream WAV chunks (one per sentence) - GET version.
@@ -268,7 +352,7 @@ async def tts_stream_get(
         raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
 
     return StreamingResponse(
-        generate_audio_stream(text, lang, voice),
+        generate_audio_stream(text, lang, voice, exaggeration, cfg_weight, temperature),
         media_type="application/octet-stream",
         headers={"X-Audio-Format": "wav", "X-Sample-Rate": str(SAMPLE_RATE)}
     )
