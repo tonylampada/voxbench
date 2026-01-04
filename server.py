@@ -55,6 +55,7 @@ class SpeakRequest(BaseModel):
     lang: str = "en"  # "en" or "pt"
     voice: Optional[str] = None  # voice file name (e.g., "pt_male.flac")
     split_sentences: bool = True
+    chunk_size: int = 3  # Number of sentences per chunk (for better prosody)
     exaggeration: Optional[float] = None  # Emotion intensity (0.0-1.0+, default: 0.0 for en, 0.5 for pt)
     cfg_weight: Optional[float] = None  # Pacing control (0.0-1.0, lower=faster, default: 0.0 for en, 0.5 for pt)
     temperature: Optional[float] = None  # Sampling randomness (default: 0.8)
@@ -70,9 +71,62 @@ class TTSRequest(BaseModel):
 
 
 def split_into_sentences(text: str) -> list[str]:
-    """Split text into sentences."""
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-    return [s.strip() for s in sentences if s.strip()]
+    """Split text into sentences, handling common edge cases."""
+    text = text.strip()
+    if not text:
+        return []
+
+    # Protect common abbreviations by replacing periods temporarily
+    abbreviations = [
+        'Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Prof.', 'Sr.', 'Jr.', 'vs.',
+        'etc.', 'e.g.', 'i.e.', 'St.', 'Mt.', 'Lt.', 'Gen.', 'Col.',
+        'Fig.', 'Vol.', 'No.', 'pp.', 'Ph.D.', 'M.D.', 'B.A.', 'M.A.',
+        'a.m.', 'p.m.', 'A.M.', 'P.M.', 'U.S.', 'U.K.', 'E.U.',
+    ]
+
+    protected = text
+    placeholders = {}
+    for i, abbr in enumerate(abbreviations):
+        placeholder = f"__ABBR{i}__"
+        if abbr in protected:
+            placeholders[placeholder] = abbr
+            protected = protected.replace(abbr, placeholder)
+
+    # Protect decimal numbers (e.g., 3.50, 10.5)
+    decimal_pattern = re.compile(r'(\d+)\.(\d+)')
+    protected = decimal_pattern.sub(r'\1__DEC__\2', protected)
+
+    # Split on sentence-ending punctuation followed by space and capital letter or end
+    # This pattern requires the next char to be uppercase or end of string
+    sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z]|$)', protected)
+
+    # Restore protected text
+    result = []
+    for s in sentences:
+        s = s.strip()
+        if not s:
+            continue
+        # Restore decimals
+        s = s.replace('__DEC__', '.')
+        # Restore abbreviations
+        for placeholder, abbr in placeholders.items():
+            s = s.replace(placeholder, abbr)
+        result.append(s)
+
+    return result
+
+
+def chunk_sentences(sentences: list[str], chunk_size: int = 3) -> list[str]:
+    """Group sentences into chunks for better prosody."""
+    if not sentences:
+        return []
+
+    chunks = []
+    for i in range(0, len(sentences), chunk_size):
+        chunk = ' '.join(sentences[i:i + chunk_size])
+        chunks.append(chunk)
+
+    return chunks
 
 
 def audio_player_worker():
@@ -192,16 +246,18 @@ def generate_audio_stream(
     exaggeration: Optional[float] = None,
     cfg_weight: Optional[float] = None,
     temperature: Optional[float] = None,
+    chunk_size: int = 3,
 ) -> Generator[bytes, None, None]:
-    """Generate audio chunks for each sentence, yielding WAV bytes."""
+    """Generate audio chunks for groups of sentences, yielding WAV bytes."""
     sentences = split_into_sentences(text)
+    chunks = chunk_sentences(sentences, chunk_size)
 
-    for i, sentence in enumerate(sentences):
-        if not sentence:
+    for chunk in chunks:
+        if not chunk:
             continue
 
-        # Generate audio for this sentence
-        audio = generate_speech(sentence, lang, voice, exaggeration, cfg_weight, temperature)
+        # Generate audio for this chunk of sentences
+        audio = generate_speech(chunk, lang, voice, exaggeration, cfg_weight, temperature)
         wav_bytes = numpy_to_wav_bytes(audio)
 
         # Yield chunk with length prefix (4 bytes) + WAV data
@@ -243,21 +299,22 @@ async def speak(request: SpeakRequest):
 
     if request.split_sentences:
         sentences = split_into_sentences(request.text)
+        chunks = chunk_sentences(sentences, request.chunk_size)
     else:
-        sentences = [request.text]
+        chunks = [request.text]
 
-    for sentence in sentences:
-        if not sentence:
+    for chunk in chunks:
+        if not chunk:
             continue
         wav = generate_speech(
-            sentence, request.lang, request.voice,
+            chunk, request.lang, request.voice,
             request.exaggeration, request.cfg_weight, request.temperature
         )
         audio_queue.put((wav, SAMPLE_RATE))
 
     return {
         "status": "queued",
-        "sentences": len(sentences),
+        "chunks": len(chunks),
         "lang": request.lang,
         "voice": request.voice
     }
