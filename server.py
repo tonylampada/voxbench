@@ -16,7 +16,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import torch
-import sounddevice as sd
+try:
+    import sounddevice as sd
+    SOUNDDEVICE_AVAILABLE = True
+except OSError:
+    sd = None
+    SOUNDDEVICE_AVAILABLE = False
+    print("Warning: sounddevice not available (PortAudio not found). /speak endpoint disabled.")
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
@@ -29,14 +35,21 @@ def _patched_torch_load(*args, **kwargs):
     return _original_torch_load(*args, **kwargs)
 torch.load = _patched_torch_load
 
-# Patch snapshot_download for offline mode (when HF_HUB_OFFLINE=1)
-if os.environ.get('HF_HUB_OFFLINE') == '1':
-    import huggingface_hub
-    _original_snapshot_download = huggingface_hub.snapshot_download
-    def _patched_snapshot_download(*args, **kwargs):
+# Patch snapshot_download to fix token handling
+# The chatterbox library incorrectly uses token=True when no token is set,
+# which forces authentication even for public models. We fix this by
+# converting token=True to token=None for public models.
+import huggingface_hub
+_original_snapshot_download = huggingface_hub.snapshot_download
+def _patched_snapshot_download(*args, **kwargs):
+    # If token is True (forcing auth) but no actual token, use None instead
+    if kwargs.get('token') is True:
+        kwargs['token'] = os.environ.get('HF_TOKEN') or None
+    # Support offline mode
+    if os.environ.get('HF_HUB_OFFLINE') == '1':
         kwargs['local_files_only'] = True
-        return _original_snapshot_download(*args, **kwargs)
-    huggingface_hub.snapshot_download = _patched_snapshot_download
+    return _original_snapshot_download(*args, **kwargs)
+huggingface_hub.snapshot_download = _patched_snapshot_download
 
 from chatterbox.tts_turbo import ChatterboxTurboTTS
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
@@ -131,6 +144,8 @@ def chunk_sentences(sentences: list[str], chunk_size: int = 3) -> list[str]:
 
 def audio_player_worker():
     """Worker thread that plays audio from the queue."""
+    if not SOUNDDEVICE_AVAILABLE:
+        return
     while True:
         item = audio_queue.get()
         if item is None:
@@ -273,14 +288,17 @@ async def startup():
     models["en"] = ChatterboxTurboTTS.from_pretrained(device="cpu")
     print("English model loaded!")
 
-    # print("Loading Portuguese (Multilingual) model...")
-    # models["pt"] = ChatterboxMultilingualTTS.from_pretrained(device="cpu")
-    # print("Portuguese model loaded!")
+    print("Loading Portuguese (Multilingual) model...")
+    models["pt"] = ChatterboxMultilingualTTS.from_pretrained(device="cpu")
+    print("Portuguese model loaded!")
 
-    # Start audio player thread
-    player_thread = threading.Thread(target=audio_player_worker, daemon=True)
-    player_thread.start()
-    print("Audio player started!")
+    # Start audio player thread (only if sounddevice available)
+    if SOUNDDEVICE_AVAILABLE:
+        player_thread = threading.Thread(target=audio_player_worker, daemon=True)
+        player_thread.start()
+        print("Audio player started!")
+    else:
+        print("Audio player disabled (no sounddevice)")
 
     print("\n" + "="*50)
     print("Chatterbox TTS Server Ready!")
@@ -294,6 +312,8 @@ async def startup():
 @app.post("/speak")
 async def speak(request: SpeakRequest):
     """Generate and play speech locally."""
+    if not SOUNDDEVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Audio playback not available (PortAudio not installed)")
     if request.lang not in ["en", "pt"]:
         raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
 
