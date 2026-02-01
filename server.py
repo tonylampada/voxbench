@@ -8,9 +8,12 @@ import os
 import re
 import wave
 import queue
+import base64
+import tempfile
 import threading
 from pathlib import Path
-from typing import Optional, Generator
+from typing import Optional, Generator, Tuple
+from contextlib import contextmanager
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -67,6 +70,7 @@ class SpeakRequest(BaseModel):
     text: str
     lang: str = "en"  # "en" or "pt"
     voice: Optional[str] = None  # voice file name (e.g., "pt_male.flac")
+    voice_data: Optional[str] = None  # base64-encoded audio for dynamic voice cloning
     split_sentences: bool = True
     chunk_size: int = 3  # Number of sentences per chunk (for better prosody)
     exaggeration: Optional[float] = None  # Emotion intensity (0.0-1.0+, default: 0.0 for en, 0.5 for pt)
@@ -78,6 +82,7 @@ class TTSRequest(BaseModel):
     text: str
     lang: str = "en"
     voice: Optional[str] = None
+    voice_data: Optional[str] = None  # base64-encoded audio for dynamic voice cloning
     exaggeration: Optional[float] = None
     cfg_weight: Optional[float] = None
     temperature: Optional[float] = None
@@ -176,17 +181,57 @@ def get_voice_path(voice: Optional[str]) -> Optional[str]:
     return None
 
 
+@contextmanager
+def resolve_voice(voice: Optional[str], voice_data: Optional[str]) -> Generator[Optional[str], None, None]:
+    """
+    Resolve voice to a file path, handling base64 voice_data with temp file cleanup.
+    
+    Priority:
+    1. voice_data (base64) - decode and save to temp file
+    2. voice (name/path) - resolve via get_voice_path
+    3. None - no voice cloning
+    
+    Usage:
+        with resolve_voice(voice, voice_data) as voice_path:
+            generate_speech(..., voice_path)
+    """
+    temp_file = None
+    
+    try:
+        if voice_data:
+            # Decode base64 and save to temp file
+            try:
+                audio_bytes = base64.b64decode(voice_data)
+            except Exception as e:
+                raise ValueError(f"Invalid base64 voice_data: {e}")
+            
+            # Create temp file with .wav extension (works for most formats)
+            temp_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            temp_file.write(audio_bytes)
+            temp_file.close()
+            yield temp_file.name
+        elif voice:
+            yield get_voice_path(voice)
+        else:
+            yield None
+    finally:
+        # Clean up temp file if created
+        if temp_file and os.path.exists(temp_file.name):
+            try:
+                os.unlink(temp_file.name)
+            except Exception:
+                pass  # Best effort cleanup
+
+
 def generate_speech(
     text: str,
     lang: str,
-    voice: Optional[str] = None,
+    voice_path: Optional[str] = None,
     exaggeration: Optional[float] = None,
     cfg_weight: Optional[float] = None,
     temperature: Optional[float] = None,
 ) -> np.ndarray:
-    """Generate speech for given text."""
-    voice_path = get_voice_path(voice)
-
+    """Generate speech for given text. voice_path should be pre-resolved."""
     # Debug output
     params = []
     if exaggeration is not None:
@@ -196,7 +241,7 @@ def generate_speech(
     if temperature is not None:
         params.append(f"temp={temperature}")
     if voice_path:
-        params.append(f"voice={voice}")
+        params.append(f"voice={Path(voice_path).name}")
     param_str = f" [{', '.join(params)}]" if params else ""
     print(f"[{lang}]{param_str} {text}")
 
@@ -257,7 +302,7 @@ def numpy_to_wav_bytes(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> byt
 def generate_audio_stream(
     text: str,
     lang: str,
-    voice: Optional[str] = None,
+    voice_path: Optional[str] = None,
     exaggeration: Optional[float] = None,
     cfg_weight: Optional[float] = None,
     temperature: Optional[float] = None,
@@ -272,7 +317,7 @@ def generate_audio_stream(
             continue
 
         # Generate audio for this chunk of sentences
-        audio = generate_speech(chunk, lang, voice, exaggeration, cfg_weight, temperature)
+        audio = generate_speech(chunk, lang, voice_path, exaggeration, cfg_weight, temperature)
         wav_bytes = numpy_to_wav_bytes(audio)
 
         # Yield chunk with length prefix (4 bytes) + WAV data
@@ -323,20 +368,22 @@ async def speak(request: SpeakRequest):
     else:
         chunks = [request.text]
 
-    for chunk in chunks:
-        if not chunk:
-            continue
-        wav = generate_speech(
-            chunk, request.lang, request.voice,
-            request.exaggeration, request.cfg_weight, request.temperature
-        )
-        audio_queue.put((wav, SAMPLE_RATE))
+    with resolve_voice(request.voice, request.voice_data) as voice_path:
+        for chunk in chunks:
+            if not chunk:
+                continue
+            wav = generate_speech(
+                chunk, request.lang, voice_path,
+                request.exaggeration, request.cfg_weight, request.temperature
+            )
+            audio_queue.put((wav, SAMPLE_RATE))
 
     return {
         "status": "queued",
         "chunks": len(chunks),
         "lang": request.lang,
-        "voice": request.voice
+        "voice": request.voice,
+        "voice_data_provided": request.voice_data is not None
     }
 
 
@@ -346,15 +393,16 @@ async def speak(request: SpeakRequest):
 
 @app.post("/tts")
 async def tts(request: TTSRequest):
-    """Generate speech and return as WAV binary."""
+    """Generate speech and return as WAV binary. Supports voice cloning via voice_data (base64)."""
     if request.lang not in ["en", "pt"]:
         raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
 
-    audio = generate_speech(
-        request.text, request.lang, request.voice,
-        request.exaggeration, request.cfg_weight, request.temperature
-    )
-    wav_bytes = numpy_to_wav_bytes(audio)
+    with resolve_voice(request.voice, request.voice_data) as voice_path:
+        audio = generate_speech(
+            request.text, request.lang, voice_path,
+            request.exaggeration, request.cfg_weight, request.temperature
+        )
+        wav_bytes = numpy_to_wav_bytes(audio)
 
     return Response(
         content=wav_bytes,
@@ -376,8 +424,9 @@ async def tts_get(
     if lang not in ["en", "pt"]:
         raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
 
-    audio = generate_speech(text, lang, voice, exaggeration, cfg_weight, temperature)
-    wav_bytes = numpy_to_wav_bytes(audio)
+    with resolve_voice(voice, None) as voice_path:
+        audio = generate_speech(text, lang, voice_path, exaggeration, cfg_weight, temperature)
+        wav_bytes = numpy_to_wav_bytes(audio)
 
     return Response(
         content=wav_bytes,
@@ -390,10 +439,28 @@ async def tts_get(
 # /tts/stream - Stream audio chunks (one per sentence)
 # =============================================================================
 
+def generate_audio_stream_with_voice_data(
+    text: str,
+    lang: str,
+    voice: Optional[str] = None,
+    voice_data: Optional[str] = None,
+    exaggeration: Optional[float] = None,
+    cfg_weight: Optional[float] = None,
+    temperature: Optional[float] = None,
+    chunk_size: int = 3,
+) -> Generator[bytes, None, None]:
+    """Wrapper that handles voice resolution with proper cleanup for streaming."""
+    with resolve_voice(voice, voice_data) as voice_path:
+        yield from generate_audio_stream(
+            text, lang, voice_path, exaggeration, cfg_weight, temperature, chunk_size
+        )
+
+
 @app.post("/tts/stream")
 async def tts_stream(request: TTSRequest):
     """
     Generate speech and stream WAV chunks (one per sentence).
+    Supports voice cloning via voice_data (base64).
 
     Each chunk is prefixed with 4 bytes (big-endian) indicating chunk length.
     Format: [4 bytes length][WAV data][4 bytes length][WAV data]...
@@ -402,8 +469,8 @@ async def tts_stream(request: TTSRequest):
         raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
 
     return StreamingResponse(
-        generate_audio_stream(
-            request.text, request.lang, request.voice,
+        generate_audio_stream_with_voice_data(
+            request.text, request.lang, request.voice, request.voice_data,
             request.exaggeration, request.cfg_weight, request.temperature
         ),
         media_type="application/octet-stream",
@@ -429,7 +496,7 @@ async def tts_stream_get(
         raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
 
     return StreamingResponse(
-        generate_audio_stream(text, lang, voice, exaggeration, cfg_weight, temperature),
+        generate_audio_stream_with_voice_data(text, lang, voice, None, exaggeration, cfg_weight, temperature),
         media_type="application/octet-stream",
         headers={"X-Audio-Format": "wav", "X-Sample-Rate": str(SAMPLE_RATE)}
     )
