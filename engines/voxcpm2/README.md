@@ -65,8 +65,16 @@ downloads them into the cache.
 
 ## Observed
 
-- VRAM: <!-- FILL AFTER SMOKE TEST -->
+- VRAM: **~6.1 GiB after load/warmup, ~6.7 GiB after serving requests** (torch allocator
+  numbers for the server process, bfloat16, includes CUDA-graph private pools).
+- Startup: ~15 min on first ever run (5 GB weight download) + ~3 min torch.compile warmup;
+  subsequent starts skip the download.
+- Smoke test WAVs: EN 5.6 s / PT 5.8 s, both 48 kHz mono; streaming produced 50 framed
+  WAVs (~0.16 s each) for a 4-sentence text — first frame arrives long before synthesis
+  finishes.
 - Warts: text normalization (`normalize=True`) is off — numbers/abbreviations are spoken
   as the model reads them; enabling it needs the `wetext` normalizer per language.
   With no `voice`, the model picks an arbitrary voice per request (no fixed default
-  speaker) — pass a voice for stable output.
+  speaker) — pass a voice for stable output. The load-time log warns the checkpoint's
+  tokenizer class is `VoxCPM2Tokenizer` while voxcpm loads it as `LlamaTokenizerFast`;
+  that is upstream's own loading path, not something we changed.
