@@ -89,6 +89,7 @@ Verdicts are from the bake-off measurements recorded in each engine's README.
 | omnivoice-brpt | 8887 | conflicted (Apache tag on CC-BY-NC base) | Best measured pt-BR: WER 0.040 / CER 0.038; research-only until the licence conflict resolves |
 | piper | 8888 | GPL-3.0 engine, MIT voices | CPU-only and instant; no cloning; GPL applies if embedded in a product |
 | kokoro | 8889 | Apache-2.0 | 82M, ~100× realtime; Portuguese is pan-lusophone "D" grade, not Brazilian |
+| higgs-tts-3 | 8893 | Boson Research & Non-Commercial | 4B multilingual (102 langs, en+pt both top tier); served by SGLang-Omni, native PCM streaming; see its README for measurements |
 
 ## The GPU workaround (pre-reboot)
 

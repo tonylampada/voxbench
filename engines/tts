@@ -22,6 +22,7 @@ gepard           8886  gpu  .  -
 omnivoice-brpt   8887  gpu  .  -
 piper            8888  cpu  .  -
 kokoro           8889  gpu  .  -
+higgs-tts-3      8893  gpu  .  voices+shm
 '
 
 die() { echo "tts: $*" >&2; exit 1; }
@@ -103,6 +104,9 @@ cmd_up() {
   fi
   case "$EXTRA" in
     voices)   RUN_ARGS+=(-v "$PWD/voices:/app/voices:ro") ;;
+    # voices+shm: SGLang-based engines want a big /dev/shm (vendor docs say
+    # --shm-size 32g); the default 64 MB starves torch's IPC.
+    voices+shm) RUN_ARGS+=(-v "$PWD/voices:/app/voices:ro" --shm-size 32g) ;;
     ttscache) RUN_ARGS+=(-v /home/ai/.local/share/tts:/root/.local/share/tts) ;;
   esac
   docker run "${RUN_ARGS[@]}" "tts-$e:gpu" >/dev/null
