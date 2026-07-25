@@ -1,5 +1,6 @@
 <!doctype html>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TTS test bench</title>
 <style>
   :root { color-scheme: dark; }
@@ -62,6 +63,19 @@
   audio { width: 100%; height: 32px; margin-top: .3rem; }
   .runbar { display: flex; gap: .6rem; align-items: center; margin: .8rem 0 1rem;
             position: sticky; top: 0; background: #14161a; padding: .5rem 0; z-index: 2; }
+
+  /* Phone: the layout already wraps, so this is about touch targets, not columns.
+     Without a viewport tag the page renders at desktop width and everything is
+     unreadably small — that tag is the actual fix; the rest is comfort. */
+  @media (max-width: 640px) {
+    body { margin: 1rem auto; padding: 0 .7rem; }
+    .card { flex: 1 1 100%; max-width: 100%; }
+    .phrase .txt { white-space: normal; }
+    button, select, input { min-height: 2.2rem; font-size: 1rem; }
+    audio { width: 100%; }
+    .runbar { position: sticky; bottom: 0; background: #14161a; padding: .6rem 0;
+              z-index: 5; flex-wrap: wrap; }
+  }
 </style>
 
 <h1>TTS test bench <small>— side-by-side synthesis · <a href="/">control plane</a></small></h1>
