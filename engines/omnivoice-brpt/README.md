@@ -34,7 +34,8 @@ First start downloads to the mounted HF cache: the finetune (~2.5 GB), the audio
 `eustlb/higgs-audio-v2-tokenizer` (the finetune repo ships no `audio_tokenizer/` folder;
 the `omnivoice` library falls back to that repo automatically), and — only on the first
 voice-cloning request — `openai/whisper-large-v3-turbo` (~1.6 GB) to auto-transcribe the
-reference clip.
+reference clip. Whisper runs on **CPU** (`asr_device="cpu"`): it transcribes a ~5 s clip
+once per voice, and on GPU it OOMed when sibling engines filled the card.
 
 ## Model / language choices
 
@@ -79,8 +80,9 @@ length-prefixed WAV per chunk.
 
 ## VRAM observed
 
-~2.5 GB after load, ~3.5 GB peak during synthesis (fp16, RTX 4090). Whisper for
-voice-clone transcription would add ~1.6 GB when first used.
+~2.5 GB resident after load and during plain `/tts` synthesis (fp16, RTX 4090).
+Brief extra allocations (tens of MB) during reference-clip encoding for voice cloning.
+Whisper runs on CPU, so it adds no VRAM.
 
 ## Warts
 
@@ -90,3 +92,9 @@ voice-clone transcription would add ~1.6 GB when first used.
   rather than race. The bench hits it serially anyway.
 - First `/tts` after cold start is slower (CUDA/graph warmup); the bench's `/health`
   poll does not warm the generate path.
+- **Voice cloning was not fully verified on this box**: during smoke testing three
+  sibling engines held 21+ of 24 GB, and the clone path OOMed on ~2–88 MiB allocations
+  (ref-clip encode, then a generate step). Plain `/tts`, `/tts/stream`, `/voices`,
+  `/health`, and the 400 path all passed under that same contention. With the card to
+  itself (bench conditions) cloning needs only tens of MB beyond the resident 2.5 GB
+  and is expected to pass — but it was not observed passing end-to-end.

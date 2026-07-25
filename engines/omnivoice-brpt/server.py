@@ -41,7 +41,11 @@ class TTSRequest(BaseModel):
 def load_model():
     global model
     print(f"Loading {MODEL_ID}...")
-    model = OmniVoice.from_pretrained(MODEL_ID, device_map="cuda:0", dtype=torch.float16)
+    # asr_device="cpu": Whisper only transcribes a ~5s reference clip once per
+    # voice; on GPU it OOMs when sibling engines fill the card.
+    model = OmniVoice.from_pretrained(
+        MODEL_ID, device_map="cuda:0", dtype=torch.float16, asr_device="cpu"
+    )
     print("Model loaded.")
 
 
