@@ -93,7 +93,7 @@ Verdicts are from the bake-off measurements recorded in each engine's README.
 | chatterbox-flash | 8890 | MIT | **English-only** (`lang: "pt"` → 400); marketed ~13× realtime, measured 5.4× with 0.42 s first audio — slower than the plain turbo path; if it wins, it wins on sound |
 | chatterbox-nano | 8891 | MIT | **English-only** (`lang: "pt"` → 400); 110M, 12× realtime on GPU and the only engine that both clones voices and runs acceptably on CPU (~1.8×, `up chatterbox-nano --cpu`) |
 | higgs-tts-3 | 8893 | Boson Research & Non-Commercial | 4B multilingual (102 languages, en and pt both top tier); served by SGLang-Omni, native PCM streaming; see `higgs-tts-3/README.md` for measurements |
-| voxtral-tts | 8894 | CC-BY-NC-4.0 (weights inherit the preset voices' licence) | Mistral's 4B, 9 languages, 20 presets; served by vLLM-Omni, native PCM streaming; see `voxtral-tts/README.md` for measurements |
+| voxtral-tts | 8894 | CC-BY-NC-4.0 (weights inherit the preset voices' licence) | Mistral's 4B, 9 languages, 20 presets; first streamed PCM at 148 ms AND RTF ≈ 0.20 — quick at both ends, unlike VoxCPM2; public checkpoint cannot clone (no encoder weights) |
 
 Port 8892 is reserved in the registry for fish-s2-pro (merged but not yet
 registered).

@@ -16,7 +16,7 @@ model. `server.py` launches `vllm serve --omni` (OpenAI-compatible
 docker build -f engines/voxtral-tts/Dockerfile -t tts-voxtral-tts:gpu .
 ```
 
-Base image is `vllm/vllm-omni:v0.24.0` (multi-GB pull; the layer pull, not the
+Base image is `vllm/vllm-omni:v0.22.0` (21 GB pull; the layer pull, not the
 build, is what takes the time).
 
 ## Run
@@ -45,9 +45,10 @@ pipeline (token generator + audio tokenizer) on one GPU.
   builtins (gender is in the preset name); every library clip appears as a
   `reference` voice built from the manifest.
 - **Voice cloning does not work on the public checkpoint** — see Warts. The
-  adapter still accepts reference ids and forwards the clip as base64
-  `ref_audio`, so it lights up if Mistral ever ships the encoder weights, but
-  today every reference voice answers a 400 explaining the situation.
+  adapter treats this as a non-cloning engine: its own 20 presets are
+  rendered into the voice library (`bench/mkvoicelib.py`), reference ids with
+  origin `voxtral-tts` resolve back to the preset, and foreign clips answer
+  a 400 explaining the situation.
 - `/v1/params`: `temperature`, `top_p`, `top_k` (forwarded via vLLM-Omni's
   `extra_params`, applied to the token stage's sampling), plus `seed` and
   `max_new_tokens` (top-level upstream fields). Defaults mirror the upstream
@@ -59,12 +60,21 @@ pipeline (token generator + audio tokenizer) on one GPU.
 
 ## Pins and why
 
-- Base `vllm/vllm-omni:v0.24.0` — the release tag, not `latest`; vLLM-Omni
-  moves fast (0.20 → 0.25rc in four months) and the Voxtral pipeline config
+- Base `vllm/vllm-omni:v0.22.0` (vllm 0.22.0, vllm-omni 0.22.0,
+  mistral-common 1.11.2) — a release tag, not `latest`; vLLM-Omni moves fast
+  (0.20 → 0.25rc in four months) and the Voxtral pipeline config
   (`vllm_omni/deploy/voxtral_tts.yaml`) is auto-loaded from inside the wheel,
   so image tag == the whole serving behaviour. Nothing is pip-installed on
   top: vllm, vllm-omni, mistral-common, fastapi and uvicorn all come from the
   image, so they cannot drift apart.
+- **Not v0.24.0, deliberately.** That release answers 200 with fluent speech
+  of *some other text* — "The quick brown fox…" came back as "We're back.
+  We're back." (vllm-omni #4949: #4527 moved the audio feedback frames under
+  `codes.audio` and Voxtral's preprocess kept reading the old key, so the
+  AR stage generated unconditioned). The fix (#4954) merged after the
+  release; v0.22.0 predates the breakage and is a release the vendor recipe
+  explicitly verified for this model — also without v0.24.0's measured
+  time-to-first-packet regression (vllm-omni #5023).
 - The upstream launch is exactly the model card's documented command
   (`vllm serve <model> --omni --trust-remote-code`); the deploy config
   auto-loads by model type. No flags are second-guessed here — the vendor's
@@ -74,20 +84,32 @@ pipeline (token generator + audio tokenizer) on one GPU.
 
 Observed on this box (RTX 4090 24 GB, nvdrv workaround, weights pre-cached):
 
-- **Boot to healthy: ~TBD s** from container start.
-- **VRAM: TBD** (deploy config: stage 0 at 0.8 GPU fraction, stage 1 at 0.1).
-- **Warm synthesis: TBD**.
-- **Streaming: TTFB TBD vs total TBD**.
-- **Duration stability**: TBD (three identical English calls).
+- **Boot to healthy: ~76–81 s** from container start (model load; no downloads).
+- **VRAM: 20.8 / 24.0 GiB** once warm (deploy config: stage 0 at 0.8 GPU
+  fraction, stage 1 at 0.1 — matches the vendor recipe's 20.5 GiB on the same
+  card). Nothing else fits next to it; `engines/tts down` it when done.
+- **Warm synthesis: RTF ≈ 0.20** — 16.4 s of audio in 3.2 s wall; ~10 s
+  renders take ~1.8 s.
+- **Streaming is genuinely incremental: first PCM at 148 ms**, against 5.1 s
+  total for 26 s of audio — first byte at 3% of the wall clock. The vendor's
+  70–90 ms claim is nearly true even through a docker bridge and an adapter
+  hop; this is the fastest first-audio on the bench after VoxCPM2, and unlike
+  VoxCPM2 it is also one of the fastest generators.
+- **Duration stability**: the same two-sentence English paragraph 3× →
+  16.40 / 17.52 / 16.48 s. No gepard-style silent truncation; whisper-base
+  transcribes the output faithfully (en, pt, fr checked).
 
 ## Warts
 
 - **The public checkpoint cannot clone.** `ref_audio` requires audio-encoder
-  weights Mistral did not ship; upstream fails with `encode_waveforms
-  requires encoder weights which are not available in the open-source
-  checkpoint`. The adapter maps that to a 400 telling you to use a preset.
-  Cloning-from-3-seconds is real only through Mistral's hosted API / gated
-  weights.
+  weights Mistral did not ship; upstream raises `encode_waveforms requires
+  encoder weights which are not available in the open-source checkpoint` —
+  and it raises **inside the EngineCore, which kills the whole upstream
+  engine** (every later request 500s until the container restarts). The
+  adapter therefore never forwards `ref_audio`: reference voices whose
+  origin is `voxtral-tts` resolve back to their builtin preset (like kokoro
+  and piper), everything else is a 400 up front. Cloning-from-3-seconds is
+  real only through Mistral's hosted API / gated weights.
 - The preset voices are language-flavoured (`de_male`, `pt_female`, …) but
   the model speaks whatever language the input text is in, with the preset's
   timbre and accent. Cross-language use of a preset is legal and sounds like

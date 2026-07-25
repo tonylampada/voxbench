@@ -720,6 +720,166 @@
   "seconds": 12.32
  },
  {
+  "file": "voxtral-tts-ar-male-ar.wav",
+  "engine": "voxtral-tts",
+  "voice": "ar_male",
+  "lang": "ar",
+  "gender": "male",
+  "seconds": 9.04
+ },
+ {
+  "file": "voxtral-tts-casual-female-en.wav",
+  "engine": "voxtral-tts",
+  "voice": "casual_female",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.72
+ },
+ {
+  "file": "voxtral-tts-casual-male-en.wav",
+  "engine": "voxtral-tts",
+  "voice": "casual_male",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 7.92
+ },
+ {
+  "file": "voxtral-tts-cheerful-female-en.wav",
+  "engine": "voxtral-tts",
+  "voice": "cheerful_female",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 12.24
+ },
+ {
+  "file": "voxtral-tts-de-female-de.wav",
+  "engine": "voxtral-tts",
+  "voice": "de_female",
+  "lang": "de",
+  "gender": "female",
+  "seconds": 8.08
+ },
+ {
+  "file": "voxtral-tts-de-male-de.wav",
+  "engine": "voxtral-tts",
+  "voice": "de_male",
+  "lang": "de",
+  "gender": "male",
+  "seconds": 8.32
+ },
+ {
+  "file": "voxtral-tts-es-female-es.wav",
+  "engine": "voxtral-tts",
+  "voice": "es_female",
+  "lang": "es",
+  "gender": "female",
+  "seconds": 11.04
+ },
+ {
+  "file": "voxtral-tts-es-male-es.wav",
+  "engine": "voxtral-tts",
+  "voice": "es_male",
+  "lang": "es",
+  "gender": "male",
+  "seconds": 8.48
+ },
+ {
+  "file": "voxtral-tts-fr-female-fr.wav",
+  "engine": "voxtral-tts",
+  "voice": "fr_female",
+  "lang": "fr",
+  "gender": "female",
+  "seconds": 8.96
+ },
+ {
+  "file": "voxtral-tts-fr-male-fr.wav",
+  "engine": "voxtral-tts",
+  "voice": "fr_male",
+  "lang": "fr",
+  "gender": "male",
+  "seconds": 10.4
+ },
+ {
+  "file": "voxtral-tts-hi-female-hi.wav",
+  "engine": "voxtral-tts",
+  "voice": "hi_female",
+  "lang": "hi",
+  "gender": "female",
+  "seconds": 8.64
+ },
+ {
+  "file": "voxtral-tts-hi-male-hi.wav",
+  "engine": "voxtral-tts",
+  "voice": "hi_male",
+  "lang": "hi",
+  "gender": "male",
+  "seconds": 10.88
+ },
+ {
+  "file": "voxtral-tts-it-female-it.wav",
+  "engine": "voxtral-tts",
+  "voice": "it_female",
+  "lang": "it",
+  "gender": "female",
+  "seconds": 11.04
+ },
+ {
+  "file": "voxtral-tts-it-male-it.wav",
+  "engine": "voxtral-tts",
+  "voice": "it_male",
+  "lang": "it",
+  "gender": "male",
+  "seconds": 9.04
+ },
+ {
+  "file": "voxtral-tts-neutral-female-en.wav",
+  "engine": "voxtral-tts",
+  "voice": "neutral_female",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 10.32
+ },
+ {
+  "file": "voxtral-tts-neutral-male-en.wav",
+  "engine": "voxtral-tts",
+  "voice": "neutral_male",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.32
+ },
+ {
+  "file": "voxtral-tts-nl-female-nl.wav",
+  "engine": "voxtral-tts",
+  "voice": "nl_female",
+  "lang": "nl",
+  "gender": "female",
+  "seconds": 8.08
+ },
+ {
+  "file": "voxtral-tts-nl-male-nl.wav",
+  "engine": "voxtral-tts",
+  "voice": "nl_male",
+  "lang": "nl",
+  "gender": "male",
+  "seconds": 9.52
+ },
+ {
+  "file": "voxtral-tts-pt-female-pt.wav",
+  "engine": "voxtral-tts",
+  "voice": "pt_female",
+  "lang": "pt",
+  "gender": "female",
+  "seconds": 9.2
+ },
+ {
+  "file": "voxtral-tts-pt-male-pt.wav",
+  "engine": "voxtral-tts",
+  "voice": "pt_male",
+  "lang": "pt",
+  "gender": "male",
+  "seconds": 9.36
+ },
+ {
   "file": "xtts-v2-aaron-dreschner-en.wav",
   "engine": "xtts-v2",
   "voice": "Aaron Dreschner",
