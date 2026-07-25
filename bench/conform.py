@@ -43,9 +43,9 @@ def http(method: str, path: str, body: dict | None = None, timeout: float = 300)
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.status, dict(r.headers), r.read()
+            return r.status, {k.lower(): v for k, v in r.headers.items()}, r.read()
     except urllib.error.HTTPError as e:
-        return e.code, dict(e.headers), e.read()
+        return e.code, {k.lower(): v for k, v in e.headers.items()}, e.read()
 
 
 def is_wav(b: bytes) -> bool:
@@ -77,7 +77,7 @@ def main():
     if st != 200:
         sys.exit("engine not healthy — conform assumes it is already up")
     st, hdr, raw = http("GET", "/", timeout=5)
-    check("test page", st == 200 and "text/html" in hdr.get("Content-Type", ""), f"{st}")
+    check("test page", st == 200 and "text/html" in hdr.get("content-type", ""), f"{st}")
 
     # ── old surface is gone ──────────────────────────────────────────────
     for m, p in [("POST", "/tts"), ("POST", "/tts/stream"), ("GET", "/voices")]:
@@ -125,7 +125,7 @@ def main():
         st, hdr, raw = http("POST", "/v1/audio/speech",
                             {"input": "Hello from the conformance harness.", "voice": voice["id"], "lang": lang})
         check(f"speech builtin ({voice['id']})", st == 200 and is_wav(raw)
-              and "audio/wav" in hdr.get("Content-Type", ""), f"{st}, {len(raw)}b")
+              and "audio/wav" in hdr.get("content-type", ""), f"{st}, {len(raw)}b")
     st, _, raw = http("POST", "/v1/audio/speech", {"input": "Defaults work."})
     check("speech with defaults only", st == 200 and is_wav(raw), f"{st}")
 
