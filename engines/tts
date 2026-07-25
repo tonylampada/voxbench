@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+# tts — build/run/talk to any engine in engines/ with nothing but its name.
+# See engines/README.md for the HTTP contract and the engine table.
+set -euo pipefail
+cd "$(dirname "$0")/.."  # repo root; every path below is relative to it
+
+# ── Registry ─────────────────────────────────────────────────────────────────
+# name  port  gpu|cpu  build-context  extra-mount
+# Adding an engine = ONE line here (plus its engines/<name>/ dir).
+# Derived, not listed: dockerfile is always engines/<name>/Dockerfile, image is
+# tts-<name>:gpu, container is tts-<name>, the server always listens on 8877
+# inside. Context "." means the repo root (those builds bake in voices/).
+# extra-mount: voices = repo voices/ dir, ttscache = coqui model cache, - = none.
+REGISTRY='
+chatterbox-ptbr  8881  gpu  .                    -
+qwen3-tts        8882  gpu  engines/qwen3-tts    -
+voxcpm2          8883  gpu  .                    -
+f5-tts-ptbr      8884  gpu  engines/f5-tts-ptbr  voices
+xtts-v2          8885  gpu  engines/xtts-v2      ttscache
+gepard           8886  gpu  engines/gepard       -
+omnivoice-brpt   8887  gpu  .                    -
+piper            8888  cpu  engines/piper        -
+kokoro           8889  gpu  engines/kokoro       -
+'
+
+die() { echo "tts: $*" >&2; exit 1; }
+engines() { echo "$REGISTRY" | awk 'NF {print $1}'; }
+field() { echo "$REGISTRY" | awk -v e="$1" -v f="$2" '$1 == e {print $f}'; }
+require() {  # sets PORT/GPU/CTX/EXTRA for an engine name, or dies
+  PORT=$(field "$1" 2)
+  if [ -z "$PORT" ]; then die "unknown engine '$1' — one of: $(engines | tr '\n' ' ')"; fi
+  GPU=$(field "$1" 3); CTX=$(field "$1" 4); EXTRA=$(field "$1" 5)
+}
+state() { docker inspect -f '{{.State.Status}}' "tts-$1" 2>/dev/null | grep . || echo absent; }
+has_image() { docker image inspect "tts-$1:gpu" >/dev/null 2>&1; }
+healthy() { curl -fsS -m 3 "http://127.0.0.1:$(field "$1" 2)/health" >/dev/null 2>&1; }
+
+# ── The GPU recipe, in ONE place ─────────────────────────────────────────────
+# Pre-reboot workaround: this box's kernel module (580.159.03) and host libs
+# (580.173.02) are mismatched, so `--gpus all` dies — nvidia-container-toolkit
+# tries to mount /run/nvidia-persistenced/socket, which doesn't exist. Instead
+# we pass the device nodes explicitly and mount libs matching the kernel module.
+# After the reboot aligns them, run with TTS_GPU_MODE=gpus-all; this function is
+# the only thing to change (make gpus-all the default, or delete the nvdrv arm).
+gpu_run_args() {  # appends to RUN_ARGS
+  case "${TTS_GPU_MODE:-nvdrv}" in
+    gpus-all) RUN_ARGS+=(--gpus all) ;;
+    nvdrv) RUN_ARGS+=(
+      --device /dev/nvidia0 --device /dev/nvidiactl
+      --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
+      -e LD_LIBRARY_PATH=/opt/nvdrv
+      -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro) ;;
+    *) die "TTS_GPU_MODE must be 'nvdrv' or 'gpus-all'" ;;
+  esac
+}
+
+cmd_up() {
+  local e=$1 force=${2:-}
+  require "$e"
+  if [ "$(state "$e")" = running ]; then
+    if healthy "$e"; then echo "tts-$e already up: http://127.0.0.1:$PORT"; return; fi
+    echo "tts-$e is running but not healthy yet — waiting"; wait_healthy "$e"; return
+  fi
+  # There is ONE 24 GB card — refuse to start a second GPU engine.
+  if [ "$GPU" = gpu ] && [ "$force" != --force ]; then
+    local o
+    for o in $(engines); do
+      if [ "$o" != "$e" ] && [ "$(field "$o" 3)" = gpu ] && [ "$(state "$o")" = running ]; then
+        die "GPU engine '$o' is already running and the card fits one big model. Run 'engines/tts down $o' first, or pass --force if you know both fit."
+      fi
+    done
+  fi
+  if ! has_image "$e"; then
+    if [ "$e" = xtts-v2 ] && ! docker image inspect chatterbox-tts:gpu >/dev/null 2>&1; then
+      echo "building chatterbox-tts:gpu first (xtts-v2's image derives from it)"
+      docker build -t chatterbox-tts:gpu .
+    fi
+    echo "image tts-$e:gpu missing — building (this can take many minutes)"
+    docker build -f "engines/$e/Dockerfile" -t "tts-$e:gpu" "$CTX"
+  fi
+  docker rm -f "tts-$e" >/dev/null 2>&1 || true  # clear a stopped leftover
+  RUN_ARGS=(-d --name "tts-$e" -p "127.0.0.1:$PORT:8877")
+  if [ "$GPU" = gpu ]; then
+    gpu_run_args
+    RUN_ARGS+=(-v /home/ai/.cache/huggingface:/root/.cache/huggingface)
+  fi
+  case "$EXTRA" in
+    voices)   RUN_ARGS+=(-v "$PWD/voices:/app/voices:ro") ;;
+    ttscache) RUN_ARGS+=(-v /home/ai/.local/share/tts:/root/.local/share/tts) ;;
+  esac
+  docker run "${RUN_ARGS[@]}" "tts-$e:gpu" >/dev/null
+  wait_healthy "$e"
+}
+
+wait_healthy() {
+  local e=$1 t0=$SECONDS timeout=${TTS_UP_TIMEOUT:-900}
+  echo "waiting for tts-$e to answer /health (big models take minutes; timeout ${timeout}s)"
+  while ! healthy "$e"; do
+    if [ "$(state "$e")" != running ]; then
+      die "container tts-$e died while loading — see: engines/tts logs $e"
+    fi
+    if [ $((SECONDS - t0)) -ge "$timeout" ]; then
+      die "not healthy after ${timeout}s — see: engines/tts logs $e (or raise TTS_UP_TIMEOUT; a first run may be downloading weights)"
+    fi
+    sleep 5; echo "  still loading... ($((SECONDS - t0))s)"
+  done
+  echo "tts-$e healthy in $((SECONDS - t0))s: http://127.0.0.1:$PORT"
+}
+
+cmd_down() {
+  require "$1"
+  if [ "$(state "$1")" = absent ]; then echo "tts-$1 is not running"; return; fi
+  docker rm -f "tts-$1" >/dev/null && echo "tts-$1 stopped"
+}
+
+cmd_ls() {
+  printf '%-16s %-6s %-4s %-6s %-9s %s\n' ENGINE PORT GPU IMAGE CONTAINER HEALTH
+  local e img st h
+  for e in $(engines); do
+    require "$e"
+    img=no; if has_image "$e"; then img=yes; fi
+    st=$(state "$e")
+    h=-; if [ "$st" = running ]; then if healthy "$e"; then h=ok; else h=loading; fi; fi
+    printf '%-16s %-6s %-4s %-6s %-9s %s\n' "$e" "$PORT" "$GPU" "$img" "$st" "$h"
+  done
+}
+
+cmd_logs() { local e=$1; shift; require "$e"; docker logs --tail 100 "$@" "tts-$e"; }
+
+json_escape() { local s=${1//\\/\\\\}; printf '%s' "${s//\"/\\\"}"; }
+
+cmd_say() {
+  local e=$1 text=$2 lang=en voice='' out=''; shift 2
+  require "$e"
+  while [ $# -gt 0 ]; do case $1 in
+    --lang) lang=$2; shift 2 ;;
+    --voice) voice=$2; shift 2 ;;
+    --out) out=$2; shift 2 ;;
+    *) die "say: unknown flag '$1' (--lang en|pt, --voice V, --out FILE)" ;;
+  esac; done
+  out=${out:-/tmp/$e-$lang.wav}
+  local body="{\"text\":\"$(json_escape "$text")\",\"lang\":\"$lang\""
+  if [ -n "$voice" ]; then body="$body,\"voice\":\"$(json_escape "$voice")\""; fi
+  body="$body}"
+  if ! curl -fsS -X POST "http://127.0.0.1:$PORT/tts" \
+       -H 'Content-Type: application/json' -d "$body" -o "$out"; then
+    die "synthesis failed — is the engine up? try: engines/tts up $e"
+  fi
+  echo "wrote $out ($(du -h "$out" | cut -f1))"
+}
+
+cmd_voices() {
+  require "$1"
+  curl -fsS "http://127.0.0.1:$PORT/voices" || die "no answer — try: engines/tts up $1"
+  echo
+}
+
+usage() {
+  cat <<'EOF'
+usage: engines/tts <command> [args]
+  up <engine> [--force]   build image if missing, start, wait until healthy
+  down <engine>           stop it
+  ls                      dashboard: port / image / container / health
+  logs <engine> [-f]      tail its logs
+  say <engine> "text" [--lang en|pt] [--voice V] [--out FILE]
+                          synthesize a WAV (default /tmp/<engine>-<lang>.wav)
+  voices <engine>         list its voices
+env: TTS_GPU_MODE=nvdrv|gpus-all (default nvdrv until the reboot), TTS_UP_TIMEOUT=secs
+EOF
+  exit 1
+}
+
+case "${1:-}" in
+  up)     cmd_up "${2:?usage: tts up <engine> [--force]}" "${3:-}" ;;
+  down)   cmd_down "${2:?usage: tts down <engine>}" ;;
+  ls)     cmd_ls ;;
+  logs)   shift; cmd_logs "${@:?usage: tts logs <engine> [-f]}" ;;
+  say)    shift; [ $# -ge 2 ] || usage; cmd_say "$@" ;;
+  voices) cmd_voices "${2:?usage: tts voices <engine>}" ;;
+  *)      usage ;;
+esac

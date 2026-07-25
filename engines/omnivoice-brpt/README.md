@@ -22,13 +22,10 @@ docker build -f engines/omnivoice-brpt/Dockerfile -t tts-omnivoice-brpt:gpu .
 ## Run
 
 ```
-docker run -d --name tts-omnivoice-brpt \
-  --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
-  -e LD_LIBRARY_PATH=/opt/nvdrv \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
-  -p 127.0.0.1:8887:8877 tts-omnivoice-brpt:gpu
+../tts up omnivoice-brpt        # port 8887
 ```
+
+(GPU device/driver flags and mounts live in `engines/tts`; see `engines/README.md`.)
 
 First start downloads to the mounted HF cache: the finetune (~2.5 GB), the audio tokenizer
 `eustlb/higgs-audio-v2-tokenizer` (the finetune repo ships no `audio_tokenizer/` folder;
