@@ -14,7 +14,7 @@ from typing import Optional, Generator
 import torch
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 from chatterbox_flash import ChatterboxFlashTTS
@@ -115,6 +115,11 @@ def startup():
     # Warm the default voice so the first /tts doesn't pay conditioning prep.
     get_conds(get_voice_path(None), DEFAULT_EXAGGERATION)
     print("Chatterbox Flash engine ready")
+
+
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")
