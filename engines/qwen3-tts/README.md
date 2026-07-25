@@ -11,16 +11,11 @@ docker build -t tts-qwen3-tts:gpu .
 
 ## Run
 
-This box's driver stack is broken pre-reboot — pass device nodes + matching driver libs explicitly (see repo notes), never `--gpus all`:
-
 ```bash
-docker run -d --name tts-qwen3-tts \
-  --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
-  -e LD_LIBRARY_PATH=/opt/nvdrv \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
-  -p 127.0.0.1:8882:8877 tts-qwen3-tts:gpu
+../tts up qwen3-tts        # port 8882
 ```
+
+(GPU device/driver flags and mounts live in `engines/tts`; see `engines/README.md`.)
 
 First start downloads ~3.4 GB of weights into the mounted HF cache.
 

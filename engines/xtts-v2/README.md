@@ -25,17 +25,11 @@ still pulling). `chatterbox-tts:gpu` was already local and carries torch
 ## Run
 
 ```
-docker run -d --name tts-xtts-v2 \
-  --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
-  -e LD_LIBRARY_PATH=/opt/nvdrv \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.local/share/tts:/root/.local/share/tts \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
-  -p 127.0.0.1:8885:8877 tts-xtts-v2:gpu
+../tts up xtts-v2        # port 8885
 ```
 
-The `--device`/`nvdrv` incantation is the pre-reboot workaround for this box's
-mismatched driver stack — see the fleet notes; `--gpus all` does not work here.
+(GPU device/driver flags and mounts — including this engine's extra coqui TTS
+cache mount — live in `engines/tts`; see `engines/README.md`.)
 
 ## Model / cache
 
