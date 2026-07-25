@@ -5,11 +5,19 @@ block-diffusion with parallel unmasking — not the autoregressive path of the o
 Chatterbox variants) behind the shared bench contract. Vendor-reported numbers:
 RTF 0.076, 103 ms time-to-first-packet, Seed-TTS similarity 0.704, WER 1.96.
 
-## Build (from the repo root — the build copies `voices/`)
+## Build (from the repo root)
 
 ```
 docker build -f engines/chatterbox-flash/Dockerfile -t tts-chatterbox-flash:gpu .
 ```
+
+The image is based on the repo's own `chatterbox-tts:gpu` (build that first from the
+repo root if missing: `docker build -t chatterbox-tts:gpu .`) rather than a fresh
+`python:3.11-slim` — this box's link could not re-pull the multi-GB torch wheels, and
+the local base already carries torch 2.6.0+cu124, chatterbox-tts 0.1.7, setuptools<81
+and `voices/`. Same trick as `engines/xtts-v2/`. The Dockerfile overrides the base's
+`HF_HOME` (baked cache at `/app/.cache`) and `HF_HUB_OFFLINE=1`, both of which would
+otherwise break the mounted-host-cache run recipe below.
 
 ## Run (broken-driver-stack recipe for this box)
 
@@ -63,8 +71,11 @@ Weights come from the mounted HF cache (`ResembleAI/chatterbox-flash`:
   pipeline never imports or applies the `resemble-perth` watermarker — output audio is
   unwatermarked. (The package still *depends* on it transitively via `chatterbox-tts`,
   hence the setuptools pin.)
-- VRAM observed: ~2.5 GB (container reported via `torch.cuda.memory_reserved` after
-  load + one generation; host `nvidia-smi` is broken pre-reboot).
+- VRAM observed: could not isolate per-process (host `nvidia-smi` is broken
+  pre-reboot and the driver-lib mount carries no smi binary). Container peak RSS was
+  3.57 GiB; vendor-expected VRAM is 2–3 GB and the model is ~520M params in bf16.
+- Generation is fast: the full two-sentence smoke text synthesized in ~0.8–1.4 s wall
+  clock over HTTP (≈5 s of audio), consistent with the vendor's ~13x realtime claim.
 - Sentence splitting is a plain `[.!?…]` regex — decimal numbers/abbreviations may
   split oddly in `/tts/stream`; `/tts` synthesizes the whole text in one shot.
 - The English text normalizer (`en_us_cleaner`) runs inside `generate()` by default
