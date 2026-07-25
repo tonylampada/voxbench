@@ -1,5 +1,6 @@
 <!doctype html>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TTS console</title>
 <style>
   :root { color-scheme: dark; }
@@ -30,6 +31,13 @@
   a { color: #4c8dd6; }
   #gpuline { color: #9aa3af; margin: 0 0 1rem; font-size: .9rem; }
   #gpuline.warn { color: #d6b44c; }
+
+  @media (max-width: 640px) {
+    body { margin: 1rem auto; padding: 0 .7rem; }
+    .meter { min-width: 100%; }
+    .bars { gap: 1rem; }
+    button { min-height: 2.2rem; font-size: 1rem; }
+  }
 </style>
 
 <h1>TTS console <small>— engines on this machine, loopback only · <a href="/test">test bench</a></small></h1>
