@@ -10,7 +10,7 @@ from typing import Optional
 import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 MODEL_ID = os.environ.get("QWEN_TTS_MODEL", "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice")
@@ -71,11 +71,16 @@ def to_wav_bytes(audio, sr: int) -> bytes:
     return buf.getvalue()
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 def health():
     if "model" not in state:
         raise HTTPException(503, "model not loaded")
-    return {"status": "ok", "models_loaded": [MODEL_ID], "queue_size": 0}
+    return {"status": "ok", "engine": "qwen3-tts", "models_loaded": [MODEL_ID], "queue_size": 0}
 
 
 @app.get("/voices")

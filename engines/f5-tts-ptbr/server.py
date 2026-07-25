@@ -15,7 +15,7 @@ from typing import Generator, Optional, Tuple
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from huggingface_hub import hf_hub_download
 from num2words import num2words
 from pydantic import BaseModel
@@ -122,9 +122,14 @@ async def startup():
     print("F5-TTS pt-BR server ready!")
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 async def health():
-    return {"status": "ok", "models_loaded": list(models.keys()), "queue_size": 0}
+    return {"status": "ok", "engine": "f5-tts-ptbr", "models_loaded": list(models.keys()), "queue_size": 0}
 
 
 @app.get("/voices")

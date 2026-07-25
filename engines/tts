@@ -9,18 +9,19 @@ cd "$(dirname "$0")/.."  # repo root; every path below is relative to it
 # Adding an engine = ONE line here (plus its engines/<name>/ dir).
 # Derived, not listed: dockerfile is always engines/<name>/Dockerfile, image is
 # tts-<name>:gpu, container is tts-<name>, the server always listens on 8877
-# inside. Context "." means the repo root (those builds bake in voices/).
+# inside. Context is always "." (the repo root) — every build needs
+# engines/testpage.html and some also bake in voices/.
 # extra-mount: voices = repo voices/ dir, ttscache = coqui model cache, - = none.
 REGISTRY='
-chatterbox-ptbr  8881  gpu  .                    -
-qwen3-tts        8882  gpu  engines/qwen3-tts    -
-voxcpm2          8883  gpu  .                    -
-f5-tts-ptbr      8884  gpu  engines/f5-tts-ptbr  voices
-xtts-v2          8885  gpu  engines/xtts-v2      ttscache
-gepard           8886  gpu  engines/gepard       -
-omnivoice-brpt   8887  gpu  .                    -
-piper            8888  cpu  engines/piper        -
-kokoro           8889  gpu  engines/kokoro       -
+chatterbox-ptbr  8881  gpu  .  -
+qwen3-tts        8882  gpu  .  -
+voxcpm2          8883  gpu  .  -
+f5-tts-ptbr      8884  gpu  .  voices
+xtts-v2          8885  gpu  .  ttscache
+gepard           8886  gpu  .  -
+omnivoice-brpt   8887  gpu  .  -
+piper            8888  cpu  .  -
+kokoro           8889  gpu  .  -
 '
 
 die() { echo "tts: $*" >&2; exit 1; }
@@ -58,7 +59,7 @@ cmd_up() {
   local e=$1 force=${2:-}
   require "$e"
   if [ "$(state "$e")" = running ]; then
-    if healthy "$e"; then echo "tts-$e already up: http://127.0.0.1:$PORT"; return; fi
+    if healthy "$e"; then echo "tts-$e already up: http://127.0.0.1:$PORT (test page)"; return; fi
     echo "tts-$e is running but not healthy yet — waiting"; wait_healthy "$e"; return
   fi
   # There is ONE 24 GB card — refuse to start a second GPU engine.
@@ -104,7 +105,7 @@ wait_healthy() {
     fi
     sleep 5; echo "  still loading... ($((SECONDS - t0))s)"
   done
-  echo "tts-$e healthy in $((SECONDS - t0))s: http://127.0.0.1:$PORT"
+  echo "tts-$e healthy in $((SECONDS - t0))s: http://127.0.0.1:$PORT (test page)"
 }
 
 cmd_down() {

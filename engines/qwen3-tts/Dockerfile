@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends sox && rm -rf /
 RUN pip install --no-cache-dir torch==2.8.0 torchaudio==2.8.0 qwen-tts==0.1.1 fastapi uvicorn
 
 WORKDIR /app
-COPY server.py .
+COPY engines/qwen3-tts/server.py .
+COPY engines/testpage.html /app/testpage.html
 EXPOSE 8877
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8877"]

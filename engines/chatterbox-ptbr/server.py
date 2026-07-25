@@ -15,7 +15,7 @@ from typing import Optional, Generator
 import torch
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 from huggingface_hub import snapshot_download, hf_hub_download
 from safetensors.torch import load_file as load_safetensors
@@ -157,9 +157,14 @@ def startup():
     print("Chatterbox pt-BR engine ready")
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "models_loaded": list(models.keys()), "queue_size": 0}
+    return {"status": "ok", "engine": "chatterbox-ptbr", "models_loaded": list(models.keys()), "queue_size": 0}
 
 
 @app.get("/voices")

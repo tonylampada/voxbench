@@ -12,7 +12,7 @@ from typing import Generator, Optional
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 from gepard_inference import GepardSession
@@ -135,9 +135,14 @@ async def startup():
     print("Gepard TTS Server Ready!")
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 async def health():
-    return {"status": "ok", "models_loaded": ["nineninesix/gepard-1.0"], "queue_size": 0}
+    return {"status": "ok", "engine": "gepard", "models_loaded": ["nineninesix/gepard-1.0"], "queue_size": 0}
 
 
 @app.get("/voices")

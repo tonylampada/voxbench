@@ -42,7 +42,8 @@ Every engine serves, on container port 8877 (published on its host port below):
 
 | Endpoint | Method | Behaviour |
 |---|---|---|
-| `/health` | GET | 200 `{"status": "ok", ...}` once the model is loaded; 503 (or no answer) while loading |
+| `/` | GET | serves `engines/testpage.html` — a browser test page (type a sentence, hear it, see timings). Part of the contract: every engine ships it |
+| `/health` | GET | 200 `{"status": "ok", "engine": "<name>", ...}` once the model is loaded; 503 (or no answer) while loading |
 | `/voices` | GET | `{"voices": [...]}` — names accepted in the `voice` field |
 | `/tts` | POST | WAV binary (mono 16-bit; sample rate per engine, see its README) |
 | `/tts/stream` | POST | framed stream: repeated `[4-byte big-endian length][complete WAV]` |

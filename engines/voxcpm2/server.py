@@ -13,7 +13,7 @@ from typing import Optional, Generator
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 from voxcpm import VoxCPM
 
@@ -97,9 +97,14 @@ async def startup():
     print(f"VoxCPM2 ready, sample rate {SAMPLE_RATE}")
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 async def health():
-    return {"status": "ok", "models_loaded": ["openbmb/VoxCPM2"], "queue_size": 0}
+    return {"status": "ok", "engine": "voxcpm2", "models_loaded": ["openbmb/VoxCPM2"], "queue_size": 0}
 
 
 @app.get("/voices")
