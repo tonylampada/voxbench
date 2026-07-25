@@ -13,5 +13,9 @@ RUN pip install --no-cache-dir torch==2.8.0 torchaudio==2.8.0 qwen-tts==0.1.1 fa
 WORKDIR /app
 COPY engines/qwen3-tts/server.py .
 COPY engines/testpage.html /app/testpage.html
+# Voice-library metadata for /v1/voices (qwen3-tts only needs the manifest, not
+# the clips — CustomVoice can't clone; qwen3-tts-origin entries resolve back to
+# builtin speakers).
+COPY voices/library/manifest.json /app/voices_manifest.json
 EXPOSE 8877
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8877"]
