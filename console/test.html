@@ -1,0 +1,384 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TTS test bench</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font: 14px/1.45 system-ui, sans-serif; background: #14161a; color: #dde1e6;
+         max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.15rem; } h1 small { color: #7a8290; font-weight: normal; }
+  h2 { font-size: .85rem; color: #7a8290; text-transform: uppercase; margin: 1.4rem 0 .5rem; }
+  a { color: #4c8dd6; }
+  button { background: #2d333b; color: #dde1e6; border: 1px solid #3a414b;
+           border-radius: 4px; padding: .25rem .8rem; cursor: pointer; }
+  button:hover { background: #3a414b; }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: #2b4a6d; border-color: #3a5f8a; }
+  button.primary:hover { background: #345a85; }
+  select, input[type=text], textarea { background: #1c2026; color: #dde1e6;
+    border: 1px solid #3a414b; border-radius: 4px; padding: .25rem .5rem; }
+  textarea { width: 100%; box-sizing: border-box; min-height: 3.2em; }
+  .note { color: #9aa3af; font-size: .8rem; }
+  .err { color: #e07a7a; font-size: .85rem; white-space: pre-wrap; }
+
+  /* phrases */
+  .phrase { display: flex; gap: .5rem; align-items: baseline; padding: .3rem .4rem;
+            border-radius: 4px; cursor: pointer; }
+  .phrase:hover { background: #1c2026; }
+  .phrase.sel { background: #22303f; }
+  .phrase .tag { font-size: .72rem; color: #8ec07c; background: #262a31;
+                 padding: .05rem .4rem; border-radius: 3px; white-space: nowrap; }
+  .phrase .txt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .phrase.sel .txt { white-space: normal; }
+  .phrase .del { color: #6c7480; cursor: pointer; padding: 0 .3rem; background: none; border: none; }
+  .phrase .del:hover { color: #e07a7a; }
+
+  /* engine chips */
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .echip { display: inline-flex; gap: .4rem; align-items: center; padding: .25rem .7rem;
+           border: 1px solid #3a414b; border-radius: 14px; cursor: pointer; background: #1c2026; }
+  .echip.on { border-color: #4c8dd6; background: #22303f; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #6c7480; }
+  .dot.ready { background: #8ec07c; } .dot.loading { background: #d6b44c; }
+
+  /* cards */
+  #cards { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+  .card { flex: 1 1 340px; max-width: 560px; background: #1a1e24; border: 1px solid #262a31;
+          border-radius: 6px; padding: .8rem .9rem; }
+  .card h3 { margin: 0 0 .5rem; font-size: 1rem; display: flex; gap: .5rem; align-items: center; }
+  .card h3 .st { font-size: .75rem; font-weight: normal; }
+  .st.ready { color: #8ec07c; } .st.loading { color: #d6b44c; } .st.stopped { color: #6c7480; }
+  .row { display: flex; gap: .5rem; margin: .35rem 0; align-items: center; flex-wrap: wrap; }
+  .knob { margin: .5rem 0; }
+  .knob .kh { display: flex; justify-content: space-between; font-size: .85rem; }
+  .knob .kh b { font-weight: 600; }
+  .knob .kh .val { color: #8ec07c; font-variant-numeric: tabular-nums; }
+  .knob input[type=range] { width: 100%; }
+  .knob .desc { color: #7a8290; font-size: .78rem; }
+  .res { border-top: 1px solid #262a31; margin-top: .6rem; padding-top: .5rem; }
+  .res .mode { font-size: .8rem; color: #9aa3af; text-transform: uppercase; }
+  .timing { font-variant-numeric: tabular-nums; font-size: .9rem; margin: .15rem 0; }
+  .timing b { color: #8ec07c; }
+  .timing .gap { color: #d6b44c; }
+  audio { width: 100%; height: 32px; margin-top: .3rem; }
+  .runbar { display: flex; gap: .6rem; align-items: center; margin: .8rem 0 1rem;
+            position: sticky; top: 0; background: #14161a; padding: .5rem 0; z-index: 2; }
+</style>
+
+<h1>TTS test bench <small>— side-by-side synthesis · <a href="/">control plane</a></small></h1>
+
+<h2>Phrases</h2>
+<div id="phrases"></div>
+<div class="row" style="margin-top:.5rem">
+  <textarea id="newphrase" placeholder="Type a new phrase — it joins the list and survives a restart"></textarea>
+</div>
+<div class="row"><button id="addphrase">add phrase</button><span class="note" id="phrasenote"></span></div>
+
+<h2>Engines</h2>
+<div class="chips" id="chips"></div>
+<p class="note" id="gpunote"></p>
+
+<div class="runbar">
+  <button class="primary" id="run">▶ generate</button>
+  <button class="primary" id="runstream">≋ generate (stream)</button>
+  <button id="runboth">both</button>
+  <span class="note">runs the selected phrase on every selected engine, side by side</span>
+</div>
+
+<div id="cards"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+const ms = v => v == null ? '—' : v < 1000 ? Math.round(v) + ' ms' : (v/1000).toFixed(2) + ' s';
+
+let phrases = [], phraseId = null;
+let engines = [];                 // last /api/engines snapshot
+const selected = new Set();       // engine names on the bench
+const cards = {};                 // name -> {state, voices, params, values, results, flt}
+
+/* ── phrases ─────────────────────────────────────────────────────────── */
+async function loadPhrases() {
+  phrases = (await (await fetch('/api/phrases')).json()).phrases;
+  if (!phrases.find(p => p.id === phraseId)) phraseId = phrases[0]?.id ?? null;
+  renderPhrases();
+}
+function renderPhrases() {
+  $('phrases').replaceChildren(...phrases.map(p => {
+    const div = document.createElement('div');
+    div.className = 'phrase' + (p.id === phraseId ? ' sel' : '');
+    div.innerHTML = `<span class="tag">${esc(p.label || 'custom')}</span>` +
+      `<span class="txt">${esc(p.text)}</span><button class="del" title="delete">×</button>`;
+    div.onclick = () => { phraseId = p.id; renderPhrases(); };
+    div.querySelector('.del').onclick = async e => {
+      e.stopPropagation();
+      await fetch('/api/phrases/' + p.id, {method: 'DELETE'});
+      loadPhrases();
+    };
+    return div;
+  }));
+}
+$('addphrase').onclick = async () => {
+  const text = $('newphrase').value.trim();
+  if (!text) return;
+  const r = await fetch('/api/phrases', {method: 'POST',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text})});
+  const j = await r.json();
+  $('phrasenote').textContent = r.ok ? 'saved — persists across restarts' : (j.error || 'failed');
+  if (r.ok) { $('newphrase').value = ''; phraseId = j.id; loadPhrases(); }
+};
+
+/* ── engines / cards ─────────────────────────────────────────────────── */
+async function refreshEngines() {
+  try { engines = await (await fetch('/api/engines')).json(); }
+  catch { $('gpunote').textContent = 'console server unreachable'; return; }
+  $('chips').replaceChildren(...engines.map(e => {
+    const b = document.createElement('span');
+    b.className = 'echip' + (selected.has(e.name) ? ' on' : '');
+    b.innerHTML = `<span class="dot ${e.state}"></span>${e.name}` +
+      `<span class="note">${e.gpu}</span>`;
+    b.onclick = () => {
+      selected.has(e.name) ? (selected.delete(e.name), delete cards[e.name])
+                           : selected.add(e.name);
+      renderCards();
+    };
+    return b;
+  }));
+  const holder = engines.find(e => e.gpu === 'gpu' && e.state !== 'stopped');
+  $('gpunote').textContent = holder
+    ? `one 24 GB card, one GPU engine at a time — ${holder.name} is on the card now`
+    : 'no GPU engine is on the card';
+  renderCards();
+}
+
+function card(name) { return cards[name] ??= {results: {}, values: {}, flt: {lang: '', kind: ''}}; }
+
+function renderCards() {
+  const wrap = $('cards');
+  // keep card DOM stable: create/remove only on selection change
+  for (const el of [...wrap.children]) if (!selected.has(el.dataset.name)) el.remove();
+  for (const name of selected) {
+    let el = wrap.querySelector(`[data-name="${name}"]`);
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'card'; el.dataset.name = name;
+      el.innerHTML = `<h3>${esc(name)} <span class="st"></span></h3>
+        <div class="body"></div><div class="results"></div>`;
+      wrap.appendChild(el);
+    }
+    updateCard(name, el);
+  }
+}
+
+function updateCard(name, el) {
+  const e = engines.find(x => x.name === name);
+  const c = card(name);
+  const st = el.querySelector('.st');
+  st.className = 'st ' + e.state;
+  st.textContent = e.state + (e.state === 'loading' && e.detail ? ' — ' + e.detail : '');
+  const body = el.querySelector('.body');
+
+  if (e.state === 'stopped') {
+    c.loaded = false;
+    body.innerHTML = `<div class="row"><span class="note">not running — that's not an error:</span>
+      <button>start it</button></div>` + (e.error ? `<div class="err">${esc(e.error)}</div>` : '');
+    body.querySelector('button').onclick = async () => {
+      const r = await fetch(`/api/engines/${name}/up`, {method: 'POST'});
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) body.insertAdjacentHTML('beforeend', `<div class="err">${esc(j.error || 'up failed')}</div>`);
+      refreshEngines();
+    };
+  } else if (e.state === 'loading') {
+    c.loaded = false;
+    body.innerHTML = `<span class="note">loading — the model is coming up, controls appear when it's ready</span>`;
+  } else if (!c.loaded) {
+    c.loaded = true;
+    body.innerHTML = `<span class="note">fetching voices & params…</span>`;
+    loadControls(name, body).catch(err => {
+      c.loaded = false;
+      body.innerHTML = `<div class="err">could not load controls: ${esc(String(err))}</div>`;
+    });
+  }
+  // results are rendered only when a synthesis starts/ends — a 2s poll must
+  // not rebuild <audio> elements mid-playback
+}
+
+async function loadControls(name, body) {
+  const c = card(name);
+  const [vr, pr] = await Promise.all([
+    fetch(`/api/engines/${name}/voices`), fetch(`/api/engines/${name}/params`)]);
+  if (!vr.ok || !pr.ok) throw new Error(`voices ${vr.status} / params ${pr.status}`);
+  c.voices = (await vr.json()).voices;
+  c.params = (await pr.json()).params;
+  c.values = {};   // only knobs the user touched get sent
+
+  const langs = [...new Set(c.voices.flatMap(v => v.langs))].sort();
+  body.innerHTML = `
+    <div class="row">
+      <select class="flang"><option value="">any lang</option>
+        ${langs.map(l => `<option>${l}</option>`).join('')}</select>
+      <select class="fkind"><option value="">builtin + reference</option>
+        <option value="builtin">builtin (the model's own)</option>
+        <option value="reference">reference (cloning clips)</option></select>
+      <span class="note vcount"></span>
+    </div>
+    <div class="row"><select class="voice" style="max-width:100%"></select></div>
+    <div class="knobs"></div>`;
+
+  const voiceSel = body.querySelector('.voice');
+  const fill = () => {
+    const {lang, kind} = c.flt;
+    const vs = c.voices.filter(v => (!lang || v.langs.includes(lang)) && (!kind || v.kind === kind));
+    voiceSel.replaceChildren(
+      new Option('(engine default voice)', ''),
+      ...vs.map(v => new Option(
+        `${v.name} — ${v.kind}${v.origin ? ' from ' + v.origin : ''} · ${v.langs.join(',')} · ${v.gender}`,
+        v.id)));
+    body.querySelector('.vcount').textContent = `${vs.length} of ${c.voices.length} voices`;
+  };
+  body.querySelector('.flang').onchange = ev => { c.flt.lang = ev.target.value; fill(); };
+  body.querySelector('.fkind').onchange = ev => { c.flt.kind = ev.target.value; fill(); };
+  fill();
+
+  // one control per knob, straight from /v1/params — nothing hardcoded
+  const knobs = body.querySelector('.knobs');
+  const entries = Object.entries(c.params);
+  if (!entries.length)
+    knobs.innerHTML = `<div class="note">this engine declares no knobs — {"params": {}} is a real answer</div>`;
+  for (const [k, p] of entries) {
+    const div = document.createElement('div');
+    div.className = 'knob';
+    if (p.type === 'number' || p.type === 'integer') {
+      div.innerHTML = `<div class="kh"><b>${esc(k)}</b><span class="val">${p.default}</span></div>
+        <input type="range" min="${p.min}" max="${p.max}" value="${p.default}"
+               step="${p.type === 'integer' ? 1 : Math.pow(10, Math.floor(Math.log10((p.max - p.min) / 100)))}">
+        <div class="desc">${esc(p.description)} (${p.min}–${p.max}, default ${p.default})</div>`;
+      div.querySelector('input').oninput = ev => {
+        const v = p.type === 'integer' ? parseInt(ev.target.value) : parseFloat(ev.target.value);
+        div.querySelector('.val').textContent = v;
+        v === p.default ? delete c.values[k] : c.values[k] = v;
+      };
+    } else if (p.type === 'boolean') {
+      div.innerHTML = `<div class="kh"><b><label><input type="checkbox" ${p.default ? 'checked' : ''}> ${esc(k)}</label></b></div>
+        <div class="desc">${esc(p.description)} (default ${p.default})</div>`;
+      div.querySelector('input').onchange = ev =>
+        ev.target.checked === p.default ? delete c.values[k] : c.values[k] = ev.target.checked;
+    } else {
+      div.innerHTML = `<div class="kh"><b>${esc(k)}</b></div>
+        <input type="text" value="${esc(String(p.default))}" style="width:100%">
+        <div class="desc">${esc(p.description)} (default ${esc(String(p.default))})</div>`;
+      div.querySelector('input').oninput = ev =>
+        ev.target.value === String(p.default) ? delete c.values[k] : c.values[k] = ev.target.value;
+    }
+    knobs.appendChild(div);
+  }
+}
+
+/* ── synthesis ───────────────────────────────────────────────────────── */
+function pcmToWav(chunks, rate) {
+  const len = chunks.reduce((a, c) => a + c.length, 0);
+  const buf = new ArrayBuffer(44 + len), v = new DataView(buf), u = new Uint8Array(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + len, true); w(8, 'WAVEfmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, 'data'); v.setUint32(40, len, true);
+  let o = 44; for (const c of chunks) { u.set(c, o); o += c.length; }
+  return new Blob([buf], {type: 'audio/wav'});
+}
+
+async function speak(name, mode) {
+  const c = card(name);
+  const el = document.querySelector(`[data-name="${name}"]`);
+  const voice = el?.querySelector('.voice')?.value || null;
+  const phrase = phrases.find(p => p.id === phraseId);
+  const body = {input: phrase.text, stream: mode === 'stream'};
+  if (voice) body.voice = voice;
+  if (Object.keys(c.values).length) body.params = {...c.values};
+
+  const res = c.results[mode] = {running: true};
+  renderResults(name, el.querySelector('.results'));
+  const t0 = performance.now();
+  try {
+    const r = await fetch(`/api/engines/${name}/speech`, {method: 'POST',
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    if (!r.ok) {
+      const txt = await r.text();
+      let msg; try { msg = JSON.parse(txt).detail || JSON.parse(txt).error; } catch { msg = txt; }
+      Object.assign(res, {running: false, status: r.status, error: msg || ('HTTP ' + r.status)});
+      return;
+    }
+    const rate = parseInt(r.headers.get('x-sample-rate') || '0');
+    const reader = r.body.getReader();
+    const chunks = []; let first = null;
+    for (;;) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      if (value?.length) { first ??= performance.now(); chunks.push(value); }
+    }
+    const total = performance.now() - t0;
+    const bytes = chunks.reduce((a, c) => a + c.length, 0);
+    if (!bytes) {
+      Object.assign(res, {running: false, error: '200 but the body was empty — the engine produced no audio'});
+      return;
+    }
+    const blob = mode === 'stream' ? pcmToWav(chunks, rate || 24000)
+                                   : new Blob(chunks, {type: r.headers.get('Content-Type') || 'audio/wav'});
+    Object.assign(res, {running: false, ttfa: first - t0, total,
+                        url: URL.createObjectURL(blob), bytes});
+  } catch (err) {
+    Object.assign(res, {running: false, error: String(err)});
+  } finally {
+    renderResults(name, el.querySelector('.results'));
+  }
+}
+
+function renderResults(name, box) {
+  const c = cards[name];
+  if (!c || !box) return;
+  box.replaceChildren(...['normal', 'stream'].map(mode => {
+    const r = c.results[mode];
+    if (!r) return '';
+    const div = document.createElement('div');
+    div.className = 'res';
+    if (r.running) {
+      div.innerHTML = `<span class="mode">${mode}</span> <span class="note">synthesizing…</span>`;
+    } else if (r.error) {
+      div.innerHTML = `<span class="mode">${mode}</span>
+        <div class="err">${r.status ? r.status + ': ' : ''}${esc(r.error)}</div>`;
+    } else {
+      div.innerHTML = `<span class="mode">${mode}</span>
+        <div class="timing">first audio <b>${ms(r.ttfa)}</b> · total <b>${ms(r.total)}</b>
+          ${mode === 'stream' && c.results.normal?.total
+            ? `<span class="gap">— vs ${ms(c.results.normal.total)} before any sound without streaming</span>` : ''}
+        </div>
+        <div class="note">${(r.bytes / 1024).toFixed(0)} KiB</div>
+        <audio controls src="${r.url}"></audio>`;
+    }
+    return div;
+  }).filter(Boolean));
+}
+
+function runAll(modes) {
+  if (phraseId == null) return;
+  for (const name of selected) {
+    const e = engines.find(x => x.name === name);
+    if (e?.state !== 'ready') {
+      card(name).results.normal = {error: `${name} is not ready — start it on its card first`, running: false};
+      renderResults(name, document.querySelector(`[data-name="${name}"] .results`));
+      continue;
+    }
+    // modes run in sequence per engine — two simultaneous syntheses on one
+    // engine skew both timings (and some engines refuse concurrency outright);
+    // engines still run side by side
+    (async () => { for (const m of modes) await speak(name, m); })();
+  }
+}
+$('run').onclick = () => runAll(['normal']);
+$('runstream').onclick = () => runAll(['stream']);
+$('runboth').onclick = () => runAll(['normal', 'stream']);
+
+loadPhrases();
+refreshEngines();
+setInterval(refreshEngines, 2000);
+</script>

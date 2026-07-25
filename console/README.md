@@ -3,8 +3,17 @@
 Manage the TTS engines and see the machine from the browser.
 
 ```
-python3 console/server.py        # → http://127.0.0.1:9000
+python3 console/server.py        # → http://127.0.0.1:9000  (control plane)
+                                 #   http://127.0.0.1:9000/test  (test bench)
 ```
+
+`/test` is the test bench: a phrase library (seeded with the bench texts,
+additions persist in `console/phrases.json`), engines selected side by side,
+voices from `/v1/voices` (filter by lang and kind), one control per knob
+rendered from `/v1/params` and nothing else, and normal vs streaming synthesis
+with time-to-first-audio against total time on screen. Engine refusals (can't
+stream, foreign cloning reference, GPU held) are shown verbatim — they are
+answers, not failures.
 
 Runs on the host, outside docker, and drives containers by shelling out to
 `engines/tts` — that script stays the only registry of names, ports and
@@ -18,6 +27,9 @@ Stdlib only, no dependencies, no build step. `CONSOLE_PORT` overrides the port.
 ```
 GET  /api/engines                 [{name, port, gpu, state, healthy, vram_mb, uptime_s, error, detail}]
 GET  /api/machine                 {ram, vram, gpu_engine, gpu_other}
+GET  /api/phrases                 {phrases: [{id, label, text}]}
+POST /api/phrases                 {text} → new phrase, persisted to console/phrases.json
+DELETE /api/phrases/<id>
 POST /api/engines/<name>/up       202 loading | 409 with the tts script's refusal
 POST /api/engines/<name>/down
 GET  /api/engines/<name>/voices   proxies GET /v1/voices

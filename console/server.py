@@ -26,6 +26,44 @@ lock = threading.Lock()
 ops = {}  # name -> {"proc": Popen, "log": [lines], "t0": epoch} while `tts up` runs
 last_error = {}  # name -> last failed `tts up` message, cleared on next up/down
 
+# ── Phrase library ───────────────────────────────────────────────────────────
+# The test screen's phrases. Seeds are the bench texts (short/medium/long, en
+# and pt); user additions/deletions persist in a JSON file next to this server.
+# No file until the first change — the seeds live here and always come back.
+PHRASES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "phrases.json")
+# short/long verbatim from bench/measure.py's bake-off sentences, medium from
+# bench/mkvoicelib.py's reference-clip seed — one text means one thing across
+# the measurements, the listening pages and this screen. The long texts are
+# multi-sentence on purpose: they expose context-wall re-reads and dropped
+# final clauses that a repeated sentence would hide.
+SEED_PHRASES = [
+    {"label": "short · en", "text": "Captain, the deploy is green. Two pull requests merged, one waiting on your review."},
+    {"label": "short · pt", "text": "Capitão, o deploy passou. Dois pull requests mergeados, um esperando a sua revisão."},
+    {"label": "medium · en", "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."},
+    {"label": "medium · pt", "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."},
+    {"label": "long · en", "text": "Captain, here is the state of the fleet. The audio artifact work is merged and live, so a "
+                                   "voice sample now plays inside the card viewer instead of only offering a download. Nine text "
+                                   "to speech engines are being wrapped in containers tonight, each behind the same interface, so "
+                                   "the comparison is honest. Nothing is blocked, and nothing is on fire."},
+    {"label": "long · pt", "text": "Capitão, segue o estado da frota. O trabalho de áudio nos artefatos está mergeado e no ar, "
+                                   "então uma amostra de voz agora toca dentro do visualizador do card em vez de só oferecer "
+                                   "download. Nove motores de síntese de voz estão sendo empacotados em containers esta noite, "
+                                   "cada um atrás da mesma interface, para a comparação ser honesta. Nada travado, nada pegando fogo."},
+]
+
+
+def load_phrases():
+    if os.path.exists(PHRASES_FILE):
+        return json.load(open(PHRASES_FILE))
+    return [{"id": i + 1, **p} for i, p in enumerate(SEED_PHRASES)]
+
+
+def save_phrases(phrases):
+    tmp = PHRASES_FILE + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(phrases, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, PHRASES_FILE)
+
 
 def run(argv, **kw):
     return subprocess.run(argv, capture_output=True, text=True, timeout=120, **kw)
@@ -228,14 +266,22 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(chunk)
         conn.close()
 
+    def send_html(self, filename):
+        body = open(os.path.join(os.path.dirname(__file__), filename), "rb").read()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
         if self.path == "/" or self.path == "/index.html":
-            body = open(os.path.join(os.path.dirname(__file__), "index.html"), "rb").read()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            self.send_html("index.html")
+        elif self.path == "/test":
+            self.send_html("test.html")
+        elif self.path == "/api/phrases":
+            with lock:
+                self.send_json(200, {"phrases": load_phrases()})
         elif self.path == "/api/engines":
             self.send_json(200, engines_json())
         elif self.path == "/api/machine":
@@ -260,13 +306,40 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(404, {"error": "not found"})
 
     def do_POST(self):
-        if m := re.fullmatch(r"/api/engines/([\w.-]+)/(up|down)", self.path):
+        if self.path == "/api/phrases":
+            try:
+                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            except ValueError:
+                return self.send_json(400, {"error": "body must be JSON"})
+            text = (body.get("text") or "").strip()
+            if not text:
+                return self.send_json(400, {"error": "text is required"})
+            with lock:
+                phrases = load_phrases()
+                p = {"id": max((q["id"] for q in phrases), default=0) + 1,
+                     "label": "custom", "text": text}
+                phrases.append(p)
+                save_phrases(phrases)
+            self.send_json(200, p)
+        elif m := re.fullmatch(r"/api/engines/([\w.-]+)/(up|down)", self.path):
             name, verb = m.groups()
             if not self.engine_or_404(name):
                 return
             self.send_json(*(start_engine if verb == "up" else stop_engine)(name))
         elif m := re.fullmatch(r"/api/engines/([\w.-]+)/speech", self.path):
             self.proxy(m.group(1), "/v1/audio/speech")
+        else:
+            self.send_json(404, {"error": "not found"})
+
+    def do_DELETE(self):
+        if m := re.fullmatch(r"/api/phrases/(\d+)", self.path):
+            with lock:
+                phrases = load_phrases()
+                keep = [p for p in phrases if p["id"] != int(m.group(1))]
+                if len(keep) == len(phrases):
+                    return self.send_json(404, {"error": "no such phrase"})
+                save_phrases(keep)
+            self.send_json(200, {"deleted": int(m.group(1))})
         else:
             self.send_json(404, {"error": "not found"})
 
