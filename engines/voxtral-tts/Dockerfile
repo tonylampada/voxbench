@@ -1,0 +1,23 @@
+# Voxtral TTS (mistralai/Voxtral-4B-TTS-2603) behind the shared bench contract.
+# Build from the REPO ROOT:
+#   docker build -f engines/voxtral-tts/Dockerfile -t tts-voxtral-tts:gpu .
+#
+# Base: vllm/vllm-omni:v0.24.0 — the serving stack Mistral's model card and
+# the vllm-omni recipe document for this model, pinned to a release tag
+# because vllm-omni moves fast. server.py launches `vllm serve --omni`
+# (OpenAI-compatible /v1/audio/speech, native PCM streaming) as a subprocess
+# and adapts the bench contract on 8877. Weights come from the mounted host
+# HF cache; nothing is baked into the image.
+FROM vllm/vllm-omni:v0.24.0
+
+ENV HF_HOME=/root/.cache/huggingface
+
+WORKDIR /app
+COPY engines/testpage.html /app/testpage.html
+COPY engines/voxtral-tts/server.py /app/server.py
+
+EXPOSE 8877
+# The image's entrypoint is the vllm CLI — override it so the adapter owns
+# the process tree (it spawns `vllm serve` itself, from the same env).
+ENTRYPOINT []
+CMD ["python3", "/app/server.py"]
