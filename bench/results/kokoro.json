@@ -1,0 +1,60 @@
+{
+  "engine": "kokoro",
+  "port": 8889,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 0.06,
+        "audio_s": 4.95,
+        "realtime_x": 83.45,
+        "bytes": 237442
+      },
+      "long": {
+        "gen_s": 0.21,
+        "audio_s": 21.58,
+        "realtime_x": 103.04,
+        "bytes": 1035856
+      },
+      "stream": {
+        "ttfb_s": 0.09,
+        "total_s": 0.16,
+        "audio_s": 21.58,
+        "bytes": 1035776
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 0.04,
+        "audio_s": 4.79,
+        "realtime_x": 114.21,
+        "bytes": 230030
+      },
+      "long": {
+        "gen_s": 0.14,
+        "audio_s": 22.01,
+        "realtime_x": 156.78,
+        "bytes": 1056382
+      },
+      "stream": {
+        "ttfb_s": 0.06,
+        "total_s": 0.12,
+        "audio_s": 22.01,
+        "bytes": 1056304
+      }
+    }
+  },
+  "ram_idle_mib": 2059,
+  "vram_idle_mib": 1291,
+  "vram_busy_mib": 1561,
+  "ram_peak_mib": 2136,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 1108
+    }
+  ]
+}

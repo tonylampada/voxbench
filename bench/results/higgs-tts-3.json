@@ -1,0 +1,60 @@
+{
+  "engine": "higgs-tts-3",
+  "port": 8893,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 1.29,
+        "audio_s": 5.04,
+        "realtime_x": 3.89,
+        "bytes": 241964
+      },
+      "long": {
+        "gen_s": 5.0,
+        "audio_s": 21.12,
+        "realtime_x": 4.22,
+        "bytes": 1013804
+      },
+      "stream": {
+        "ttfb_s": 1.71,
+        "total_s": 5.64,
+        "audio_s": 23.08,
+        "bytes": 1107840
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 1.49,
+        "audio_s": 6.04,
+        "realtime_x": 4.05,
+        "bytes": 289964
+      },
+      "long": {
+        "gen_s": 5.56,
+        "audio_s": 23.52,
+        "realtime_x": 4.23,
+        "bytes": 1129004
+      },
+      "stream": {
+        "ttfb_s": 1.52,
+        "total_s": 5.53,
+        "audio_s": 22.6,
+        "bytes": 1084800
+      }
+    }
+  },
+  "ram_idle_mib": 5622,
+  "vram_idle_mib": 21295,
+  "vram_busy_mib": 21813,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 21630
+    }
+  ],
+  "ram_peak_mib": 5689
+}

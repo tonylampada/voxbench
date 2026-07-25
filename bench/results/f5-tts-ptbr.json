@@ -1,0 +1,54 @@
+{
+  "engine": "f5-tts-ptbr",
+  "port": 8884,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 0.63,
+        "audio_s": 7.9,
+        "realtime_x": 12.61,
+        "bytes": 379436
+      },
+      "long": {
+        "gen_s": 1.71,
+        "audio_s": 32.74,
+        "realtime_x": 19.18,
+        "bytes": 1571340
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — F5-TTS has no incremental synthesis; use stream: false"
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 0.58,
+        "audio_s": 8.1,
+        "realtime_x": 14.06,
+        "bytes": 388652
+      },
+      "long": {
+        "gen_s": 2.21,
+        "audio_s": 35.25,
+        "realtime_x": 15.97,
+        "bytes": 1692108
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — F5-TTS has no incremental synthesis; use stream: false"
+      }
+    }
+  },
+  "ram_idle_mib": 2920,
+  "vram_idle_mib": 2065,
+  "vram_busy_mib": 2465,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 2282
+    }
+  ],
+  "ram_peak_mib": 4002
+}

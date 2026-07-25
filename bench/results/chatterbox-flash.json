@@ -1,0 +1,48 @@
+{
+  "engine": "chatterbox-flash",
+  "port": 8890,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 1.15,
+        "audio_s": 5.78,
+        "realtime_x": 5.03,
+        "bytes": 277484
+      },
+      "long": {
+        "gen_s": 3.43,
+        "audio_s": 19.7,
+        "realtime_x": 5.74,
+        "bytes": 945644
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — chatterbox-flash synthesizes the whole utterance at once; use stream: false"
+      }
+    },
+    "pt": {
+      "short": {
+        "error": "400: lang 'pt' not supported — Chatterbox Flash is English-only"
+      },
+      "long": {
+        "error": "400: lang 'pt' not supported — Chatterbox Flash is English-only"
+      },
+      "stream": {
+        "no_streaming": "lang 'pt' not supported — Chatterbox Flash is English-only"
+      }
+    }
+  },
+  "ram_idle_mib": 5179,
+  "vram_idle_mib": 3031,
+  "vram_busy_mib": 3949,
+  "ram_peak_mib": 5411,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 2848
+    }
+  ]
+}

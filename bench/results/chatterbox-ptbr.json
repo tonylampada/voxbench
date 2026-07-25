@@ -1,0 +1,54 @@
+{
+  "engine": "chatterbox-ptbr",
+  "port": 8881,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 0.7,
+        "audio_s": 5.24,
+        "realtime_x": 7.51,
+        "bytes": 251564
+      },
+      "long": {
+        "gen_s": 3.06,
+        "audio_s": 21.68,
+        "realtime_x": 7.08,
+        "bytes": 1040684
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — chatterbox synthesizes the whole utterance at once; use stream: false"
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 2.58,
+        "audio_s": 8.96,
+        "realtime_x": 3.47,
+        "bytes": 430124
+      },
+      "long": {
+        "gen_s": 5.34,
+        "audio_s": 18.52,
+        "realtime_x": 3.47,
+        "bytes": 889004
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — chatterbox synthesizes the whole utterance at once; use stream: false"
+      }
+    }
+  },
+  "ram_idle_mib": 8304,
+  "vram_idle_mib": 6401,
+  "vram_busy_mib": 7441,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 7258
+    }
+  ],
+  "ram_peak_mib": 9434
+}

@@ -1,0 +1,54 @@
+{
+  "engine": "piper",
+  "port": 8888,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 0.14,
+        "audio_s": 5.24,
+        "realtime_x": 37.19,
+        "bytes": 230956
+      },
+      "long": {
+        "gen_s": 0.44,
+        "audio_s": 18.96,
+        "realtime_x": 42.96,
+        "bytes": 836140
+      },
+      "stream": {
+        "ttfb_s": 0.05,
+        "total_s": 0.45,
+        "audio_s": 19.16,
+        "bytes": 844800
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 0.12,
+        "audio_s": 4.67,
+        "realtime_x": 40.42,
+        "bytes": 205868
+      },
+      "long": {
+        "gen_s": 0.47,
+        "audio_s": 20.12,
+        "realtime_x": 42.51,
+        "bytes": 887340
+      },
+      "stream": {
+        "ttfb_s": 0.05,
+        "total_s": 0.48,
+        "audio_s": 20.17,
+        "bytes": 889344
+      }
+    }
+  },
+  "ram_idle_mib": 470,
+  "vram_idle_mib": 175,
+  "vram_busy_mib": 175,
+  "ram_peak_mib": 1045
+}

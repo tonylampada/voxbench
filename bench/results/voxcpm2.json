@@ -1,0 +1,60 @@
+{
+  "engine": "voxcpm2",
+  "port": 8883,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "long": {
+        "gen_s": 6.3,
+        "audio_s": 17.12,
+        "realtime_x": 2.72,
+        "bytes": 1643564
+      },
+      "stream": {
+        "ttfb_s": 0.04,
+        "total_s": 7.36,
+        "audio_s": 19.04,
+        "bytes": 1827840
+      },
+      "short": {
+        "gen_s": 2.64,
+        "audio_s": 7.2,
+        "realtime_x": 2.73,
+        "bytes": 691244
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 1.98,
+        "audio_s": 5.44,
+        "realtime_x": 2.75,
+        "bytes": 522284
+      },
+      "long": {
+        "gen_s": 8.14,
+        "audio_s": 22.08,
+        "realtime_x": 2.71,
+        "bytes": 2119724
+      },
+      "stream": {
+        "ttfb_s": 0.03,
+        "total_s": 10.42,
+        "audio_s": 26.72,
+        "bytes": 2565120
+      }
+    }
+  },
+  "vram_idle_mib": 6927,
+  "vram_busy_mib": 8161,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 7978
+    }
+  ],
+  "ram_idle_mib": 5440,
+  "ram_peak_mib": 5453
+}

@@ -44,5 +44,11 @@
   "vram_idle_mib": 14799,
   "vram_busy_mib": 14803,
   "ram_idle_mib": 5733,
-  "ram_peak_mib": 5732
+  "ram_peak_mib": 5732,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 14614
+    }
+  ]
 }
