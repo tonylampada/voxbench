@@ -68,8 +68,31 @@ codebooks at 25 fps, Higgs tokenizer + vocoder bundled in the serving stack.
 
 ## Measurements
 
-(VRAM, warm-call latency, duration-stability — filled after smoke test)
+Observed on this box (RTX 4090 24 GB, nvdrv workaround, weights pre-cached):
+
+- **Boot to healthy: ~71 s** from container start (model load; no downloads).
+- **VRAM: 21.5 / 24.0 GiB** — SGLang preallocates its KV pool from free VRAM,
+  so the card reads full regardless of load. This is the auto-picked
+  mem fraction; `HIGGS_MEM_FRACTION` shrinks it if something must coexist.
+  Container RSS 3.7 GiB.
+- **Warm `/tts`: RTF ≈ 0.26** — 5.9 s of audio in 1.5 s wall. Cold first call
+  after boot ~5 s.
+- **`/tts/stream` warm: first frame ≈ 1.5 s**, then a continuous trickle;
+  22 s of audio completed in 5.4 s wall (RTF 0.24).
+- **Duration stability**: same English sentence 4× → 5.0 / 5.6 / 6.9 / 5.9 s.
+  Sampling variance (default temperature), never silence or truncation.
 
 ## Warts
 
-(filled after smoke test)
+- **Short sentences "stream" as one burst**: anything the model finishes
+  inside the ~1.5 s first-audio window (i.e. most bench sentences) arrives as
+  all frames at once. Genuine incremental delivery shows on longer inputs.
+- **Degenerate repetitive input can loop**: a test string with one sentence
+  repeated 8× produced 80+ s of rambling audio. Natural text is fine.
+- **The card reads full while the engine is up** (KV preallocation, above) —
+  nothing else fits on the GPU next to it; `engines/tts down` it when done.
+- Logs show `Failed to import nixl` at ERROR level — harmless; nixl is the
+  multi-node relay transport, unused single-GPU.
+- Output is 24 kHz mono 16-bit WAV. Identical calls give different takes
+  (autoregressive sampling); pass `temperature: 0` territory at your own risk,
+  it is not pinned here.

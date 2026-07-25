@@ -182,7 +182,10 @@ async def tts_stream(request: TTSRequest):
         pending = b""
         with resp:
             while True:
-                chunk = resp.read(65536)
+                # Small reads matter: read(N) blocks until N bytes arrive, so
+                # a big N would add N/48000 seconds of artificial first-audio
+                # latency (64 KB cost 1.3 s here). 4 KB = 85 ms of audio.
+                chunk = resp.read(4096)
                 if not chunk:
                     break
                 pending += chunk
