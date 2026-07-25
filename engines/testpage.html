@@ -97,12 +97,12 @@ async function loadVoices() {
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
-function reqBody() {
-  return JSON.stringify({
+function reqBody(extra) {
+  return JSON.stringify(Object.assign({
     text: $('text').value,
     lang: $('lang').value,
     voice: $('voice').value || null,
-  });
+  }, extra));
 }
 
 function audioDuration(blob) {   // seconds, via a throwaway <audio>
@@ -188,8 +188,9 @@ $('stream').onclick = async () => {
     a.play().catch(playNext);
   }
   try {
+    // one sentence per frame, so time-to-first-chunk actually means something
     const r = await fetch('/tts/stream', { method: 'POST',
-      headers: { 'Content-Type': 'application/json' }, body: reqBody() });
+      headers: { 'Content-Type': 'application/json' }, body: reqBody({ chunk_size: 1 }) });
     if (!r.ok) { addEntry({ mode: 'stream', error: await errorText(r) }); return; }
     const reader = r.body.getReader();
     let buf = new Uint8Array(0), firstChunkS = null;
