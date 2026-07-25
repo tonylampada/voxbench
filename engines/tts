@@ -20,7 +20,7 @@ qwen3-tts        8882  gpu  .  -
 voxcpm2          8883  gpu  .  voices
 f5-tts-ptbr      8884  gpu  .  voices
 xtts-v2          8885  gpu  .  ttscache,voicesroot
-gepard           8886  gpu  .  -
+gepard           8886  gpu  .  voices
 omnivoice-brpt   8887  gpu  .  voices
 piper            8888  cpu  .  -
 kokoro           8889  gpu  .  -
