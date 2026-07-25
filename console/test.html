@@ -3,84 +3,154 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TTS test bench</title>
 <style>
-  :root { color-scheme: dark; }
-  body { font: 14px/1.45 system-ui, sans-serif; background: #14161a; color: #dde1e6;
-         max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
-  h1 { font-size: 1.15rem; } h1 small { color: #7a8290; font-weight: normal; }
-  h2 { font-size: .85rem; color: #7a8290; text-transform: uppercase; margin: 1.4rem 0 .5rem; }
-  a { color: #4c8dd6; }
-  button { background: #2d333b; color: #dde1e6; border: 1px solid #3a414b;
-           border-radius: 4px; padding: .25rem .8rem; cursor: pointer; }
-  button:hover { background: #3a414b; }
-  button:disabled { opacity: .4; cursor: default; }
-  button.primary { background: #2b4a6d; border-color: #3a5f8a; }
-  button.primary:hover { background: #345a85; }
-  select, input[type=text], textarea { background: #1c2026; color: #dde1e6;
-    border: 1px solid #3a414b; border-radius: 4px; padding: .25rem .5rem; }
-  textarea { width: 100%; box-sizing: border-box; min-height: 3.2em; }
-  .note { color: #9aa3af; font-size: .8rem; }
-  .err { color: #e07a7a; font-size: .85rem; white-space: pre-wrap; }
+  /* A listening room: warm near-black ground, one amber accent (the VU meter),
+     green lamps for "live". All evidence — timings, sizes, ports — is mono. */
+  :root {
+    color-scheme: dark;
+    --ground: #141110; --panel: #1c1815; --inset: #211c17; --line: #302a24;
+    --text: #e9e2d6; --muted: #998f80; --faint: #6e6558;
+    --signal: #e69f35; --lamp: #8fbf72; --fault: #d97b6c;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.5 system-ui, sans-serif; background: var(--ground); color: var(--text);
+         max-width: 1260px; margin: 0 auto; padding: 1.6rem 1.2rem 3rem; }
+  a { color: var(--signal); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 
-  /* phrases */
-  .phrase { display: flex; gap: .5rem; align-items: baseline; padding: .3rem .4rem;
-            border-radius: 4px; cursor: pointer; }
-  .phrase:hover { background: #1c2026; }
-  .phrase.sel { background: #22303f; }
-  .phrase .tag { font-size: .72rem; color: #8ec07c; background: #262a31;
-                 padding: .05rem .4rem; border-radius: 3px; white-space: nowrap; }
+  header { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap;
+           border-bottom: 1px solid var(--line); padding-bottom: .9rem; margin-bottom: 1.2rem; }
+  h1 { margin: 0; font-size: 1.05rem; font-weight: 650; letter-spacing: .14em;
+       text-transform: uppercase; }
+  h1::before { content: ""; display: inline-block; width: .55em; height: .55em;
+               background: var(--signal); border-radius: 1px; margin-right: .6em;
+               vertical-align: baseline; }
+  header .sub { color: var(--muted); font-size: .85rem; }
+
+  h2 { font-size: .72rem; color: var(--muted); text-transform: uppercase;
+       letter-spacing: .16em; font-weight: 600; margin: 1.6rem 0 .6rem; }
+  .note { color: var(--muted); font-size: .8rem; }
+  .err { color: var(--fault); font-size: .85rem; white-space: pre-wrap; }
+
+  button { background: var(--inset); color: var(--text); border: 1px solid var(--line);
+           border-radius: 5px; padding: .35rem .9rem; cursor: pointer; font: inherit; }
+  button:hover { border-color: #4a4032; background: #262019; }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--signal); border-color: var(--signal); color: #1c1300;
+                   font-weight: 650; }
+  button.primary:hover { background: #f0b155; border-color: #f0b155; }
+  select, input[type=text], textarea { background: var(--inset); color: var(--text);
+    border: 1px solid var(--line); border-radius: 5px; padding: .35rem .55rem; font: inherit; }
+  textarea { width: 100%; min-height: 3.2em; }
+
+  /* ── script: the phrase list ─────────────────────────────────────────── */
+  .phrase { display: flex; gap: .6rem; align-items: baseline; padding: .38rem .55rem;
+            border-radius: 5px; cursor: pointer; border: 1px solid transparent; }
+  .phrase:hover { background: var(--panel); }
+  .phrase.sel { background: var(--panel); border-color: var(--line); }
+  .phrase.sel .tag { color: var(--signal); border-color: #574320; }
+  .phrase .tag { font: .68rem/1.5 var(--mono); letter-spacing: .06em; color: var(--muted);
+                 border: 1px solid var(--line); padding: .02rem .45rem; border-radius: 3px;
+                 white-space: nowrap; }
   .phrase .txt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .phrase.sel .txt { white-space: normal; }
-  .phrase .del { color: #6c7480; cursor: pointer; padding: 0 .3rem; background: none; border: none; }
-  .phrase .del:hover { color: #e07a7a; }
+  .phrase .del { color: var(--faint); cursor: pointer; padding: 0 .3rem; background: none;
+                 border: none; border-radius: 3px; }
+  .phrase .del:hover { color: var(--fault); background: none; }
 
-  /* engine chips */
-  .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
-  .echip { display: inline-flex; gap: .4rem; align-items: center; padding: .25rem .7rem;
-           border: 1px solid #3a414b; border-radius: 14px; cursor: pointer; background: #1c2026; }
-  .echip.on { border-color: #4c8dd6; background: #22303f; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #6c7480; }
-  .dot.ready { background: #8ec07c; } .dot.loading { background: #d6b44c; }
+  /* ── channel select: engine chips ────────────────────────────────────── */
+  .chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .echip { display: inline-flex; gap: .5rem; align-items: center; padding: .32rem .8rem;
+           border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+           background: var(--panel); }
+  .echip .note { font-family: var(--mono); font-size: .7rem; }
+  .echip.on { border-color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal); }
 
-  /* cards */
-  #cards { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
-  .card { flex: 1 1 340px; max-width: 560px; background: #1a1e24; border: 1px solid #262a31;
-          border-radius: 6px; padding: .8rem .9rem; }
-  .card h3 { margin: 0 0 .5rem; font-size: 1rem; display: flex; gap: .5rem; align-items: center; }
-  .card h3 .st { font-size: .75rem; font-weight: normal; }
-  .st.ready { color: #8ec07c; } .st.loading { color: #d6b44c; } .st.stopped { color: #6c7480; }
-  .row { display: flex; gap: .5rem; margin: .35rem 0; align-items: center; flex-wrap: wrap; }
-  .knob { margin: .5rem 0; }
-  .knob .kh { display: flex; justify-content: space-between; font-size: .85rem; }
+  /* lamps — state must read from across the room */
+  .lamp { width: 9px; height: 9px; border-radius: 50%; background: var(--faint);
+          flex: none; display: inline-block; }
+  .lamp.ready { background: var(--lamp); box-shadow: 0 0 6px 1px rgba(143,191,114,.55); }
+  .lamp.loading { background: var(--signal); box-shadow: 0 0 6px 1px rgba(230,159,53,.55);
+                  animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .lamp.loading { animation: none; } }
+
+  /* ── transport bar ───────────────────────────────────────────────────── */
+  .runbar { display: flex; gap: .6rem; align-items: center; margin: 1rem 0 1.2rem;
+            position: sticky; top: 0; z-index: 3; padding: .6rem .8rem;
+            background: rgba(20,17,16,.92); backdrop-filter: blur(6px);
+            border: 1px solid var(--line); border-radius: 8px; }
+
+  /* ── channel strips ──────────────────────────────────────────────────── */
+  #cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+           gap: 1rem; align-items: start; }
+  .card { display: flex; flex-direction: column; background: var(--panel);
+          border: 1px solid var(--line); border-radius: 8px; padding: .85rem 1rem;
+          min-width: 0; }
+  .card.loading { border-color: #55421f; }
+  .card h3 { order: 0; margin: 0; font-size: .95rem; display: flex; gap: .55rem;
+             align-items: center; padding-bottom: .55rem; border-bottom: 1px solid var(--line); }
+  .card h3 .st { font: .72rem/1.4 var(--mono); font-weight: 400; letter-spacing: .05em;
+                 text-transform: uppercase; margin-left: auto; }
+  .st.ready { color: var(--lamp); } .st.loading { color: var(--signal); }
+  .st.stopped { color: var(--faint); }
+  .card.stopped h3 { color: var(--muted); }
+  .stdetail { font: .72rem/1.5 var(--mono); color: var(--signal); padding-top: .4rem; }
+  .stdetail:empty { display: none; }
+  /* the take outranks the knobs: results sit right under the nameplate */
+  .card .stdetail { order: 1; }
+  .card .results { order: 2; }
+  .card .body { order: 3; padding-top: .35rem; }
+  .row { display: flex; gap: .5rem; margin: .4rem 0; align-items: center; flex-wrap: wrap; }
+
+  .knob { margin: .65rem 0; }
+  .knob .kh { display: flex; justify-content: space-between; font-size: .84rem; }
   .knob .kh b { font-weight: 600; }
-  .knob .kh .val { color: #8ec07c; font-variant-numeric: tabular-nums; }
-  .knob input[type=range] { width: 100%; }
-  .knob .desc { color: #7a8290; font-size: .78rem; }
-  .res { border-top: 1px solid #262a31; margin-top: .6rem; padding-top: .5rem; }
-  .res .mode { font-size: .8rem; color: #9aa3af; text-transform: uppercase; }
-  .timing { font-variant-numeric: tabular-nums; font-size: .9rem; margin: .15rem 0; }
-  .timing b { color: #8ec07c; }
-  .timing .gap { color: #d6b44c; }
-  audio { width: 100%; height: 32px; margin-top: .3rem; }
-  .runbar { display: flex; gap: .6rem; align-items: center; margin: .8rem 0 1rem;
-            position: sticky; top: 0; background: #14161a; padding: .5rem 0; z-index: 2; }
+  .knob .kh .val { color: var(--signal); font-family: var(--mono); font-size: .8rem;
+                   font-variant-numeric: tabular-nums; }
+  /* knobs stay quiet — amber belongs to the take and the transport */
+  .knob input[type=range] { width: 100%; accent-color: #7d6f57; }
+  .knob .desc { color: var(--faint); font-size: .76rem; }
 
-  /* Phone: the layout already wraps, so this is about touch targets, not columns.
-     Without a viewport tag the page renders at desktop width and everything is
-     unreadably small — that tag is the actual fix; the rest is comfort. */
+  /* ── the take: player first, then the evidence ───────────────────────── */
+  .res { border-top: 1px solid var(--line); margin-top: .6rem; padding-top: .6rem; }
+  .res .mode { font: .68rem/1.4 var(--mono); color: var(--muted); text-transform: uppercase;
+               letter-spacing: .14em; }
+  audio { width: 100%; height: 40px; margin: .45rem 0 .2rem; display: block; }
+  .figs { display: flex; gap: 1.4rem; align-items: baseline; flex-wrap: wrap;
+          font-variant-numeric: tabular-nums; margin-top: .3rem; }
+  .fig .fv { font: 600 1.05rem/1.3 var(--mono); display: block; }
+  .fig.first .fv { color: var(--signal); }
+  .fig .fl { font-size: .68rem; color: var(--muted); text-transform: uppercase;
+             letter-spacing: .1em; }
+  .fig.dim .fv { font-weight: 400; font-size: .85rem; color: var(--muted); }
+  .gap { color: var(--muted); font-size: .78rem; margin-top: .25rem; }
+  .gap b { color: var(--signal); font-family: var(--mono); font-weight: 600; }
+
+  /* a 4xx is the engine answering, not the page breaking */
+  .refusal { border-left: 3px solid var(--line); padding: .15rem 0 .15rem .7rem;
+             margin-top: .35rem; color: var(--muted); font-style: italic; }
+  .refusal .who { display: block; font: normal .68rem/1.6 var(--mono); color: var(--faint);
+                  text-transform: uppercase; letter-spacing: .12em; font-style: normal; }
+
   @media (max-width: 640px) {
-    body { margin: 1rem auto; padding: 0 .7rem; }
-    .card { flex: 1 1 100%; max-width: 100%; }
+    body { padding: .9rem .7rem 7.5rem; }
+    #cards { grid-template-columns: 1fr; }
     .phrase .txt { white-space: normal; }
-    button, select, input { min-height: 2.2rem; font-size: 1rem; }
-    audio { width: 100%; }
-    .runbar { position: sticky; bottom: 0; background: #14161a; padding: .6rem 0;
-              z-index: 5; flex-wrap: wrap; }
+    button, select, input { min-height: 2.3rem; font-size: 1rem; }
+    .runbar { position: fixed; left: .5rem; right: .5rem; bottom: .5rem; top: auto;
+              margin: 0; flex-wrap: wrap; box-shadow: 0 6px 24px rgba(0,0,0,.5); }
+    .runbar .note { display: none; }
   }
 </style>
 
-<h1>TTS test bench <small>— side-by-side synthesis · <a href="/">control plane</a></small></h1>
+<header>
+  <h1>Test bench</h1>
+  <span class="sub">side-by-side synthesis · <a href="/">machine panel</a></span>
+</header>
 
-<h2>Phrases</h2>
+<h2>Script</h2>
 <div id="phrases"></div>
 <div class="row" style="margin-top:.5rem">
   <textarea id="newphrase" placeholder="Type a new phrase — it joins the list and survives a restart"></textarea>
@@ -148,7 +218,7 @@ async function refreshEngines() {
   $('chips').replaceChildren(...engines.map(e => {
     const b = document.createElement('span');
     b.className = 'echip' + (selected.has(e.name) ? ' on' : '');
-    b.innerHTML = `<span class="dot ${e.state}"></span>${e.name}` +
+    b.innerHTML = `<span class="lamp ${e.state}"></span>${e.name}` +
       `<span class="note">${e.gpu}</span>`;
     b.onclick = () => {
       selected.has(e.name) ? (selected.delete(e.name), delete cards[e.name])
@@ -175,8 +245,8 @@ function renderCards() {
     if (!el) {
       el = document.createElement('div');
       el.className = 'card'; el.dataset.name = name;
-      el.innerHTML = `<h3>${esc(name)} <span class="st"></span></h3>
-        <div class="body"></div><div class="results"></div>`;
+      el.innerHTML = `<h3><span class="lamp"></span>${esc(name)} <span class="st"></span></h3>
+        <div class="stdetail"></div><div class="body"></div><div class="results"></div>`;
       wrap.appendChild(el);
     }
     updateCard(name, el);
@@ -186,9 +256,13 @@ function renderCards() {
 function updateCard(name, el) {
   const e = engines.find(x => x.name === name);
   const c = card(name);
+  el.className = 'card ' + e.state;
+  el.querySelector('.lamp').className = 'lamp ' + e.state;
   const st = el.querySelector('.st');
   st.className = 'st ' + e.state;
-  st.textContent = e.state + (e.state === 'loading' && e.detail ? ' — ' + e.detail : '');
+  st.textContent = e.state;
+  el.querySelector('.stdetail').textContent =
+    e.state === 'loading' && e.detail ? e.detail : '';
   const body = el.querySelector('.body');
 
   if (e.state === 'stopped') {
@@ -358,16 +432,23 @@ function renderResults(name, box) {
     if (r.running) {
       div.innerHTML = `<span class="mode">${mode}</span> <span class="note">synthesizing…</span>`;
     } else if (r.error) {
-      div.innerHTML = `<span class="mode">${mode}</span>
-        <div class="err">${r.status ? r.status + ': ' : ''}${esc(r.error)}</div>`;
+      // a 4xx carries a sentence the engine meant to say; only transport
+      // failures and 5xx get the red treatment
+      div.innerHTML = r.status && r.status < 500
+        ? `<span class="mode">${mode}</span>
+           <div class="refusal"><span class="who">the engine declined · ${r.status}</span>${esc(r.error)}</div>`
+        : `<span class="mode">${mode}</span>
+           <div class="err">${r.status ? r.status + ': ' : ''}${esc(r.error)}</div>`;
     } else {
       div.innerHTML = `<span class="mode">${mode}</span>
-        <div class="timing">first audio <b>${ms(r.ttfa)}</b> · total <b>${ms(r.total)}</b>
-          ${mode === 'stream' && c.results.normal?.total
-            ? `<span class="gap">— vs ${ms(c.results.normal.total)} before any sound without streaming</span>` : ''}
+        <audio controls src="${r.url}"></audio>
+        <div class="figs">
+          <div class="fig first"><span class="fv">${ms(r.ttfa)}</span><span class="fl">first audio</span></div>
+          <div class="fig"><span class="fv">${ms(r.total)}</span><span class="fl">total</span></div>
+          <div class="fig dim"><span class="fv">${(r.bytes / 1024).toFixed(0)} KiB</span></div>
         </div>
-        <div class="note">${(r.bytes / 1024).toFixed(0)} KiB</div>
-        <audio controls src="${r.url}"></audio>`;
+        ${mode === 'stream' && c.results.normal?.total
+          ? `<div class="gap">vs <b>${ms(c.results.normal.total)}</b> before any sound without streaming</div>` : ''}`;
     }
     return div;
   }).filter(Boolean));
