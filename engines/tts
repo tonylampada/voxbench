@@ -31,7 +31,7 @@ chatterbox-flash 8890  gpu  .  voices
 chatterbox-nano  8891  gpu  .  voices
 fish-s2-pro      8892  gpu  .  voices,hf
 higgs-tts-3      8893  gpu  .  voices,shm
-# 8894 reserved: voxtral-tts (not built)
+voxtral-tts      8894  gpu  .  voices
 '
 
 die() { echo "tts: $*" >&2; exit 1; }
