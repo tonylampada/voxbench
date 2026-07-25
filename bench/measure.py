@@ -23,6 +23,7 @@ measurement; a leaf already present is skipped, so an interrupted run picks up
 where it stopped. --cpu (chatterbox-nano only) measures the CPU path into
 bench/results/chatterbox-nano-cpu.json. Stdlib only.
 """
+import http.client
 import io
 import json
 import re
@@ -72,6 +73,17 @@ def vram_mib():
     r = sh("docker", "exec", "ollama", "nvidia-smi",
            "--query-gpu=memory.used", "--format=csv,noheader,nounits", timeout=30)
     return int(r.stdout.strip().splitlines()[0]) if r.returncode == 0 else None
+
+
+def vram_apps():
+    """Per-process VRAM: [{name, mib}]. The engine's own figure, immune to
+    whatever ollama has resident at the moment."""
+    r = sh("docker", "exec", "ollama", "nvidia-smi",
+           "--query-compute-apps=process_name,used_gpu_memory", "--format=csv,noheader,nounits", timeout=30)
+    if r.returncode != 0:
+        return None
+    return [{"name": ln.rsplit(",", 1)[0].strip(), "mib": int(ln.rsplit(",", 1)[1])}
+            for ln in r.stdout.strip().splitlines() if ln.strip()]
 
 
 def ram_mib(container):
@@ -126,11 +138,18 @@ def measure_gen(port, lang, kind):
 
 def measure_stream(port, lang):
     t0 = time.time()
+    end_error = None
     try:
         with speech(port, {"input": SENT[lang]["long"], "lang": lang, "stream": True}) as r:
             first = r.read(4096)
             ttfb = time.time() - t0
-            rest = r.read()
+            try:
+                rest = r.read()
+            except http.client.IncompleteRead as e:
+                # Server dropped the connection without a chunked terminator.
+                # TTFB and the bytes that did arrive are still real — record
+                # them, and the defect.
+                rest, end_error = e.partial, "connection ended without chunked terminator (IncompleteRead)"
             total = time.time() - t0
             rate = int(r.headers.get("x-sample-rate", 0))
     except urllib.error.HTTPError as e:
@@ -138,8 +157,11 @@ def measure_stream(port, lang):
             return {"no_streaming": detail_of(e)}  # the honest answer, not a failure
         return {"error": f"{e.code}: {detail_of(e)}"}
     n = len(first) + len(rest)
-    return {"ttfb_s": round(ttfb, 2), "total_s": round(total, 2),
-            "audio_s": round(n / (rate * 2), 2) if rate else None, "bytes": n}
+    out = {"ttfb_s": round(ttfb, 2), "total_s": round(total, 2),
+           "audio_s": round(n / (rate * 2), 2) if rate else None, "bytes": n}
+    if end_error:
+        out["stream_end_error"] = end_error
+    return out
 
 
 def up(engine, cpu):
@@ -176,7 +198,7 @@ def main():
 
     leaves = [(lang, k) for lang in SENT for k in ("short", "long", "stream")
               if k not in row["langs"].get(lang, {})]
-    hw = [k for k in ("vram_idle_mib", "vram_busy_mib", "ram_idle_mib", "ram_peak_mib")
+    hw = [k for k in ("vram_idle_mib", "vram_busy_mib", "vram_apps", "ram_idle_mib", "ram_peak_mib")
           if k not in row] if not cpu else \
          [k for k in ("ram_idle_mib", "ram_peak_mib") if k not in row]
     if not leaves and not hw:
@@ -207,6 +229,8 @@ def main():
 
     if "vram_busy_mib" in hw:
         row["vram_busy_mib"] = vram_mib()
+    if "vram_apps" in hw:
+        row["vram_apps"] = vram_apps()
     if "ram_peak_mib" in hw:
         row["ram_peak_mib"] = ram_mib(container)
     save()
