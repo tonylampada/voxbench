@@ -38,15 +38,15 @@ PHRASES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "phrases
 # multi-sentence on purpose: they expose context-wall re-reads and dropped
 # final clauses that a repeated sentence would hide.
 SEED_PHRASES = [
-    {"label": "short · en", "text": "Captain, the deploy is green. Two pull requests merged, one waiting on your review."},
-    {"label": "short · pt", "text": "Capitão, o deploy passou. Dois pull requests mergeados, um esperando a sua revisão."},
-    {"label": "medium · en", "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."},
-    {"label": "medium · pt", "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."},
-    {"label": "long · en", "text": "Captain, here is the state of the fleet. The audio artifact work is merged and live, so a "
+    {"label": "short", "lang": "en", "text": "Captain, the deploy is green. Two pull requests merged, one waiting on your review."},
+    {"label": "short", "lang": "pt", "text": "Capitão, o deploy passou. Dois pull requests mergeados, um esperando a sua revisão."},
+    {"label": "medium", "lang": "en", "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."},
+    {"label": "medium", "lang": "pt", "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."},
+    {"label": "long", "lang": "en", "text": "Captain, here is the state of the fleet. The audio artifact work is merged and live, so a "
                                    "voice sample now plays inside the card viewer instead of only offering a download. Nine text "
                                    "to speech engines are being wrapped in containers tonight, each behind the same interface, so "
                                    "the comparison is honest. Nothing is blocked, and nothing is on fire."},
-    {"label": "long · pt", "text": "Capitão, segue o estado da frota. O trabalho de áudio nos artefatos está mergeado e no ar, "
+    {"label": "long", "lang": "pt", "text": "Capitão, segue o estado da frota. O trabalho de áudio nos artefatos está mergeado e no ar, "
                                    "então uma amostra de voz agora toca dentro do visualizador do card em vez de só oferecer "
                                    "download. Nove motores de síntese de voz estão sendo empacotados em containers esta noite, "
                                    "cada um atrás da mesma interface, para a comparação ser honesta. Nada travado, nada pegando fogo."},
@@ -315,10 +315,14 @@ class Handler(BaseHTTPRequestHandler):
             text = (body.get("text") or "").strip()
             if not text:
                 return self.send_json(400, {"error": "text is required"})
+            # a phrase is filed under a name and a language — that pair is what
+            # the test screen's dropdown shows ("greeting · pt")
+            label = (body.get("name") or body.get("label") or "").strip() or "custom"
+            lang = (body.get("lang") or "").strip().lower()
             with lock:
                 phrases = load_phrases()
                 p = {"id": max((q["id"] for q in phrases), default=0) + 1,
-                     "label": "custom", "text": text}
+                     "label": label, "lang": lang, "text": text}
                 phrases.append(p)
                 save_phrases(phrases)
             self.send_json(200, p)

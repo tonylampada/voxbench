@@ -3,367 +3,591 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TTS test bench</title>
 <style>
-  /* A listening room: warm near-black ground, one amber accent (the VU meter),
-     green lamps for "live". All evidence — timings, sizes, ports — is mono. */
+  /* The listening room, same as the machine panel: warm near-black ground, one
+     amber signal reserved for sound and action, a green lamp for "running",
+     mono for evidence. Two surfaces: the console desk (configure) on the left,
+     the session tape (listen, compare) as the centre of the page. */
   :root {
     color-scheme: dark;
-    --ground: #141110; --panel: #1c1815; --inset: #211c17; --line: #302a24;
-    --text: #e9e2d6; --muted: #998f80; --faint: #6e6558;
-    --signal: #e69f35; --lamp: #8fbf72; --fault: #d97b6c;
+    --ground: #141110; --panel: #1c1815; --inset: #241d17; --line: #332b23;
+    --text: #ede6d9; --muted: #9c9183; --faint: #6f6659;
+    --signal: #e8a343; --lamp: #8fc172; --fault: #d97b6c;
     --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
-  body { font: 14px/1.5 system-ui, sans-serif; background: var(--ground); color: var(--text);
-         max-width: 1260px; margin: 0 auto; padding: 1.6rem 1.2rem 3rem; }
+  body { font: 15px/1.5 system-ui, sans-serif; background: var(--ground); color: var(--text);
+         max-width: 1160px; margin: 0 auto; padding: 1.6rem 1.2rem 3.5rem; }
   a { color: var(--signal); text-decoration: none; }
   a:hover { text-decoration: underline; }
   :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 
   header { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap;
-           border-bottom: 1px solid var(--line); padding-bottom: .9rem; margin-bottom: 1.2rem; }
+           border-bottom: 1px solid var(--line); padding-bottom: .9rem; margin-bottom: 1.3rem; }
   h1 { margin: 0; font-size: 1.05rem; font-weight: 650; letter-spacing: .14em;
        text-transform: uppercase; }
   h1::before { content: ""; display: inline-block; width: .55em; height: .55em;
-               background: var(--signal); border-radius: 1px; margin-right: .6em;
-               vertical-align: baseline; }
+               background: var(--signal); border-radius: 1px; margin-right: .6em; }
   header .sub { color: var(--muted); font-size: .85rem; }
 
-  h2 { font-size: .72rem; color: var(--muted); text-transform: uppercase;
-       letter-spacing: .16em; font-weight: 600; margin: 1.6rem 0 .6rem; }
-  .note { color: var(--muted); font-size: .8rem; }
-  .err { color: var(--fault); font-size: .85rem; white-space: pre-wrap; }
+  .lbl { display: block; font-size: .68rem; letter-spacing: .16em; text-transform: uppercase;
+         color: var(--muted); font-weight: 600; margin-bottom: .45rem; }
+  .note { color: var(--faint); font-size: .8rem; }
+  .note a { color: var(--signal); }
 
-  button { background: var(--inset); color: var(--text); border: 1px solid var(--line);
-           border-radius: 5px; padding: .35rem .9rem; cursor: pointer; font: inherit; }
-  button:hover { border-color: #4a4032; background: #262019; }
-  button:disabled { opacity: .4; cursor: default; }
-  button.primary { background: var(--signal); border-color: var(--signal); color: #1c1300;
-                   font-weight: 650; }
-  button.primary:hover { background: #f0b155; border-color: #f0b155; }
-  select, input[type=text], textarea { background: var(--inset); color: var(--text);
-    border: 1px solid var(--line); border-radius: 5px; padding: .35rem .55rem; font: inherit; }
-  textarea { width: 100%; min-height: 3.2em; }
+  /* ── the deck: desk | tape ───────────────────────────────────────────── */
+  .deck { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 1.5rem;
+          align-items: start; }
+  .desk { position: sticky; top: 1rem; display: flex; flex-direction: column; gap: 1.05rem;
+          background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+          padding: 1.1rem 1.15rem 1.15rem; }
 
-  /* ── script: the phrase list ─────────────────────────────────────────── */
-  .phrase { display: flex; gap: .6rem; align-items: baseline; padding: .38rem .55rem;
-            border-radius: 5px; cursor: pointer; border: 1px solid transparent; }
-  .phrase:hover { background: var(--panel); }
-  .phrase.sel { background: var(--panel); border-color: var(--line); }
-  .phrase.sel .tag { color: var(--signal); border-color: #574320; }
-  .phrase .tag { font: .68rem/1.5 var(--mono); letter-spacing: .06em; color: var(--muted);
-                 border: 1px solid var(--line); padding: .02rem .45rem; border-radius: 3px;
-                 white-space: nowrap; }
-  .phrase .txt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .phrase.sel .txt { white-space: normal; }
-  .phrase .del { color: var(--faint); cursor: pointer; padding: 0 .3rem; background: none;
-                 border: none; border-radius: 3px; }
-  .phrase .del:hover { color: var(--fault); background: none; }
+  select, input, textarea { width: 100%; background: var(--inset); color: var(--text);
+    border: 1px solid var(--line); border-radius: 9px; padding: .5rem .65rem; font: inherit; }
+  textarea { min-height: 3.4em; resize: vertical; }
 
-  /* ── channel select: engine chips ────────────────────────────────────── */
+  /* engine chips — only what is running gets a chip at all */
   .chips { display: flex; flex-wrap: wrap; gap: .45rem; }
-  .echip { display: inline-flex; gap: .5rem; align-items: center; padding: .32rem .8rem;
+  .echip { display: inline-flex; gap: .55rem; align-items: center; padding: .4rem 1rem .4rem .8rem;
            border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
-           background: var(--panel); }
-  .echip .note { font-family: var(--mono); font-size: .7rem; }
+           background: var(--inset); color: var(--text); font: .85rem var(--mono); }
+  .echip:hover { border-color: #4a4032; }
+  .echip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lamp);
+                box-shadow: 0 0 6px 1px rgba(143,193,114,.55); }
+  .echip .dev { font-size: .66rem; color: var(--faint); letter-spacing: .06em; }
   .echip.on { border-color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal); }
 
-  /* lamps — state must read from across the room */
-  .lamp { width: 9px; height: 9px; border-radius: 50%; background: var(--faint);
-          flex: none; display: inline-block; }
-  .lamp.ready { background: var(--lamp); box-shadow: 0 0 6px 1px rgba(143,191,114,.55); }
-  .lamp.loading { background: var(--signal); box-shadow: 0 0 6px 1px rgba(230,159,53,.55);
-                  animation: pulse 1.1s ease-in-out infinite; }
-  @keyframes pulse { 50% { opacity: .35; } }
-  @media (prefers-reduced-motion: reduce) { .lamp.loading { animation: none; } }
+  /* actions — one big amber act of listening; stream only exists if the engine streams */
+  .actions { display: flex; gap: .6rem; flex-wrap: wrap; padding-top: .15rem; }
+  .actions button { border-radius: 999px; padding: .62rem 1.4rem; font: 600 .95rem/1.2 system-ui;
+                    cursor: pointer; }
+  #go { background: var(--signal); border: 1px solid var(--signal); color: #1c1300; }
+  #go:hover { background: #f0b155; border-color: #f0b155; }
+  #gostream { background: none; border: 1px solid #7a5c26; color: var(--signal); }
+  #gostream:hover { border-color: var(--signal); }
+  .actions button:disabled { opacity: .4; cursor: default; }
 
-  /* ── transport bar ───────────────────────────────────────────────────── */
-  .runbar { display: flex; gap: .6rem; align-items: center; margin: 1rem 0 1.2rem;
-            position: sticky; top: 0; z-index: 3; padding: .6rem .8rem;
-            background: rgba(20,17,16,.92); backdrop-filter: blur(6px);
-            border: 1px solid var(--line); border-radius: 8px; }
+  /* drawers — the necessary evils fold away */
+  details.drawer { border-top: 1px solid var(--line); padding-top: .7rem; }
+  details.drawer summary { cursor: pointer; list-style: none; display: flex; gap: .5rem;
+    align-items: baseline; font-size: .68rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; }
+  details.drawer summary::-webkit-details-marker { display: none; }
+  details.drawer summary::before { content: "▸"; color: var(--faint); transition: transform .15s; }
+  details.drawer[open] summary::before { transform: rotate(90deg); }
+  details.drawer summary .n { color: var(--faint); font-family: var(--mono); font-weight: 400; }
+  details.drawer > *:not(summary) { margin-top: .7rem; }
 
-  /* ── channel strips ──────────────────────────────────────────────────── */
-  #cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-           gap: 1rem; align-items: start; }
-  .card { display: flex; flex-direction: column; background: var(--panel);
-          border: 1px solid var(--line); border-radius: 8px; padding: .85rem 1rem;
-          min-width: 0; }
-  .card.loading { border-color: #55421f; }
-  .card h3 { order: 0; margin: 0; font-size: .95rem; display: flex; gap: .55rem;
-             align-items: center; padding-bottom: .55rem; border-bottom: 1px solid var(--line); }
-  .card h3 .st { font: .72rem/1.4 var(--mono); font-weight: 400; letter-spacing: .05em;
-                 text-transform: uppercase; margin-left: auto; }
-  .st.ready { color: var(--lamp); } .st.loading { color: var(--signal); }
-  .st.stopped { color: var(--faint); }
-  .card.stopped h3 { color: var(--muted); }
-  .stdetail { font: .72rem/1.5 var(--mono); color: var(--signal); padding-top: .4rem; }
-  .stdetail:empty { display: none; }
-  /* the take outranks the knobs: results sit right under the nameplate */
-  .card .stdetail { order: 1; }
-  .card .results { order: 2; }
-  .card .body { order: 3; padding-top: .35rem; }
-  .row { display: flex; gap: .5rem; margin: .4rem 0; align-items: center; flex-wrap: wrap; }
-
-  .knob { margin: .65rem 0; }
+  .knob { margin: .7rem 0; }
   .knob .kh { display: flex; justify-content: space-between; font-size: .84rem; }
   .knob .kh b { font-weight: 600; }
   .knob .kh .val { color: var(--signal); font-family: var(--mono); font-size: .8rem;
                    font-variant-numeric: tabular-nums; }
-  /* knobs stay quiet — amber belongs to the take and the transport */
-  .knob input[type=range] { width: 100%; accent-color: #7d6f57; }
-  .knob .desc { color: var(--faint); font-size: .76rem; }
+  .knob input[type=range] { width: 100%; accent-color: #7d6f57; padding: 0; }
+  .knob .desc { color: var(--faint); font-size: .74rem; }
 
-  /* ── the take: player first, then the evidence ───────────────────────── */
-  .res { border-top: 1px solid var(--line); margin-top: .6rem; padding-top: .6rem; }
-  .res .mode { font: .68rem/1.4 var(--mono); color: var(--muted); text-transform: uppercase;
-               letter-spacing: .14em; }
-  audio { width: 100%; height: 40px; margin: .45rem 0 .2rem; display: block; }
-  .figs { display: flex; gap: 1.4rem; align-items: baseline; flex-wrap: wrap;
-          font-variant-numeric: tabular-nums; margin-top: .3rem; }
-  .fig .fv { font: 600 1.05rem/1.3 var(--mono); display: block; }
-  .fig.first .fv { color: var(--signal); }
-  .fig .fl { font-size: .68rem; color: var(--muted); text-transform: uppercase;
-             letter-spacing: .1em; }
-  .fig.dim .fv { font-weight: 400; font-size: .85rem; color: var(--muted); }
-  .gap { color: var(--muted); font-size: .78rem; margin-top: .25rem; }
-  .gap b { color: var(--signal); font-family: var(--mono); font-weight: 600; }
+  /* phrase library rows */
+  .ph { display: flex; gap: .55rem; align-items: baseline; padding: .3rem 0; }
+  .ph .phtag { font: .68rem/1.6 var(--mono); color: var(--muted); border: 1px solid var(--line);
+               border-radius: 3px; padding: .02rem .45rem; white-space: nowrap; }
+  .ph .phtxt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+               white-space: nowrap; font-size: .82rem; color: var(--muted); }
+  .ph .del { background: none; border: none; color: var(--faint); cursor: pointer;
+             padding: 0 .25rem; font-size: 1rem; line-height: 1; }
+  .ph .del:hover { color: var(--fault); }
+  #addform { display: grid; grid-template-columns: 1fr 5.5rem; gap: .5rem; }
+  #addform textarea, #addform .row2 { grid-column: 1 / -1; }
+  #addform .row2 { display: flex; gap: .5rem; align-items: center; }
+  #addform button { background: var(--inset); color: var(--text); border: 1px solid var(--line);
+                    border-radius: 999px; padding: .4rem 1.1rem; cursor: pointer; font: inherit; }
+  #addform button:hover { border-color: #4a4032; }
 
+  .deskerr { color: var(--fault); font-size: .82rem; white-space: pre-wrap; }
+  .deskerr:empty { display: none; }
+
+  /* ── the session tape ────────────────────────────────────────────────── */
+  .tapehead { display: flex; align-items: baseline; gap: .6rem; padding: .35rem 0 .45rem;
+              border-bottom: 1px solid var(--line); }
+  .tapehead .lbl { margin: 0; }
+  .tapehead .n { font: .72rem var(--mono); color: var(--faint); }
+  #takes { list-style: none; margin: 0; padding: 0; }
+  #empty { color: var(--faint); font-size: .85rem; padding: 2.2rem .2rem; }
+
+  .take { display: flex; gap: .95rem; align-items: center; padding: .85rem .15rem;
+          border-bottom: 1px solid var(--line); }
+  .take .pp { width: 46px; height: 46px; border-radius: 50%; flex: none; cursor: pointer;
+              background: var(--inset); border: 1px solid var(--line);
+              display: grid; place-items: center; padding: 0; }
+  .take .pp:hover { border-color: var(--signal); }
+  .take .pp:disabled { cursor: default; border-color: var(--line); }
+  .take .pp svg { width: 15px; height: 15px; fill: var(--text); display: none; }
+  .take .pp .i-play { margin-left: 2px; }
+  .take.done .pp .i-play { display: block; }
+  .take.playing .pp { background: var(--signal); border-color: var(--signal); }
+  .take.playing .pp .i-play { display: none; }
+  .take.playing .pp .i-pause { display: block; fill: #1c1300; }
+  .take.live .pp { border-color: var(--signal); animation: breathe 1.2s ease-in-out infinite; }
+  .take.live .pp .i-stop { display: block; fill: var(--signal); }
+  .take.running .pp .i-dot { display: block; fill: var(--faint);
+                             animation: breathe 1.2s ease-in-out infinite; }
+  .take.error .pp { opacity: .35; }
+  .take.error .pp .i-x { display: block; fill: var(--faint); }
+  @keyframes breathe { 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .take .pp, .onair { animation: none !important; } }
+
+  .take .mid { flex: 1; min-width: 0; }
+  .l1 { display: flex; gap: .6rem; align-items: baseline; min-width: 0; }
+  .l1 .eng { font: 600 .85rem var(--mono); }
+  .l1 .mk { font: .7rem var(--mono); color: var(--signal); white-space: nowrap; }
+  .l1 .prov { color: var(--muted); font-size: .8rem; overflow: hidden;
+              text-overflow: ellipsis; white-space: nowrap; }
+  .l1 .tn { margin-left: auto; font: .72rem var(--mono); color: var(--faint); }
+  .strip { height: 4px; background: var(--inset); border-radius: 2px; margin: .5rem 0 .4rem;
+           cursor: pointer; overflow: hidden; }
+  .fill { height: 100%; width: 0; background: var(--signal); }
+  .l2 { display: flex; gap: 1.1rem; flex-wrap: wrap; align-items: baseline; }
+  .fig { font: .76rem var(--mono); color: var(--muted); font-variant-numeric: tabular-nums;
+         white-space: nowrap; }
+  .fig b { color: var(--text); font-weight: 600; font-size: .82rem; }
+  .fig.amber, .fig.amber b { color: var(--signal); }
+  .onair { font: 600 .7rem var(--mono); letter-spacing: .14em; text-transform: uppercase;
+           color: var(--signal); animation: breathe 1.2s ease-in-out infinite; }
   /* a 4xx is the engine answering, not the page breaking */
-  .refusal { border-left: 3px solid var(--line); padding: .15rem 0 .15rem .7rem;
-             margin-top: .35rem; color: var(--muted); font-style: italic; }
-  .refusal .who { display: block; font: normal .68rem/1.6 var(--mono); color: var(--faint);
-                  text-transform: uppercase; letter-spacing: .12em; font-style: normal; }
+  .refusal { color: var(--muted); font-style: italic; font-size: .82rem; }
+  .refusal .who { font: normal .68rem var(--mono); color: var(--faint);
+                  text-transform: uppercase; letter-spacing: .12em; font-style: normal;
+                  margin-right: .5rem; }
+  .err { color: var(--fault); font-size: .82rem; }
 
-  @media (max-width: 640px) {
-    body { padding: .9rem .7rem 7.5rem; }
-    #cards { grid-template-columns: 1fr; }
-    .phrase .txt { white-space: normal; }
-    button, select, input { min-height: 2.3rem; font-size: 1rem; }
-    .runbar { position: fixed; left: .5rem; right: .5rem; bottom: .5rem; top: auto;
-              margin: 0; flex-wrap: wrap; box-shadow: 0 6px 24px rgba(0,0,0,.5); }
-    .runbar .note { display: none; }
+  @media (max-width: 760px) {
+    body { padding: .9rem .8rem 2.5rem; }
+    .deck { grid-template-columns: 1fr; gap: 1.1rem; }
+    .desk { position: static; }
+    button, select, input { min-height: 2.4rem; }
+    .l1 .prov { white-space: normal; }
   }
 </style>
 
 <header>
   <h1>Test bench</h1>
-  <span class="sub">side-by-side synthesis · <a href="/">machine panel</a></span>
+  <span class="sub">the listening side · models load on the <a href="/">machine panel</a></span>
 </header>
 
-<h2>Script</h2>
-<div id="phrases"></div>
-<div class="row" style="margin-top:.5rem">
-  <textarea id="newphrase" placeholder="Type a new phrase — it joins the list and survives a restart"></textarea>
+<div class="deck">
+<section class="desk" aria-label="controls">
+  <div>
+    <span class="lbl">Engine — running now</span>
+    <div class="chips" id="engines"></div>
+    <p class="note" id="enginenote">…</p>
+  </div>
+
+  <div id="controls" hidden>
+    <div style="margin-bottom:1rem">
+      <label class="lbl" for="phrase">Phrase</label>
+      <select id="phrase"></select>
+    </div>
+    <div style="margin-bottom:1rem">
+      <label class="lbl" for="voice">Voice</label>
+      <select id="voice"></select>
+    </div>
+    <details class="drawer" id="paramdrawer" style="margin-bottom:1rem">
+      <summary>Parameters <span class="n" id="paramn"></span></summary>
+      <div id="knobs"></div>
+    </details>
+    <div class="actions">
+      <button id="go" type="button">▶&nbsp; Generate</button>
+      <button id="gostream" type="button" hidden>≋&nbsp; Stream live</button>
+    </div>
+    <p class="deskerr" id="deskerr"></p>
+  </div>
+
+  <details class="drawer" id="library">
+    <summary>Phrase library <span class="n" id="libn"></span></summary>
+    <div id="phraselist"></div>
+    <form id="addform">
+      <input id="pname" placeholder="name — e.g. greeting" required>
+      <input id="plang" placeholder="lang" size="4" required>
+      <textarea id="ptext" placeholder="the phrase itself" required></textarea>
+      <div class="row2">
+        <button type="submit">add phrase</button>
+        <span class="note" id="libnote"></span>
+      </div>
+    </form>
+  </details>
+</section>
+
+<section class="tape" aria-label="generated audio">
+  <div class="tapehead"><span class="lbl">Session tape</span>
+    <span class="n" id="count"></span>
+    <span class="n" style="margin-left:auto">newest first</span></div>
+  <ol id="takes"></ol>
+  <p id="empty">Nothing on the tape yet — pick an engine, pick a phrase, press generate.
+     Every take lands here so you can play them against each other.</p>
+</section>
 </div>
-<div class="row"><button id="addphrase">add phrase</button><span class="note" id="phrasenote"></span></div>
-
-<h2>Engines</h2>
-<div class="chips" id="chips"></div>
-<p class="note" id="gpunote"></p>
-
-<div class="runbar">
-  <button class="primary" id="run">▶ generate</button>
-  <button class="primary" id="runstream">≋ generate (stream)</button>
-  <button id="runboth">both</button>
-  <span class="note">runs the selected phrase on every selected engine, side by side</span>
-</div>
-
-<div id="cards"></div>
 
 <script>
 const $ = id => document.getElementById(id);
-const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
 const ms = v => v == null ? '—' : v < 1000 ? Math.round(v) + ' ms' : (v/1000).toFixed(2) + ' s';
 
-let phrases = [], phraseId = null;
-let engines = [];                 // last /api/engines snapshot
-const selected = new Set();       // engine names on the bench
-const cards = {};                 // name -> {state, voices, params, values, results, flt}
+let phrases = [];
+let ready = [];            // engines with state === "ready" — the only ones offered
+let current = null;        // selected engine name
+const eng = {};            // name -> {voices, params, values, canStream, busy}
+const takes = [];          // newest first — the memory of the session
+let takeN = 0;
+let audioCtx;
 
 /* ── phrases ─────────────────────────────────────────────────────────── */
+const phraseLabel = p => p.lang ? `${p.label} · ${p.lang}` : p.label;
+
 async function loadPhrases() {
+  const keep = $('phrase').value;
   phrases = (await (await fetch('/api/phrases')).json()).phrases;
-  if (!phrases.find(p => p.id === phraseId)) phraseId = phrases[0]?.id ?? null;
-  renderPhrases();
+  $('phrase').replaceChildren(...phrases.map(p => new Option(
+    `${phraseLabel(p)} — ${p.text.length > 44 ? p.text.slice(0, 44) + '…' : p.text}`, p.id)));
+  if (phrases.some(p => p.id == keep)) $('phrase').value = keep;
+  $('libn').textContent = phrases.length;
+  renderLibrary();
 }
-function renderPhrases() {
-  $('phrases').replaceChildren(...phrases.map(p => {
+
+function renderLibrary() {
+  $('phraselist').replaceChildren(...phrases.map(p => {
     const div = document.createElement('div');
-    div.className = 'phrase' + (p.id === phraseId ? ' sel' : '');
-    div.innerHTML = `<span class="tag">${esc(p.label || 'custom')}</span>` +
-      `<span class="txt">${esc(p.text)}</span><button class="del" title="delete">×</button>`;
-    div.onclick = () => { phraseId = p.id; renderPhrases(); };
-    div.querySelector('.del').onclick = async e => {
-      e.stopPropagation();
+    div.className = 'ph';
+    div.innerHTML = `<span class="phtag"></span><span class="phtxt"></span>
+      <button class="del" type="button" title="delete">×</button>`;
+    div.querySelector('.phtag').textContent = phraseLabel(p);
+    div.querySelector('.phtxt').textContent = p.text;
+    div.querySelector('.del').onclick = async () => {
       await fetch('/api/phrases/' + p.id, {method: 'DELETE'});
       loadPhrases();
     };
     return div;
   }));
 }
-$('addphrase').onclick = async () => {
-  const text = $('newphrase').value.trim();
-  if (!text) return;
+
+$('addform').onsubmit = async e => {
+  e.preventDefault();
+  const body = {name: $('pname').value.trim(), lang: $('plang').value.trim(),
+                text: $('ptext').value.trim()};
   const r = await fetch('/api/phrases', {method: 'POST',
-    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text})});
-  const j = await r.json();
-  $('phrasenote').textContent = r.ok ? 'saved — persists across restarts' : (j.error || 'failed');
-  if (r.ok) { $('newphrase').value = ''; phraseId = j.id; loadPhrases(); }
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+  const j = await r.json().catch(() => ({}));
+  $('libnote').textContent = r.ok ? 'saved — it survives a restart' : (j.error || 'failed');
+  if (r.ok) {
+    $('pname').value = $('plang').value = $('ptext').value = '';
+    await loadPhrases();
+    $('phrase').value = j.id;   // fresh phrase is ready to use on the desk
+  }
 };
 
-/* ── engines / cards ─────────────────────────────────────────────────── */
+/* ── engines: only what is running is offered ────────────────────────── */
 async function refreshEngines() {
-  try { engines = await (await fetch('/api/engines')).json(); }
-  catch { $('gpunote').textContent = 'console server unreachable'; return; }
-  $('chips').replaceChildren(...engines.map(e => {
-    const b = document.createElement('span');
-    b.className = 'echip' + (selected.has(e.name) ? ' on' : '');
-    b.innerHTML = `<span class="lamp ${e.state}"></span>${e.name}` +
-      `<span class="note">${e.gpu}</span>`;
-    b.onclick = () => {
-      selected.has(e.name) ? (selected.delete(e.name), delete cards[e.name])
-                           : selected.add(e.name);
-      renderCards();
-    };
+  let all;
+  try { all = await (await fetch('/api/engines')).json(); }
+  catch { $('enginenote').textContent = 'console server unreachable'; return; }
+  ready = all.filter(e => e.state === 'ready');
+  renderChips();
+  const loading = all.filter(e => e.state === 'loading').map(e => e.name);
+  const note = $('enginenote');
+  if (!ready.length) {
+    note.replaceChildren(loading.length
+      ? `${loading.join(', ')} is loading — it appears here when it answers`
+      : 'nothing is running. Load a model on the ');
+    if (!loading.length) {
+      const a = Object.assign(document.createElement('a'), {href: '/', textContent: 'machine panel'});
+      note.append(a, ', then come back and listen.');
+    }
+  } else {
+    note.replaceChildren('to test a different model, load it on the ',
+      Object.assign(document.createElement('a'), {href: '/', textContent: 'machine panel'}), '.');
+  }
+  if (current && !ready.some(e => e.name === current)) selectEngine(null);
+  if (!current && ready.length === 1) selectEngine(ready[0].name);
+}
+
+function renderChips() {
+  $('engines').replaceChildren(...ready.map(e => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'echip' + (e.name === current ? ' on' : '');
+    b.innerHTML = `<span class="dot"></span><span class="nm"></span><span class="dev">${e.gpu}</span>`;
+    b.querySelector('.nm').textContent = e.name;
+    b.onclick = () => selectEngine(e.name);
     return b;
   }));
-  const holder = engines.find(e => e.gpu === 'gpu' && e.state !== 'stopped');
-  $('gpunote').textContent = holder
-    ? `one 24 GB card, one GPU engine at a time — ${holder.name} is on the card now`
-    : 'no GPU engine is on the card';
-  renderCards();
 }
 
-function card(name) { return cards[name] ??= {results: {}, values: {}, flt: {lang: '', kind: ''}}; }
-
-function renderCards() {
-  const wrap = $('cards');
-  // keep card DOM stable: create/remove only on selection change
-  for (const el of [...wrap.children]) if (!selected.has(el.dataset.name)) el.remove();
-  for (const name of selected) {
-    let el = wrap.querySelector(`[data-name="${name}"]`);
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'card'; el.dataset.name = name;
-      el.innerHTML = `<h3><span class="lamp"></span>${esc(name)} <span class="st"></span></h3>
-        <div class="stdetail"></div><div class="body"></div><div class="results"></div>`;
-      wrap.appendChild(el);
+async function selectEngine(name) {
+  current = name;
+  renderChips();
+  $('controls').hidden = !name;
+  $('deskerr').textContent = '';
+  if (!name) return;
+  const c = eng[name] ??= {values: {}};
+  $('gostream').hidden = c.canStream !== true;
+  setBusy();
+  if (!c.voices) {
+    $('voice').replaceChildren(new Option('fetching voices…', ''));
+    $('knobs').replaceChildren();
+    try {
+      const [vr, pr] = await Promise.all([
+        fetch(`/api/engines/${name}/voices`), fetch(`/api/engines/${name}/params`)]);
+      if (!vr.ok || !pr.ok) throw new Error(`voices ${vr.status} / params ${pr.status}`);
+      c.voices = (await vr.json()).voices;
+      c.params = (await pr.json()).params;
+    } catch (err) {
+      c.voices = null;
+      if (current === name) $('deskerr').textContent = 'could not reach ' + name + ': ' + err;
+      return;
     }
-    updateCard(name, el);
+  }
+  if (current !== name) return;         // switched away while fetching
+  renderVoices(c);
+  renderKnobs(c);
+  if (c.canStream === undefined) { c.canStream = 'probing'; probeStream(name); }
+}
+
+/* The stream button exists only on engines that stream — and the engine itself
+   is the authority: stream:true gets a 200 from a streamer and a 400 sentence
+   from everything else. One tiny probe per engine, remembered. */
+async function probeStream(name) {
+  const key = 'canstream:' + name;
+  let can = {['1']: true, ['0']: false}[localStorage.getItem(key)];
+  if (can === undefined) {
+    try {
+      const ac = new AbortController();
+      const r = await fetch(`/api/engines/${name}/speech`, {method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({input: '.', stream: true}), signal: ac.signal});
+      ac.abort();                        // status is the answer; no need for audio
+      if (r.status === 200) { can = true; localStorage.setItem(key, '1'); }
+      else if (r.status === 400) { can = false; localStorage.setItem(key, '0'); }
+      else can = false;                  // engine wobbled — ask again next time
+    } catch { can = false; }
+  }
+  eng[name].canStream = can;
+  if (current === name) $('gostream').hidden = !can;
+}
+
+function renderVoices(c) {
+  const sel = $('voice');
+  sel.replaceChildren(new Option('engine default', ''));
+  const kinds = [['builtin', 'builtin voices'], ['reference', 'cloned references']];
+  for (const [kind, label] of kinds) {
+    const vs = c.voices.filter(v => v.kind === kind);
+    if (!vs.length) continue;
+    const g = document.createElement('optgroup');
+    g.label = label;
+    for (const v of vs)
+      g.append(new Option(`${v.name} · ${v.langs.join(' ')} · ${v.gender}` +
+                          (v.origin ? ` · from ${v.origin}` : ''), v.id));
+    sel.append(g);
   }
 }
 
-function updateCard(name, el) {
-  const e = engines.find(x => x.name === name);
-  const c = card(name);
-  el.className = 'card ' + e.state;
-  el.querySelector('.lamp').className = 'lamp ' + e.state;
-  const st = el.querySelector('.st');
-  st.className = 'st ' + e.state;
-  st.textContent = e.state;
-  el.querySelector('.stdetail').textContent =
-    e.state === 'loading' && e.detail ? e.detail : '';
-  const body = el.querySelector('.body');
-
-  if (e.state === 'stopped') {
-    c.loaded = false;
-    body.innerHTML = `<div class="row"><span class="note">not running — that's not an error:</span>
-      <button>start it</button></div>` + (e.error ? `<div class="err">${esc(e.error)}</div>` : '');
-    body.querySelector('button').onclick = async () => {
-      const r = await fetch(`/api/engines/${name}/up`, {method: 'POST'});
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) body.insertAdjacentHTML('beforeend', `<div class="err">${esc(j.error || 'up failed')}</div>`);
-      refreshEngines();
-    };
-  } else if (e.state === 'loading') {
-    c.loaded = false;
-    body.innerHTML = `<span class="note">loading — the model is coming up, controls appear when it's ready</span>`;
-  } else if (!c.loaded) {
-    c.loaded = true;
-    body.innerHTML = `<span class="note">fetching voices & params…</span>`;
-    loadControls(name, body).catch(err => {
-      c.loaded = false;
-      body.innerHTML = `<div class="err">could not load controls: ${esc(String(err))}</div>`;
-    });
-  }
-  // results are rendered only when a synthesis starts/ends — a 2s poll must
-  // not rebuild <audio> elements mid-playback
-}
-
-async function loadControls(name, body) {
-  const c = card(name);
-  const [vr, pr] = await Promise.all([
-    fetch(`/api/engines/${name}/voices`), fetch(`/api/engines/${name}/params`)]);
-  if (!vr.ok || !pr.ok) throw new Error(`voices ${vr.status} / params ${pr.status}`);
-  c.voices = (await vr.json()).voices;
-  c.params = (await pr.json()).params;
-  c.values = {};   // only knobs the user touched get sent
-
-  const langs = [...new Set(c.voices.flatMap(v => v.langs))].sort();
-  body.innerHTML = `
-    <div class="row">
-      <select class="flang"><option value="">any lang</option>
-        ${langs.map(l => `<option>${l}</option>`).join('')}</select>
-      <select class="fkind"><option value="">builtin + reference</option>
-        <option value="builtin">builtin (the model's own)</option>
-        <option value="reference">reference (cloning clips)</option></select>
-      <span class="note vcount"></span>
-    </div>
-    <div class="row"><select class="voice" style="max-width:100%"></select></div>
-    <div class="knobs"></div>`;
-
-  const voiceSel = body.querySelector('.voice');
-  const fill = () => {
-    const {lang, kind} = c.flt;
-    const vs = c.voices.filter(v => (!lang || v.langs.includes(lang)) && (!kind || v.kind === kind));
-    voiceSel.replaceChildren(
-      new Option('(engine default voice)', ''),
-      ...vs.map(v => new Option(
-        `${v.name} — ${v.kind}${v.origin ? ' from ' + v.origin : ''} · ${v.langs.join(',')} · ${v.gender}`,
-        v.id)));
-    body.querySelector('.vcount').textContent = `${vs.length} of ${c.voices.length} voices`;
-  };
-  body.querySelector('.flang').onchange = ev => { c.flt.lang = ev.target.value; fill(); };
-  body.querySelector('.fkind').onchange = ev => { c.flt.kind = ev.target.value; fill(); };
-  fill();
-
-  // one control per knob, straight from /v1/params — nothing hardcoded
-  const knobs = body.querySelector('.knobs');
+function renderKnobs(c) {
+  const knobs = $('knobs');
   const entries = Object.entries(c.params);
-  if (!entries.length)
-    knobs.innerHTML = `<div class="note">this engine declares no knobs — {"params": {}} is a real answer</div>`;
+  $('paramn').textContent = entries.length || 'none';
+  knobs.replaceChildren();
+  if (!entries.length) {
+    knobs.innerHTML = '<div class="note">this engine declares no knobs</div>';
+    return;
+  }
   for (const [k, p] of entries) {
     const div = document.createElement('div');
     div.className = 'knob';
+    const cur = c.values[k] ?? p.default;   // remember what was dialed in
     if (p.type === 'number' || p.type === 'integer') {
-      div.innerHTML = `<div class="kh"><b>${esc(k)}</b><span class="val">${p.default}</span></div>
-        <input type="range" min="${p.min}" max="${p.max}" value="${p.default}"
-               step="${p.type === 'integer' ? 1 : Math.pow(10, Math.floor(Math.log10((p.max - p.min) / 100)))}">
-        <div class="desc">${esc(p.description)} (${p.min}–${p.max}, default ${p.default})</div>`;
+      const step = p.type === 'integer' ? 1
+        : Math.pow(10, Math.floor(Math.log10((p.max - p.min) / 100)));
+      div.innerHTML = `<div class="kh"><b></b><span class="val">${cur}</span></div>
+        <input type="range" min="${p.min}" max="${p.max}" value="${cur}" step="${step}">
+        <div class="desc"></div>`;
       div.querySelector('input').oninput = ev => {
         const v = p.type === 'integer' ? parseInt(ev.target.value) : parseFloat(ev.target.value);
         div.querySelector('.val').textContent = v;
         v === p.default ? delete c.values[k] : c.values[k] = v;
       };
     } else if (p.type === 'boolean') {
-      div.innerHTML = `<div class="kh"><b><label><input type="checkbox" ${p.default ? 'checked' : ''}> ${esc(k)}</label></b></div>
-        <div class="desc">${esc(p.description)} (default ${p.default})</div>`;
+      div.innerHTML = `<div class="kh"><b><label><input type="checkbox" style="width:auto"
+          ${cur ? 'checked' : ''}> <span class="kn"></span></label></b></div><div class="desc"></div>`;
       div.querySelector('input').onchange = ev =>
         ev.target.checked === p.default ? delete c.values[k] : c.values[k] = ev.target.checked;
     } else {
-      div.innerHTML = `<div class="kh"><b>${esc(k)}</b></div>
-        <input type="text" value="${esc(String(p.default))}" style="width:100%">
-        <div class="desc">${esc(p.description)} (default ${esc(String(p.default))})</div>`;
-      div.querySelector('input').oninput = ev =>
+      div.innerHTML = `<div class="kh"><b></b></div><input type="text"><div class="desc"></div>`;
+      const inp = div.querySelector('input');
+      inp.value = String(cur);
+      inp.oninput = ev =>
         ev.target.value === String(p.default) ? delete c.values[k] : c.values[k] = ev.target.value;
     }
+    (div.querySelector('.kn') || div.querySelector('b')).textContent = k;
+    div.querySelector('.desc').textContent = (p.description ? p.description + ' ' : '') +
+      (p.min != null ? `(${p.min}–${p.max}, default ${p.default})` : `(default ${p.default})`);
     knobs.appendChild(div);
   }
 }
 
+function setBusy() {
+  const busy = !!(current && eng[current]?.busy);
+  $('go').disabled = busy;
+  $('gostream').disabled = busy;
+}
+
+/* ── takes: everything generated falls onto the tape ─────────────────── */
+function addTake(init) {
+  const t = {id: ++takeN, state: 'running', ...init};
+  takes.unshift(t);
+  t.el = buildTakeEl(t);
+  $('takes').prepend(t.el);
+  $('empty').hidden = true;
+  $('count').textContent = takes.length + (takes.length === 1 ? ' take' : ' takes');
+  updateTake(t);
+  return t;
+}
+
+function buildTakeEl(t) {
+  const li = document.createElement('li');
+  li.innerHTML = `
+    <button class="pp" aria-label="play">
+      <svg class="i-play" viewBox="0 0 16 16"><path d="M3 1.5v13l11-6.5z"/></svg>
+      <svg class="i-pause" viewBox="0 0 16 16"><path d="M3 2h3.5v12H3zM9.5 2H13v12H9.5z"/></svg>
+      <svg class="i-stop" viewBox="0 0 16 16"><path d="M3 3h10v10H3z"/></svg>
+      <svg class="i-dot" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4"/></svg>
+      <svg class="i-x" viewBox="0 0 16 16"><path d="M3 4.4 4.4 3 8 6.6 11.6 3 13 4.4 9.4 8l3.6 3.6-1.4 1.4L8 9.4 4.6 13 3.2 11.6 6.6 8z"/></svg>
+    </button>
+    <div class="mid">
+      <div class="l1"><span class="eng"></span><span class="mk"></span>
+        <span class="prov"></span><span class="tn"></span></div>
+      <div class="strip"><div class="fill"></div></div>
+      <div class="l2"></div>
+    </div>`;
+  li.querySelector('.pp').onclick = () => t.state === 'live' ? stopLive(t) : toggle(t);
+  li.querySelector('.strip').onclick = e => {
+    if (!t.audio || !t.audio.duration) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    t.audio.currentTime = (e.clientX - r.left) / r.width * t.audio.duration;
+  };
+  return li;
+}
+
+function updateTake(t) {
+  const el = t.el;
+  el.className = 'take ' + t.state + (t.audio && !t.audio.paused ? ' playing' : '');
+  el.querySelector('.eng').textContent = t.engine;
+  el.querySelector('.mk').textContent = t.mode === 'stream' ? '≋ stream' : '';
+  el.querySelector('.prov').textContent = `${t.phrase} · ${t.voice}`;
+  el.querySelector('.tn').textContent = String(t.id).padStart(2, '0');
+  el.querySelector('.pp').disabled = !(t.state === 'done' || t.state === 'live');
+  const l2 = el.querySelector('.l2');
+  if (t.state === 'running') {
+    l2.innerHTML = '<span class="fig">synthesizing…</span>';
+  } else if (t.state === 'live') {
+    // felt latency, as it happens: first sound the moment the first chunk lands
+    l2.innerHTML = `<span class="onair">● live</span>
+      <span class="fig amber">first sound <b>${t.ttfs != null ? ms(t.ttfs) : '…'}</b></span>
+      <span class="fig"><span class="elapsed">0.0 s</span> elapsed</span>`;
+  } else if (t.state === 'error') {
+    l2.replaceChildren();
+    const s = document.createElement('span');
+    if (t.status && t.status < 500) {
+      s.className = 'refusal';
+      s.innerHTML = `<span class="who">the engine declined · ${t.status}</span>`;
+      s.append(t.error);
+    } else {
+      s.className = 'err';
+      s.textContent = (t.status ? t.status + ': ' : '') + t.error;
+    }
+    l2.append(s);
+  } else {
+    l2.innerHTML = `<span class="fig"><b>${t.dur != null ? t.dur.toFixed(1) + ' s' : '…'}</b> audio</span>`
+      + (t.mode === 'stream'
+        ? `<span class="fig amber">first sound <b>${ms(t.ttfs)}</b></span>
+           <span class="fig">done in ${ms(t.gen)}</span>`
+        : `<span class="fig">made in ${ms(t.gen)}</span>`);
+  }
+}
+
+function attachAudio(t) {
+  const a = t.audio = new Audio();
+  a.preload = 'metadata';
+  a.src = t.url;
+  a.addEventListener('loadedmetadata', () => {
+    if (isFinite(a.duration) && a.duration) { t.dur = a.duration; updateTake(t); }
+  });
+  a.addEventListener('timeupdate', () => {
+    if (a.duration) t.el.querySelector('.fill').style.width = 100 * a.currentTime / a.duration + '%';
+  });
+  a.addEventListener('play', () => t.el.classList.add('playing'));
+  a.addEventListener('pause', () => t.el.classList.remove('playing'));
+  a.addEventListener('ended', () => {
+    t.el.classList.remove('playing');
+    t.el.querySelector('.fill').style.width = '0';
+  });
+}
+
+function stopAll() {   // one voice at a time — this list is for comparing
+  for (const x of takes) if (x.audio && !x.audio.paused) x.audio.pause();
+}
+
+function toggle(t) {
+  if (!t.audio) return;
+  if (!t.audio.paused) { t.audio.pause(); return; }
+  stopAll();
+  t.audio.play();
+}
+
 /* ── synthesis ───────────────────────────────────────────────────────── */
+$('go').onclick = () => run(false);
+$('gostream').onclick = () => run(true);
+
+function run(stream) {
+  if (!current) return;
+  const name = current, c = eng[name];
+  if (c.busy) return;
+  const p = phrases.find(x => x.id == $('phrase').value);
+  if (!p) return;
+  const vid = $('voice').value;
+  const body = {input: p.text, stream};
+  if (vid) body.voice = vid;
+  if (Object.keys(c.values).length) body.params = {...c.values};
+  const t = addTake({engine: name, phrase: phraseLabel(p), mode: stream ? 'stream' : 'take',
+                     voice: vid ? (c.voices.find(v => v.id === vid)?.name ?? vid) : 'default voice'});
+  c.busy = true; setBusy();
+  (stream ? runStream(t, body) : runTake(t, body))
+    .finally(() => { c.busy = false; setBusy(); });
+}
+
+async function errText(r) {
+  const txt = await r.text();
+  try { return JSON.parse(txt).detail || JSON.parse(txt).error || txt; } catch { return txt; }
+}
+
+function failTake(t, status, msg) {
+  Object.assign(t, {state: 'error', status, error: msg});
+  updateTake(t);
+}
+
+async function runTake(t, body) {
+  const t0 = performance.now();
+  try {
+    const r = await fetch(`/api/engines/${t.engine}/speech`, {method: 'POST',
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    if (!r.ok) return failTake(t, r.status, await errText(r));
+    const blob = await r.blob();
+    t.gen = performance.now() - t0;
+    if (!blob.size) return failTake(t, 0, '200 but the body was empty — no audio came back');
+    t.url = URL.createObjectURL(blob);
+    t.state = 'done';
+    attachAudio(t);     // duration arrives via loadedmetadata
+    updateTake(t);
+  } catch (err) { failTake(t, 0, String(err)); }
+}
+
 function pcmToWav(chunks, rate) {
-  const len = chunks.reduce((a, c) => a + c.length, 0);
+  let len = chunks.reduce((a, c) => a + c.length, 0);
+  len &= ~1;   // 16-bit samples — an odd trailing byte is not audio
   const buf = new ArrayBuffer(44 + len), v = new DataView(buf), u = new Uint8Array(buf);
   const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
   w(0, 'RIFF'); v.setUint32(4, 36 + len, true); w(8, 'WAVEfmt ');
@@ -371,109 +595,90 @@ function pcmToWav(chunks, rate) {
   v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
   v.setUint16(32, 2, true); v.setUint16(34, 16, true);
   w(36, 'data'); v.setUint32(40, len, true);
-  let o = 44; for (const c of chunks) { u.set(c, o); o += c.length; }
+  let o = 44;
+  for (const c of chunks) { const n = Math.min(c.length, len - (o - 44)); u.set(c.subarray(0, n), o); o += n; }
   return new Blob([buf], {type: 'audio/wav'});
 }
 
-async function speak(name, mode) {
-  const c = card(name);
-  const el = document.querySelector(`[data-name="${name}"]`);
-  const voice = el?.querySelector('.voice')?.value || null;
-  const phrase = phrases.find(p => p.id === phraseId);
-  const body = {input: phrase.text, stream: mode === 'stream'};
-  if (voice) body.voice = voice;
-  if (Object.keys(c.values).length) body.params = {...c.values};
-
-  const res = c.results[mode] = {running: true};
-  renderResults(name, el.querySelector('.results'));
+/* Stream plays LIVE: each PCM chunk is queued into the AudioContext the moment
+   it arrives, so sound starts on the first chunk — the whole point is feeling
+   the engine's latency, not reading it afterwards. */
+async function runStream(t, body) {
+  audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+  stopAll();
+  const ac = new AbortController();
+  Object.assign(t, {ac, srcs: [], state: 'live'});
+  updateTake(t);
   const t0 = performance.now();
+  t.tick = setInterval(() => {
+    const e = t.el.querySelector('.elapsed');
+    if (e) e.textContent = ((performance.now() - t0) / 1000).toFixed(1) + ' s';
+  }, 100);
+  const chunks = []; let bytes = 0, rate = 24000;
   try {
-    const r = await fetch(`/api/engines/${name}/speech`, {method: 'POST',
-      headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
-    if (!r.ok) {
-      const txt = await r.text();
-      let msg; try { msg = JSON.parse(txt).detail || JSON.parse(txt).error; } catch { msg = txt; }
-      Object.assign(res, {running: false, status: r.status, error: msg || ('HTTP ' + r.status)});
-      return;
-    }
-    const rate = parseInt(r.headers.get('x-sample-rate') || '0');
+    const r = await fetch(`/api/engines/${t.engine}/speech`, {method: 'POST',
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body),
+      signal: ac.signal});
+    if (!r.ok) { clearInterval(t.tick); return failTake(t, r.status, await errText(r)); }
+    rate = parseInt(r.headers.get('x-sample-rate')) || 24000;
     const reader = r.body.getReader();
-    const chunks = []; let first = null;
+    let carry = null, nextAt = 0;
     for (;;) {
       const {done, value} = await reader.read();
       if (done) break;
-      if (value?.length) { first ??= performance.now(); chunks.push(value); }
+      if (!value?.length) continue;
+      if (t.ttfs == null) { t.ttfs = performance.now() - t0; updateTake(t); }
+      chunks.push(value); bytes += value.length;
+      let b = value;
+      if (carry) {
+        b = new Uint8Array(carry.length + value.length);
+        b.set(carry); b.set(value, carry.length); carry = null;
+      }
+      const even = b.length & ~1;
+      if (b.length > even) carry = b.slice(even);
+      if (!even) continue;
+      const a = b.slice(0, even);        // fresh buffer — aligned for Int16
+      const i16 = new Int16Array(a.buffer, 0, even >> 1);
+      const abuf = audioCtx.createBuffer(1, i16.length, rate);
+      const ch = abuf.getChannelData(0);
+      for (let i = 0; i < i16.length; i++) ch[i] = i16[i] / 32768;
+      const src = audioCtx.createBufferSource();
+      src.buffer = abuf;
+      src.connect(audioCtx.destination);
+      const at = Math.max(audioCtx.currentTime, nextAt);   // seamless queue
+      src.start(at);
+      nextAt = at + abuf.duration;
+      t.srcs.push(src);
     }
-    const total = performance.now() - t0;
-    const bytes = chunks.reduce((a, c) => a + c.length, 0);
-    if (!bytes) {
-      Object.assign(res, {running: false, error: '200 but the body was empty — the engine produced no audio'});
-      return;
-    }
-    const blob = mode === 'stream' ? pcmToWav(chunks, rate || 24000)
-                                   : new Blob(chunks, {type: r.headers.get('Content-Type') || 'audio/wav'});
-    Object.assign(res, {running: false, ttfa: first - t0, total,
-                        url: URL.createObjectURL(blob), bytes});
+    t.gen = performance.now() - t0;
+    finalizeStream(t, chunks, bytes, rate);
   } catch (err) {
-    Object.assign(res, {running: false, error: String(err)});
-  } finally {
-    renderResults(name, el.querySelector('.results'));
+    clearInterval(t.tick);
+    if (err.name === 'AbortError') {
+      t.gen = performance.now() - t0;
+      if (bytes) finalizeStream(t, chunks, bytes, rate);   // keep what was heard
+      else failTake(t, 0, 'stopped before any audio arrived');
+    } else failTake(t, 0, String(err));
   }
 }
 
-function renderResults(name, box) {
-  const c = cards[name];
-  if (!c || !box) return;
-  box.replaceChildren(...['normal', 'stream'].map(mode => {
-    const r = c.results[mode];
-    if (!r) return '';
-    const div = document.createElement('div');
-    div.className = 'res';
-    if (r.running) {
-      div.innerHTML = `<span class="mode">${mode}</span> <span class="note">synthesizing…</span>`;
-    } else if (r.error) {
-      // a 4xx carries a sentence the engine meant to say; only transport
-      // failures and 5xx get the red treatment
-      div.innerHTML = r.status && r.status < 500
-        ? `<span class="mode">${mode}</span>
-           <div class="refusal"><span class="who">the engine declined · ${r.status}</span>${esc(r.error)}</div>`
-        : `<span class="mode">${mode}</span>
-           <div class="err">${r.status ? r.status + ': ' : ''}${esc(r.error)}</div>`;
-    } else {
-      div.innerHTML = `<span class="mode">${mode}</span>
-        <audio controls src="${r.url}"></audio>
-        <div class="figs">
-          <div class="fig first"><span class="fv">${ms(r.ttfa)}</span><span class="fl">first audio</span></div>
-          <div class="fig"><span class="fv">${ms(r.total)}</span><span class="fl">total</span></div>
-          <div class="fig dim"><span class="fv">${(r.bytes / 1024).toFixed(0)} KiB</span></div>
-        </div>
-        ${mode === 'stream' && c.results.normal?.total
-          ? `<div class="gap">vs <b>${ms(c.results.normal.total)}</b> before any sound without streaming</div>` : ''}`;
-    }
-    return div;
-  }).filter(Boolean));
+function finalizeStream(t, chunks, bytes, rate) {
+  clearInterval(t.tick);
+  if (!bytes) return failTake(t, 0, '200 but no audio arrived — the stream was empty');
+  t.url = URL.createObjectURL(pcmToWav(chunks, rate));
+  t.dur = bytes / 2 / rate;
+  t.state = 'done';
+  attachAudio(t);      // the live take becomes a normal one — replayable
+  updateTake(t);
 }
 
-function runAll(modes) {
-  if (phraseId == null) return;
-  for (const name of selected) {
-    const e = engines.find(x => x.name === name);
-    if (e?.state !== 'ready') {
-      card(name).results.normal = {error: `${name} is not ready — start it on its card first`, running: false};
-      renderResults(name, document.querySelector(`[data-name="${name}"] .results`));
-      continue;
-    }
-    // modes run in sequence per engine — two simultaneous syntheses on one
-    // engine skew both timings (and some engines refuse concurrency outright);
-    // engines still run side by side
-    (async () => { for (const m of modes) await speak(name, m); })();
-  }
+function stopLive(t) {
+  t.ac?.abort();
+  for (const s of t.srcs || []) { try { s.stop(); } catch {} }
 }
-$('run').onclick = () => runAll(['normal']);
-$('runstream').onclick = () => runAll(['stream']);
-$('runboth').onclick = () => runAll(['normal', 'stream']);
 
 loadPhrases();
 refreshEngines();
-setInterval(refreshEngines, 2000);
+setInterval(refreshEngines, 2500);
 </script>
