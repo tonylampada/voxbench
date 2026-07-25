@@ -27,9 +27,18 @@ card), so no separate `vocab.txt` download is needed.
 docker build -t tts-f5-tts-ptbr:gpu engines/f5-tts-ptbr/
 ```
 
-Base image is the official `ghcr.io/swivid/f5-tts:main` (torch + CUDA + f5-tts
-preinstalled). Only additions: `fastapi uvicorn num2words` — nothing needed
-pinning; the base image's torch stack is used as-is.
+Base image is the official `ghcr.io/swivid/f5-tts:main` (21.9 GB, CUDA +
+f5-tts 1.1.22 preinstalled).
+
+**Wart — the official image is broken as shipped.** It carries torch
+2.13.0+cu130 next to torchaudio 2.4.0 and torchvision 0.19.0, both built
+against torch 2.4. `import f5_tts` dies immediately (`libtorchaudio.so:
+undefined symbol _ZNK5torch8autograd4Node4nameEv`, and once past that,
+`operator torchvision::nms does not exist` via transformers). The Dockerfile
+fixes it by pinning the newest consistent cu130 pair — `torch==2.11.0` +
+`torchaudio==2.11.0` (torchaudio caps at 2.11 on cu130) — and uninstalling
+torchvision, which nothing here uses and transformers treats as optional.
+Only other addition: `num2words`; fastapi/uvicorn already ship in the base.
 
 ## Run
 
@@ -85,4 +94,11 @@ are accepted as optional `/tts` body fields.
 
 ## VRAM observed
 
-~TODO GB (filled in after smoke test).
+**~1.9 GiB** with both models (en + pt) loaded, measured on the RTX 4090 as
+the delta in `torch.cuda.mem_get_info()` before/after stopping the container.
+
+## Smoke-test timings (RTX 4090)
+
+- `/tts` en, 7.9 s of audio: **1.6 s** wall
+- `/tts` pt, 8.1 s of audio: **0.6 s** wall
+- output: 24 kHz mono 16-bit WAV, peak-normalized
