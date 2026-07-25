@@ -11,19 +11,21 @@ cd "$(dirname "$0")/.."  # repo root; every path below is relative to it
 # tts-<name>:gpu, container is tts-<name>, the server always listens on 8877
 # inside. Context is always "." (the repo root) — every build needs
 # engines/testpage.html and some also bake in voices/.
-# extra-mount: voices = repo voices/ dir, ttscache = coqui model cache, - = none.
+# extra-mount: comma-separated list. voices = repo voices/ dir at /app/voices,
+# voicesroot = same dir at /voices (xtts-v2 resolves clips there),
+# ttscache = coqui model cache, - = none.
 REGISTRY='
-chatterbox-ptbr  8881  gpu  .  -
+chatterbox-ptbr  8881  gpu  .  voices
 qwen3-tts        8882  gpu  .  -
-voxcpm2          8883  gpu  .  -
+voxcpm2          8883  gpu  .  voices
 f5-tts-ptbr      8884  gpu  .  voices
-xtts-v2          8885  gpu  .  ttscache
+xtts-v2          8885  gpu  .  ttscache,voicesroot
 gepard           8886  gpu  .  -
-omnivoice-brpt   8887  gpu  .  -
+omnivoice-brpt   8887  gpu  .  voices
 piper            8888  cpu  .  -
 kokoro           8889  gpu  .  -
-chatterbox-flash 8890  gpu  .  -
-chatterbox-nano  8891  gpu  .  -
+chatterbox-flash 8890  gpu  .  voices
+chatterbox-nano  8891  gpu  .  voices
 # 8892 reserved: fish-s2-pro (verified, PR open, not on master yet; needs HF cache at /hf)
 # 8893 reserved: higgs-tts-3 (not built)
 # 8894 reserved: voxtral-tts (not built)
@@ -130,10 +132,14 @@ cmd_up() {
   fi
   # nano's first-run weight pull crawls at ~0.2 MB/s under hf_xet; plain LFS is 20x faster
   if [ "$e" = chatterbox-nano ]; then RUN_ARGS+=(-e HF_HUB_DISABLE_XET=1); fi
-  case "$EXTRA" in
+  # EXTRA is a comma-separated list: an engine can need more than one mount
+  # (xtts-v2 wants the coqui cache AND the live voices dir).
+  local x; IFS=, read -ra __extra <<< "$EXTRA"
+  for x in "${__extra[@]}"; do case "$x" in
     voices)   RUN_ARGS+=(-v "$PWD/voices:/app/voices:ro") ;;
+    voicesroot) RUN_ARGS+=(-v "$PWD/voices:/voices:ro") ;;  # xtts-v2 resolves clips at /voices
     ttscache) RUN_ARGS+=(-v /home/ai/.local/share/tts:/root/.local/share/tts) ;;
-  esac
+  esac; done
   docker run "${RUN_ARGS[@]}" "tts-$e:gpu" >/dev/null
   wait_healthy "$e"
   if [ "$host" != 127.0.0.1 ]; then echo "also published on http://$host:$PORT"; fi
