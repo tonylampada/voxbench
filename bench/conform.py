@@ -164,7 +164,18 @@ def main():
             check("stream: progressive", ttfb < total * 0.5 or total < 1.0,
                   f"first bytes at {ttfb:.2f}s of {total:.2f}s")
     except urllib.error.HTTPError as e:
-        check("stream", False, f"got {e.code}: {e.read()[:100]!r}")
+        # An engine that cannot stream must say so with a 400 + sentence
+        # (contract, "Streaming response") — that is conformant, not a failure.
+        body = e.read()
+        detail = ""
+        try:
+            detail = json.loads(body)["detail"]
+        except Exception:
+            pass
+        if e.code == 400 and "stream" in str(detail).lower():
+            check("stream: honest cannot-stream 400", True, f'"{str(detail)[:90]}"')
+        else:
+            check("stream", False, f"got {e.code}: {body[:100]!r}")
 
     # ── the 400 catalogue ────────────────────────────────────────────────
     expect_400("400: empty input", {"input": "   "})
