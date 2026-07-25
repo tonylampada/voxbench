@@ -34,7 +34,20 @@ line there). `up` polls `/health` with a heartbeat until the model is loaded; a
 first run may also download weights into the shared HF cache, so give it
 minutes, not seconds (`TTS_UP_TIMEOUT` to extend). It refuses to start a second
 GPU engine while one is running — there is one 24 GB card — unless you pass
-`--force`. Everything publishes on `127.0.0.1` only.
+`--force`.
+
+Everything publishes on `127.0.0.1` by default. To reach an engine (and its
+test page) from another tailnet device — the captain's phone — publish on this
+box's tailnet address instead:
+
+```
+engines/tts up piper --host 100.114.197.65   # or: export TTS_HOST=100.114.197.65
+```
+
+`0.0.0.0` is refused outright: these engines have no authentication of any
+kind, so the network boundary is the auth boundary. A tailnet address is a
+bounded, deliberate choice; `0.0.0.0` would put an unauthenticated TTS service
+on every interface, including whatever public wifi the laptop is on.
 
 ## The contract
 

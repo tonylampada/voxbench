@@ -34,7 +34,12 @@ require() {  # sets PORT/GPU/CTX/EXTRA for an engine name, or dies
 }
 state() { docker inspect -f '{{.State.Status}}' "tts-$1" 2>/dev/null | grep . || echo absent; }
 has_image() { docker image inspect "tts-$1:gpu" >/dev/null 2>&1; }
-healthy() { curl -fsS -m 3 "http://127.0.0.1:$(field "$1" 2)/health" >/dev/null 2>&1; }
+base_url() {  # host:port the container was actually published on; loopback fallback
+  local p
+  p=$(docker port "tts-$1" 8877 2>/dev/null | grep -m1 -v '\[')
+  echo "http://${p:-127.0.0.1:$(field "$1" 2)}"
+}
+healthy() { curl -fsS -m 3 "$(base_url "$1")/health" >/dev/null 2>&1; }
 
 # ── The GPU recipe, in ONE place ─────────────────────────────────────────────
 # Pre-reboot workaround: this box's kernel module (580.159.03) and host libs
@@ -56,14 +61,27 @@ gpu_run_args() {  # appends to RUN_ARGS
 }
 
 cmd_up() {
-  local e=$1 force=${2:-}
+  local e=$1 force='' host=${TTS_HOST:-127.0.0.1}; shift
+  while [ $# -gt 0 ]; do case $1 in
+    --force) force=1; shift ;;
+    --host) host=${2:?--host needs an address}; shift 2 ;;
+    '') shift ;;
+    *) die "up: unknown flag '$1' (--force, --host <addr>)" ;;
+  esac; done
+  # No engine has any authentication — the network boundary IS the auth
+  # boundary. A specific address (loopback, a tailnet IP) is a deliberate,
+  # bounded choice; 0.0.0.0 would expose an unauthenticated TTS service on
+  # every interface, including whatever public wifi this laptop is on.
+  if [ "$host" = 0.0.0.0 ]; then
+    die "refusing --host 0.0.0.0: these engines have no auth, the network boundary is the auth boundary. Bind a specific address instead (e.g. this box's tailnet IP)."
+  fi
   require "$e"
   if [ "$(state "$e")" = running ]; then
-    if healthy "$e"; then echo "tts-$e already up: http://127.0.0.1:$PORT (test page)"; return; fi
+    if healthy "$e"; then echo "tts-$e already up: $(base_url "$e") (test page)"; return; fi
     echo "tts-$e is running but not healthy yet — waiting"; wait_healthy "$e"; return
   fi
   # There is ONE 24 GB card — refuse to start a second GPU engine.
-  if [ "$GPU" = gpu ] && [ "$force" != --force ]; then
+  if [ "$GPU" = gpu ] && [ -z "$force" ]; then
     local o
     for o in $(engines); do
       if [ "$o" != "$e" ] && [ "$(field "$o" 3)" = gpu ] && [ "$(state "$o")" = running ]; then
@@ -80,7 +98,7 @@ cmd_up() {
     docker build -f "engines/$e/Dockerfile" -t "tts-$e:gpu" "$CTX"
   fi
   docker rm -f "tts-$e" >/dev/null 2>&1 || true  # clear a stopped leftover
-  RUN_ARGS=(-d --name "tts-$e" -p "127.0.0.1:$PORT:8877")
+  RUN_ARGS=(-d --name "tts-$e" -p "$host:$PORT:8877")
   if [ "$GPU" = gpu ]; then
     gpu_run_args
     RUN_ARGS+=(-v /home/ai/.cache/huggingface:/root/.cache/huggingface)
@@ -105,7 +123,7 @@ wait_healthy() {
     fi
     sleep 5; echo "  still loading... ($((SECONDS - t0))s)"
   done
-  echo "tts-$e healthy in $((SECONDS - t0))s: http://127.0.0.1:$PORT (test page)"
+  echo "tts-$e healthy in $((SECONDS - t0))s: $(base_url "$e") (test page)"
 }
 
 cmd_down() {
@@ -143,7 +161,7 @@ cmd_say() {
   local body="{\"text\":\"$(json_escape "$text")\",\"lang\":\"$lang\""
   if [ -n "$voice" ]; then body="$body,\"voice\":\"$(json_escape "$voice")\""; fi
   body="$body}"
-  if ! curl -fsS -X POST "http://127.0.0.1:$PORT/tts" \
+  if ! curl -fsS -X POST "$(base_url "$e")/tts" \
        -H 'Content-Type: application/json' -d "$body" -o "$out"; then
     die "synthesis failed — is the engine up? try: engines/tts up $e"
   fi
@@ -152,27 +170,31 @@ cmd_say() {
 
 cmd_voices() {
   require "$1"
-  curl -fsS "http://127.0.0.1:$PORT/voices" || die "no answer — try: engines/tts up $1"
+  curl -fsS "$(base_url "$1")/voices" || die "no answer — try: engines/tts up $1"
   echo
 }
 
 usage() {
   cat <<'EOF'
 usage: engines/tts <command> [args]
-  up <engine> [--force]   build image if missing, start, wait until healthy
+  up <engine> [--force] [--host <addr>]
+                          build image if missing, start, wait until healthy;
+                          --host publishes there instead of 127.0.0.1
+                          (0.0.0.0 is refused: no auth on these engines)
   down <engine>           stop it
   ls                      dashboard: port / image / container / health
   logs <engine> [-f]      tail its logs
   say <engine> "text" [--lang en|pt] [--voice V] [--out FILE]
                           synthesize a WAV (default /tmp/<engine>-<lang>.wav)
   voices <engine>         list its voices
-env: TTS_GPU_MODE=nvdrv|gpus-all (default nvdrv until the reboot), TTS_UP_TIMEOUT=secs
+env: TTS_GPU_MODE=nvdrv|gpus-all (default nvdrv until the reboot), TTS_UP_TIMEOUT=secs,
+     TTS_HOST=addr (same as --host, set once per session)
 EOF
   exit 1
 }
 
 case "${1:-}" in
-  up)     cmd_up "${2:?usage: tts up <engine> [--force]}" "${3:-}" ;;
+  up)     shift; [ $# -ge 1 ] || usage; cmd_up "$@" ;;
   down)   cmd_down "${2:?usage: tts down <engine>}" ;;
   ls)     cmd_ls ;;
   logs)   shift; cmd_logs "${@:?usage: tts logs <engine> [-f]}" ;;
