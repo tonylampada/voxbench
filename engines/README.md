@@ -36,9 +36,10 @@ minutes, not seconds (`TTS_UP_TIMEOUT` to extend). It refuses to start a second
 GPU engine while one is running — there is one 24 GB card — unless you pass
 `--force`.
 
-Everything publishes on `127.0.0.1` by default. To reach an engine (and its
-test page) from another tailnet device — the captain's phone — publish on this
-box's tailnet address instead:
+Everything publishes on `127.0.0.1`, always — local tools depend on it. To
+also reach an engine (and its test page) from another tailnet device — the
+captain's phone — `--host` adds a second publish on this box's tailnet
+address, same port:
 
 ```
 engines/tts up piper --host 100.114.197.65   # or: export TTS_HOST=100.114.197.65
