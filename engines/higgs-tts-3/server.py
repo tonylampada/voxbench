@@ -53,6 +53,10 @@ def start_upstream() -> None:
         "--model-path", MODEL,
         "--port", "8000",
         "--host", "127.0.0.1",
+        # 24 GB card: the model declares 8192 ctx, but bench sentences are
+        # tiny — capping the declared context bounds KV/CUDA-graph allocation
+        # (sibling engine Fish S2 Pro OOMed exactly here).
+        "--context-length", os.environ.get("HIGGS_CONTEXT_LEN", "4096"),
     ]
     # Reference clips are mounted at /app/voices; upstream refuses to read
     # local files outside --allowed-local-media-path.
