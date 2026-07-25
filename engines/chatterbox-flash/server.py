@@ -1,31 +1,45 @@
 #!/usr/bin/env python3
 """
-Chatterbox Flash TTS engine — bench contract adapter.
+Chatterbox Flash TTS engine — bench contract adapter (docs/contract.md).
 
-en -> ResembleAI/chatterbox-flash (block-diffusion, parallel unmasking, English-only)
-pt -> 400 (the model is English-only)
+ResembleAI/chatterbox-flash (block-diffusion, parallel unmasking, English-only).
+No builtin voice (no conds.pt in the release) — every generation clones from a
+reference clip, so the default voice is a library reference.
 """
 import io
-import re
+import json
 import wave
 from pathlib import Path
-from typing import Optional, Generator
+from typing import Optional
 
 import torch
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from chatterbox_flash import ChatterboxFlashTTS
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 SAMPLE_RATE = 24000
-VOICES_DIR = Path("voices")
-# Chatterbox Flash has no builtin voice (no conds.pt in the release) — every
-# generation clones from a reference clip, so a default is mandatory.
-DEFAULT_VOICE = "en_female.flac"
+DEFAULT_VOICE = "kokoro-af-heart-en"
 DEFAULT_EXAGGERATION = 0.5
+
+PARAMS = {
+    "exaggeration": {"type": "number", "min": 0.0, "max": 2.0, "default": 0.5,
+                     "description": "emotion intensity of the delivery (0 = flat, 0.5 = neutral, 2 = theatrical)"},
+    "temperature": {"type": "number", "min": 0.05, "max": 2.0, "default": 0.6,
+                    "description": "sampling temperature; higher = more varied, less stable delivery"},
+    "num_steps": {"type": "integer", "min": 1, "max": 50, "default": 10,
+                  "description": "diffusion unmasking steps per block; more = better quality, slower"},
+}
+
+# Library manifest: mounted live if voices/ is mounted, else the copy baked at build.
+LIBRARY_DIR = Path("/app/voices/library")
+_manifest_file = LIBRARY_DIR / "manifest.json"
+MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file.exists() else []
+REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 
 app = FastAPI(title="Chatterbox Flash TTS Engine")
 models = {}
@@ -34,31 +48,61 @@ models = {}
 conds_cache = {}
 
 
-class TTSRequest(BaseModel):
-    text: str
-    lang: str = "en"
+@app.exception_handler(RequestValidationError)
+async def validation_to_400(request, exc):  # the contract has no 422s
+    e = exc.errors()[0]
+    where = ".".join(str(p) for p in e["loc"] if p != "body")
+    return JSONResponse(status_code=400, content={"detail": f"{where or 'body'}: {e['msg']}"})
+
+
+class SpeechRequest(BaseModel):
+    input: str = ""
     voice: Optional[str] = None
-    chunk_size: int = 3
-    exaggeration: Optional[float] = None
-    temperature: Optional[float] = None
-    num_steps: Optional[int] = None
+    lang: Optional[str] = None
+    response_format: Optional[str] = None
+    speed: Optional[float] = None  # OpenAI-compat alias; this engine has no speed knob
+    stream: bool = False
+    params: dict = {}
 
 
-def split_into_sentences(text: str) -> list[str]:
-    sentences = re.split(r'(?<=[.!?…])\s+', text.strip())
-    return [s for s in sentences if s]
+def bad(msg: str):
+    raise HTTPException(status_code=400, detail=msg)
 
 
-def chunk_sentences(sentences: list[str], chunk_size: int) -> list[str]:
-    return [' '.join(sentences[i:i + chunk_size]) for i in range(0, len(sentences), chunk_size)]
+def resolve(req: SpeechRequest) -> str:
+    """-> audio prompt path (this engine always clones)."""
+    lang = req.lang
+    if lang is not None and lang != "en":
+        bad(f"lang '{lang}' not supported — Chatterbox Flash is English-only")
+    if req.voice is None:
+        return str(LIBRARY_DIR / REFERENCES[DEFAULT_VOICE]["file"])
+    if req.voice not in REFERENCES:
+        bad(f"unknown voice '{req.voice}' — see /v1/voices")
+    e = REFERENCES[req.voice]
+    if lang is not None and lang != e["lang"]:
+        bad(f"voice '{req.voice}' speaks '{e['lang']}', not '{lang}'")
+    if e["lang"] != "en":
+        bad(f"voice '{req.voice}' speaks '{e['lang']}' — Chatterbox Flash is English-only")
+    return str(LIBRARY_DIR / e["file"])
 
 
-def get_voice_path(voice: Optional[str]) -> str:
-    voice = voice or DEFAULT_VOICE
-    for candidate in [VOICES_DIR / voice] + [VOICES_DIR / f"{voice}{ext}" for ext in (".flac", ".wav", ".mp3")]:
-        if candidate.exists():
-            return str(candidate)
-    raise HTTPException(status_code=400, detail=f"Unknown voice: {voice}")
+def effective_params(req: SpeechRequest) -> dict:
+    if not isinstance(req.params, dict):
+        bad("params must be an object")
+    knobs = {}
+    for k, v in req.params.items():
+        if k not in PARAMS:
+            bad(f"unknown param '{k}' — this engine has {sorted(PARAMS)} (see /v1/params)")
+        p = PARAMS[k]
+        want = int if p["type"] == "integer" else (int, float)
+        if isinstance(v, bool) or not isinstance(v, want):
+            bad(f"params.{k} must be a {p['type']}")
+        if not p["min"] <= v <= p["max"]:
+            bad(f"params.{k} {v} out of range [{p['min']}, {p['max']}]")
+        knobs[k] = v
+    if req.speed is not None and req.speed != 1.0:
+        bad("this engine has no speed knob — only the no-op speed 1.0 is accepted")
+    return knobs
 
 
 def get_conds(voice_path: str, exaggeration: float):
@@ -68,16 +112,11 @@ def get_conds(voice_path: str, exaggeration: float):
     return conds_cache[key]
 
 
-def generate_speech(text, voice_path, exaggeration=None, temperature=None, num_steps=None) -> np.ndarray:
+def generate_speech(text: str, voice_path: str, knobs: dict) -> np.ndarray:
     print(f"[en] {text}")
     tts = models["en"]
-    tts.conds = get_conds(voice_path, exaggeration if exaggeration is not None else DEFAULT_EXAGGERATION)
-    kwargs = {}
-    if temperature is not None:
-        kwargs["temperature"] = temperature
-    if num_steps is not None:
-        kwargs["num_steps"] = num_steps
-    wav = tts.generate(text, **kwargs)
+    tts.conds = get_conds(voice_path, knobs.pop("exaggeration", DEFAULT_EXAGGERATION))
+    wav = tts.generate(text, **knobs)
 
     audio = wav.cpu().numpy().squeeze()
     max_val = np.abs(audio).max()
@@ -97,23 +136,13 @@ def numpy_to_wav_bytes(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> byt
     return buffer.getvalue()
 
 
-def check_lang(lang: str):
-    if lang == "pt":
-        raise HTTPException(
-            status_code=400,
-            detail="Chatterbox Flash is English-only; 'pt' is not supported by this engine.",
-        )
-    if lang != "en":
-        raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
-
-
 @app.on_event("startup")
 def startup():
     print(f"Device: {DEVICE}")
     print("Loading Chatterbox Flash...")
     models["en"] = ChatterboxFlashTTS.from_pretrained(device=DEVICE)
-    # Warm the default voice so the first /tts doesn't pay conditioning prep.
-    get_conds(get_voice_path(None), DEFAULT_EXAGGERATION)
+    # Warm the default voice so the first request doesn't pay conditioning prep.
+    get_conds(str(LIBRARY_DIR / REFERENCES[DEFAULT_VOICE]["file"]), DEFAULT_EXAGGERATION)
     print("Chatterbox Flash engine ready")
 
 
@@ -124,45 +153,36 @@ def testpage():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "models_loaded": list(models.keys()), "queue_size": 0}
+    if "en" not in models:
+        return JSONResponse(status_code=503, content={"status": "loading"})
+    return {"status": "ok", "engine": "chatterbox-flash"}
 
 
-@app.get("/voices")
-def list_voices():
-    voices = sorted(f.name for f in VOICES_DIR.iterdir() if f.suffix in (".flac", ".wav", ".mp3")) if VOICES_DIR.exists() else []
-    return {"voices": voices}
+@app.get("/v1/voices")
+def voices():
+    out = [{"id": vid, "name": e["voice"], "kind": "reference", "origin": e["engine"],
+            "langs": [e["lang"]], "gender": e.get("gender", "unknown"), "seconds": e["seconds"]}
+           for vid, e in sorted(REFERENCES.items())]
+    return {"voices": out}
 
 
-@app.post("/tts")
-def tts(request: TTSRequest):
-    check_lang(request.lang)
-    audio = generate_speech(
-        request.text, get_voice_path(request.voice),
-        request.exaggeration, request.temperature, request.num_steps,
-    )
+@app.get("/v1/params")
+def params():
+    return {"params": PARAMS}
+
+
+@app.post("/v1/audio/speech")
+def speech(req: SpeechRequest):
+    if not req.input.strip():
+        bad("input is required and must be non-empty")
+    voice_path = resolve(req)
+    knobs = effective_params(req)
+    if req.stream:
+        bad("this engine cannot stream — chatterbox-flash synthesizes the whole utterance at once; use stream: false")
+    if (req.response_format or "wav") != "wav":
+        bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
+    audio = generate_speech(req.input, voice_path, knobs)
     return Response(content=numpy_to_wav_bytes(audio), media_type="audio/wav")
-
-
-def stream_chunks(request: TTSRequest, voice_path: str) -> Generator[bytes, None, None]:
-    chunks = chunk_sentences(split_into_sentences(request.text), request.chunk_size)
-    for chunk in chunks:
-        audio = generate_speech(
-            chunk, voice_path,
-            request.exaggeration, request.temperature, request.num_steps,
-        )
-        wav_bytes = numpy_to_wav_bytes(audio)
-        yield len(wav_bytes).to_bytes(4, 'big') + wav_bytes
-
-
-@app.post("/tts/stream")
-def tts_stream(request: TTSRequest):
-    check_lang(request.lang)
-    voice_path = get_voice_path(request.voice)
-    return StreamingResponse(
-        stream_chunks(request, voice_path),
-        media_type="application/octet-stream",
-        headers={"X-Audio-Format": "wav", "X-Sample-Rate": str(SAMPLE_RATE)},
-    )
 
 
 if __name__ == "__main__":
