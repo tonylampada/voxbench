@@ -22,10 +22,15 @@ gepard           8886  gpu  .  -
 omnivoice-brpt   8887  gpu  .  -
 piper            8888  cpu  .  -
 kokoro           8889  gpu  .  -
+chatterbox-flash 8890  gpu  .  -
+chatterbox-nano  8891  gpu  .  -
+# 8892 reserved: fish-s2-pro (verified, PR open, not on master yet; needs HF cache at /hf)
+# 8893 reserved: higgs-tts-3 (not built)
+# 8894 reserved: voxtral-tts (not built)
 '
 
 die() { echo "tts: $*" >&2; exit 1; }
-engines() { echo "$REGISTRY" | awk 'NF {print $1}'; }
+engines() { echo "$REGISTRY" | awk 'NF && $1 !~ /^#/ {print $1}'; }
 field() { echo "$REGISTRY" | awk -v e="$1" -v f="$2" '$1 == e {print $f}'; }
 require() {  # sets PORT/GPU/CTX/EXTRA for an engine name, or dies
   PORT=$(field "$1" 2)
@@ -33,6 +38,9 @@ require() {  # sets PORT/GPU/CTX/EXTRA for an engine name, or dies
   GPU=$(field "$1" 3); CTX=$(field "$1" 4); EXTRA=$(field "$1" 5)
 }
 state() { docker inspect -f '{{.State.Status}}' "tts-$1" 2>/dev/null | grep . || echo absent; }
+# Is this container running the model on CPU? (nano's NANO_DEVICE switch — the
+# one engine with a real CPU path; a cpu-mode container must not trip the GPU guard)
+cpu_mode() { docker inspect -f '{{.Config.Env}}' "tts-$1" 2>/dev/null | grep -q 'NANO_DEVICE=cpu'; }
 has_image() { docker image inspect "tts-$1:gpu" >/dev/null 2>&1; }
 healthy() { curl -fsS -m 3 "http://127.0.0.1:$(field "$1" 2)/health" >/dev/null 2>&1; }
 
@@ -56,12 +64,13 @@ gpu_run_args() {  # appends to RUN_ARGS
 }
 
 cmd_up() {
-  local e=$1 force='' host=${TTS_HOST:-127.0.0.1}; shift
+  local e=$1 force='' host=${TTS_HOST:-127.0.0.1} cpu=''; shift
   while [ $# -gt 0 ]; do case $1 in
     --force) force=1; shift ;;
+    --cpu) cpu=1; shift ;;
     --host) host=${2:?--host needs an address}; shift 2 ;;
     '') shift ;;
-    *) die "up: unknown flag '$1' (--force, --host <addr>)" ;;
+    *) die "up: unknown flag '$1' (--force, --cpu, --host <addr>)" ;;
   esac; done
   # No engine has any authentication — the network boundary IS the auth
   # boundary. A specific address (loopback, a tailnet IP) is a deliberate,
@@ -71,6 +80,18 @@ cmd_up() {
     die "refusing --host 0.0.0.0: these engines have no auth, the network boundary is the auth boundary. Bind a specific address instead (e.g. this box's tailnet IP)."
   fi
   require "$e"
+  if [ -n "$cpu" ]; then
+    [ "$e" = chatterbox-nano ] || die "--cpu: only chatterbox-nano has a CPU path (NANO_DEVICE)"
+    GPU=cpu  # no device flags, and the GPU stampede guard below doesn't apply
+  fi
+  if [ "$e" = chatterbox-nano ] && [ "$(state "$e")" = running ]; then
+    local have=gpu want=gpu
+    if cpu_mode "$e"; then have=cpu; fi
+    if [ -n "$cpu" ]; then want=cpu; fi
+    if [ "$have" != "$want" ]; then
+      die "tts-$e is running in $have mode, you asked for $want — 'engines/tts down $e' first"
+    fi
+  fi
   if [ "$(state "$e")" = running ]; then
     if healthy "$e"; then echo "tts-$e already up: http://127.0.0.1:$PORT (test page)"; return; fi
     echo "tts-$e is running but not healthy yet — waiting"; wait_healthy "$e"; return
@@ -79,16 +100,18 @@ cmd_up() {
   if [ "$GPU" = gpu ] && [ -z "$force" ]; then
     local o
     for o in $(engines); do
-      if [ "$o" != "$e" ] && [ "$(field "$o" 3)" = gpu ] && [ "$(state "$o")" = running ]; then
+      if [ "$o" != "$e" ] && [ "$(field "$o" 3)" = gpu ] && [ "$(state "$o")" = running ] && ! cpu_mode "$o"; then
         die "GPU engine '$o' is already running and the card fits one big model. Run 'engines/tts down $o' first, or pass --force if you know both fit."
       fi
     done
   fi
   if ! has_image "$e"; then
-    if [ "$e" = xtts-v2 ] && ! docker image inspect chatterbox-tts:gpu >/dev/null 2>&1; then
-      echo "building chatterbox-tts:gpu first (xtts-v2's image derives from it)"
-      docker build -t chatterbox-tts:gpu .
-    fi
+    case "$e" in xtts-v2|chatterbox-flash|chatterbox-nano)
+      if ! docker image inspect chatterbox-tts:gpu >/dev/null 2>&1; then
+        echo "building chatterbox-tts:gpu first ($e's image derives from it)"
+        docker build -t chatterbox-tts:gpu .
+      fi ;;
+    esac
     echo "image tts-$e:gpu missing — building (this can take many minutes)"
     docker build -f "engines/$e/Dockerfile" -t "tts-$e:gpu" "$CTX"
   fi
@@ -101,6 +124,12 @@ cmd_up() {
     gpu_run_args
     RUN_ARGS+=(-v /home/ai/.cache/huggingface:/root/.cache/huggingface)
   fi
+  if [ -n "$cpu" ]; then
+    # nano on CPU: no device flags, but it still pulls weights from the host HF cache
+    RUN_ARGS+=(-e NANO_DEVICE=cpu -v /home/ai/.cache/huggingface:/root/.cache/huggingface)
+  fi
+  # nano's first-run weight pull crawls at ~0.2 MB/s under hf_xet; plain LFS is 20x faster
+  if [ "$e" = chatterbox-nano ]; then RUN_ARGS+=(-e HF_HUB_DISABLE_XET=1); fi
   case "$EXTRA" in
     voices)   RUN_ARGS+=(-v "$PWD/voices:/app/voices:ro") ;;
     ttscache) RUN_ARGS+=(-v /home/ai/.local/share/tts:/root/.local/share/tts) ;;
@@ -138,6 +167,7 @@ cmd_ls() {
     require "$e"
     img=no; if has_image "$e"; then img=yes; fi
     st=$(state "$e")
+    if [ "$st" = running ] && cpu_mode "$e"; then GPU=cpu; fi  # honest about the running mode
     h=-; if [ "$st" = running ]; then if healthy "$e"; then h=ok; else h=loading; fi; fi
     printf '%-16s %-6s %-4s %-6s %-9s %s\n' "$e" "$PORT" "$GPU" "$img" "$st" "$h"
   done
@@ -176,8 +206,9 @@ cmd_voices() {
 usage() {
   cat <<'EOF'
 usage: engines/tts <command> [args]
-  up <engine> [--force] [--host <addr>]
+  up <engine> [--force] [--cpu] [--host <addr>]
                           build image if missing, start, wait until healthy;
+                          --cpu runs the model on CPU (chatterbox-nano only);
                           --host publishes on <addr> IN ADDITION to 127.0.0.1
                           (0.0.0.0 is refused: no auth on these engines)
   down <engine>           stop it
