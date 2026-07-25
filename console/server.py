@@ -31,13 +31,24 @@ last_error = {}  # name -> last failed `tts up` message, cleared on next up/down
 # and pt); user additions/deletions persist in a JSON file next to this server.
 # No file until the first change — the seeds live here and always come back.
 PHRASES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "phrases.json")
+# short/long verbatim from bench/measure.py's bake-off sentences, medium from
+# bench/mkvoicelib.py's reference-clip seed — one text means one thing across
+# the measurements, the listening pages and this screen. The long texts are
+# multi-sentence on purpose: they expose context-wall re-reads and dropped
+# final clauses that a repeated sentence would hide.
 SEED_PHRASES = [
-    {"label": "short · en", "text": "The quick brown fox jumps over the lazy dog. It barked back, quite offended. Nobody expected that."},
-    {"label": "short · pt", "text": "Um cachorro latiu para o carteiro, que fingiu não ouvir. Ninguém esperava por isso."},
+    {"label": "short · en", "text": "Captain, the deploy is green. Two pull requests merged, one waiting on your review."},
+    {"label": "short · pt", "text": "Capitão, o deploy passou. Dois pull requests mergeados, um esperando a sua revisão."},
     {"label": "medium · en", "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."},
     {"label": "medium · pt", "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."},
-    {"label": "long · en", "text": "The quick brown fox jumps over the lazy dog. " * 8},
-    {"label": "long · pt", "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Os barcos balançavam devagar, presos aos seus cabos, e um cheiro de sal e madeira molhada subia do cais. Um velho pescador consertava a rede sem pressa, como quem já viu todas as tempestades que o mar sabe fazer. Não aconteceu grande coisa naquele dia, e era exatamente isso que todo mundo esperava."},
+    {"label": "long · en", "text": "Captain, here is the state of the fleet. The audio artifact work is merged and live, so a "
+                                   "voice sample now plays inside the card viewer instead of only offering a download. Nine text "
+                                   "to speech engines are being wrapped in containers tonight, each behind the same interface, so "
+                                   "the comparison is honest. Nothing is blocked, and nothing is on fire."},
+    {"label": "long · pt", "text": "Capitão, segue o estado da frota. O trabalho de áudio nos artefatos está mergeado e no ar, "
+                                   "então uma amostra de voz agora toca dentro do visualizador do card em vez de só oferecer "
+                                   "download. Nove motores de síntese de voz estão sendo empacotados em containers esta noite, "
+                                   "cada um atrás da mesma interface, para a comparação ser honesta. Nada travado, nada pegando fogo."},
 ]
 
 
