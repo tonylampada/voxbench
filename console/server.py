@@ -14,7 +14,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TTS = os.path.join(ROOT, "engines", "tts")
-PORT = int(os.environ.get("CONSOLE_PORT", "8880"))
+PORT = int(os.environ.get("CONSOLE_PORT", "9000"))  # well clear of the engine block 8881-8894
 
 # Host path of the driver libs that match the kernel module — engines/tts
 # mounts this into every GPU container (see gpu_run_args there). Pulled out of
@@ -51,26 +51,52 @@ def uptime_s(name):
     return int(time.time() - datetime.fromisoformat(ts).timestamp())
 
 
-def read_vram():
-    """(dict|None, reason). nvidia-smi needs libs matching the kernel module;
-    plain host invocation fails until the reboot aligns them (NVML mismatch)."""
-    q = ["nvidia-smi", "--query-gpu=memory.used,memory.total",
-         "--format=csv,noheader,nounits"]
-    attempts = [(q, None)]
-    if NVDRV:
-        attempts.append((q, {**os.environ, "LD_LIBRARY_PATH": NVDRV}))
+def smi(query):
+    """nvidia-smi with the env fallbacks; (stdout, None) or (None, reason).
+    Plain invocation fails until the reboot aligns kernel module and host libs
+    (NVML mismatch), so retry with the driver-matched libs from engines/tts."""
+    argv = ["nvidia-smi", query, "--format=csv,noheader,nounits"]
+    envs = [None] + ([{**os.environ, "LD_LIBRARY_PATH": NVDRV}] if NVDRV else [])
     reasons = []
-    for argv, env in attempts:
+    for env in envs:
         try:
             r = run(argv, env=env)
         except OSError as e:
             reasons.append(str(e))
             continue
         if r.returncode == 0:
-            used, total = (int(x) for x in r.stdout.split(","))
-            return {"used_mb": used, "total_mb": total}, None
+            return r.stdout, None
         reasons.append(r.stderr.strip().splitlines()[-1] if r.stderr else "failed")
     return None, "nvidia-smi failed on host: " + "; ".join(reasons)
+
+
+def read_vram():
+    out, why = smi("--query-gpu=memory.used,memory.total")
+    if out is None:
+        return None, why
+    used, total = (int(x) for x in out.split(","))
+    return {"used_mb": used, "total_mb": total}, None
+
+
+# Desktop/idle baseline. Above this with no registered engine resident, someone
+# outside the registry holds the card (a container from another branch, a stray
+# process) — report that, never "free".
+IDLE_VRAM_MB = 1024
+
+
+def gpu_other(vram):
+    """What holds the card when no registered engine does, or None if idle."""
+    if not vram or vram["used_mb"] <= IDLE_VRAM_MB:
+        return None
+    procs = []
+    out, _ = smi("--query-compute-apps=pid,process_name,used_gpu_memory")
+    for line in (out or "").splitlines():
+        if line.strip():
+            pid, rest = line.split(",", 1)
+            name, used = rest.rsplit(",", 1)
+            procs.append({"pid": int(pid), "name": name.strip(),
+                          "used_mb": int(used)})
+    return {"used_mb": vram["used_mb"], "processes": procs}
 
 
 def gpu_holder(reg):
@@ -218,11 +244,15 @@ class Handler(BaseHTTPRequestHandler):
                 k, v = line.split(":")
                 mem[k] = int(v.split()[0]) // 1024
             vram, why = read_vram()
+            holder = gpu_holder(registry())
             self.send_json(200, {
                 "ram": {"used_mb": mem["MemTotal"] - mem["MemAvailable"],
                         "total_mb": mem["MemTotal"]},
                 "vram": vram if vram else {"unavailable": why},
-                "gpu_engine": gpu_holder(registry()),
+                "gpu_engine": holder,
+                # the card can be taken by something the registry doesn't know
+                # (a container from another branch, a stray process) — say so
+                "gpu_other": None if holder else gpu_other(vram),
             })
         elif m := re.fullmatch(r"/api/engines/([\w.-]+)/(voices|params)", self.path):
             self.proxy(m.group(1), f"/v1/{m.group(2)}")

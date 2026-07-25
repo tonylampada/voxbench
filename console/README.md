@@ -3,7 +3,7 @@
 Manage the TTS engines and see the machine from the browser.
 
 ```
-python3 console/server.py        # → http://127.0.0.1:8880
+python3 console/server.py        # → http://127.0.0.1:9000
 ```
 
 Runs on the host, outside docker, and drives containers by shelling out to
@@ -17,7 +17,7 @@ Stdlib only, no dependencies, no build step. `CONSOLE_PORT` overrides the port.
 
 ```
 GET  /api/engines                 [{name, port, gpu, state, healthy, vram_mb, uptime_s, error, detail}]
-GET  /api/machine                 {ram, vram, gpu_engine}
+GET  /api/machine                 {ram, vram, gpu_engine, gpu_other}
 POST /api/engines/<name>/up       202 loading | 409 with the tts script's refusal
 POST /api/engines/<name>/down
 GET  /api/engines/<name>/voices   proxies GET /v1/voices
@@ -32,3 +32,7 @@ verbatim, naming the engine that holds the card. VRAM is read with host
 into containers (plain `nvidia-smi` fails until the reboot aligns driver and
 libs); if no route works the panel says "unavailable" and why, never a fake
 number.
+
+If VRAM is well above idle and no registered engine is resident — a container
+from another branch, a stray process — `gpu_other` reports how much is taken
+and by which pids, and the panel warns instead of claiming the card is free.

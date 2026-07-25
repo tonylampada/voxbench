@@ -29,6 +29,7 @@
   .detail { color: #7a8290; font-size: .8rem; }
   a { color: #4c8dd6; }
   #gpuline { color: #9aa3af; margin: 0 0 1rem; font-size: .9rem; }
+  #gpuline.warn { color: #d6b44c; }
 </style>
 
 <h1>TTS console <small>— engines on this machine, loopback only</small></h1>
@@ -77,8 +78,14 @@ async function refresh() {
     $('vramwhy').hidden = true;
     bar($('vrambar'), $('vramtxt'), m.vram.used_mb, m.vram.total_mb);
   }
+  $('gpuline').classList.toggle('warn', !!m.gpu_other);
   $('gpuline').textContent = m.gpu_engine
     ? `GPU: held by ${m.gpu_engine} — one 24 GB card fits one big model; stop it to load another.`
+    : m.gpu_other
+    ? `GPU: ${mb(m.gpu_other.used_mb)} in use by something outside this registry` +
+      (m.gpu_other.processes.length
+        ? ` (${m.gpu_other.processes.map(p => `pid ${p.pid} ${p.name} ${mb(p.used_mb)}`).join(', ')})`
+        : '') + ` — no engine here holds it, and a big model may not fit.`
     : 'GPU: free.';
 
   $('rows').replaceChildren(...engines.map(e => {
