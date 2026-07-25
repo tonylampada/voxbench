@@ -1,0 +1,253 @@
+#!/usr/bin/env python3
+# console — control plane for engines/. Runs on the host, outside docker, and
+# drives containers by shelling out to engines/tts (the registry of record —
+# nothing about names/ports/gpu is restated here). Loopback only: the engines
+# have no auth and neither does this; the network boundary is the auth boundary.
+import json
+import os
+import re
+import subprocess
+import threading
+import time
+from datetime import datetime, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TTS = os.path.join(ROOT, "engines", "tts")
+PORT = int(os.environ.get("CONSOLE_PORT", "8880"))
+
+# Host path of the driver libs that match the kernel module — engines/tts
+# mounts this into every GPU container (see gpu_run_args there). Pulled out of
+# the script so the workaround lives in exactly one place.
+_m = re.search(r"-v (\S+):/opt/nvdrv", open(TTS).read())
+NVDRV = _m.group(1) if _m else None
+
+lock = threading.Lock()
+ops = {}  # name -> {"proc": Popen, "log": [lines], "t0": epoch} while `tts up` runs
+last_error = {}  # name -> last failed `tts up` message, cleared on next up/down
+
+
+def run(argv, **kw):
+    return subprocess.run(argv, capture_output=True, text=True, timeout=120, **kw)
+
+
+def registry():
+    """name -> {port, gpu, container, health} parsed from `engines/tts ls`."""
+    out = run([TTS, "ls"]).stdout
+    reg = {}
+    for line in out.splitlines()[1:]:
+        f = line.split()
+        if len(f) == 6:
+            reg[f[0]] = {"port": int(f[1]), "gpu": f[2] == "gpu",
+                         "container": f[4], "health": f[5]}
+    return reg
+
+
+def uptime_s(name):
+    r = run(["docker", "inspect", "-f", "{{.State.StartedAt}}", f"tts-{name}"])
+    if r.returncode != 0:
+        return None
+    ts = re.sub(r"\.(\d{6})\d*", r".\1", r.stdout.strip()).replace("Z", "+00:00")
+    return int(time.time() - datetime.fromisoformat(ts).timestamp())
+
+
+def read_vram():
+    """(dict|None, reason). nvidia-smi needs libs matching the kernel module;
+    plain host invocation fails until the reboot aligns them (NVML mismatch)."""
+    q = ["nvidia-smi", "--query-gpu=memory.used,memory.total",
+         "--format=csv,noheader,nounits"]
+    attempts = [(q, None)]
+    if NVDRV:
+        attempts.append((q, {**os.environ, "LD_LIBRARY_PATH": NVDRV}))
+    reasons = []
+    for argv, env in attempts:
+        try:
+            r = run(argv, env=env)
+        except OSError as e:
+            reasons.append(str(e))
+            continue
+        if r.returncode == 0:
+            used, total = (int(x) for x in r.stdout.split(","))
+            return {"used_mb": used, "total_mb": total}, None
+        reasons.append(r.stderr.strip().splitlines()[-1] if r.stderr else "failed")
+    return None, "nvidia-smi failed on host: " + "; ".join(reasons)
+
+
+def gpu_holder(reg):
+    """The engine currently resident on the card, or None. cpu-mode nano
+    (NANO_DEVICE=cpu) doesn't hold the card — same rule as engines/tts."""
+    for name, e in reg.items():
+        if e["gpu"] and e["container"] == "running":
+            r = run(["docker", "inspect", "-f", "{{.Config.Env}}", f"tts-{name}"])
+            if "NANO_DEVICE=cpu" not in r.stdout:
+                return name
+    return None
+
+
+def engines_json():
+    reg = registry()
+    vram, _ = read_vram()
+    holder = gpu_holder(reg)
+    out = []
+    for name, e in reg.items():
+        with lock:
+            op = ops.get(name)
+            state = ("ready" if e["health"] == "ok" else "loading") \
+                if e["container"] == "running" else ("loading" if op else "stopped")
+            item = {
+                "name": name, "port": e["port"],
+                "gpu": "gpu" if e["gpu"] else "cpu", "state": state,
+                "healthy": e["health"] == "ok",
+                # one card, one model: the resident engine owns whatever is used
+                "vram_mb": vram["used_mb"] if vram and name == holder else None,
+                "uptime_s": uptime_s(name) if e["container"] == "running" else None,
+                "error": last_error.get(name),
+                "detail": op["log"][-1].strip() if op and op["log"] else None,
+            }
+        out.append(item)
+    return out
+
+
+def start_engine(name):
+    with lock:
+        if name in ops:
+            return 202, {"state": "loading"}
+        last_error.pop(name, None)
+        p = subprocess.Popen([TTS, "up", name], stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT, text=True)
+        op = ops[name] = {"proc": p, "log": [], "t0": time.time()}
+
+    def pump():
+        for line in p.stdout:
+            op["log"].append(line)
+        p.wait()
+        with lock:
+            ops.pop(name, None)
+            if p.returncode != 0:
+                msg = [l for l in op["log"] if l.strip()]
+                last_error[name] = (msg[-1].strip() if msg else "tts up failed") \
+                    .removeprefix("tts: ")
+    threading.Thread(target=pump, daemon=True).start()
+
+    # The GPU-conflict refusal in `tts up` is instant — give it a moment so the
+    # browser gets the refusal (naming the resident engine) as a real answer
+    # instead of a phantom "loading".
+    for _ in range(20):
+        if p.poll() is not None:
+            break
+        time.sleep(0.1)
+    if p.poll() is not None and p.returncode != 0:
+        time.sleep(0.2)  # let pump() record the message
+        with lock:
+            return 409, {"error": last_error.get(name, "tts up failed")}
+    return 202, {"state": "loading"}
+
+
+def stop_engine(name):
+    with lock:
+        last_error.pop(name, None)
+    r = run([TTS, "down", name])
+    if r.returncode != 0:
+        return 500, {"error": (r.stderr or r.stdout).strip()}
+    return 200, {"state": "stopped"}
+
+
+class Handler(BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
+    def send_json(self, code, obj):
+        body = json.dumps(obj).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def engine_or_404(self, name):
+        reg = registry()
+        if name not in reg:
+            self.send_json(404, {"error": f"unknown engine '{name}'"})
+            return None
+        return reg[name]
+
+    def proxy(self, name, path):
+        """Forward to the engine on loopback, pass bodies through unchanged,
+        stream the response (speech can be chunked PCM)."""
+        e = self.engine_or_404(name)
+        if not e:
+            return
+        if e["container"] != "running":
+            return self.send_json(502, {"error": f"{name} is not running — start it first"})
+        import http.client
+        body = None
+        if self.command == "POST":
+            body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+        conn = http.client.HTTPConnection("127.0.0.1", e["port"], timeout=600)
+        try:
+            conn.request(self.command, path, body=body,
+                         headers={"Content-Type": self.headers.get("Content-Type",
+                                                                   "application/json")})
+            r = conn.getresponse()
+        except OSError as ex:
+            return self.send_json(502, {"error": f"{name} did not answer: {ex}"})
+        self.send_response(r.status)
+        for h in ("Content-Type", "x-sample-rate"):
+            if r.getheader(h):
+                self.send_header(h, r.getheader(h))
+        # stream with no Content-Length: delimit by close (works mid-synthesis)
+        self.send_header("Connection", "close")
+        self.close_connection = True
+        self.end_headers()
+        while chunk := r.read(65536):
+            self.wfile.write(chunk)
+        conn.close()
+
+    def do_GET(self):
+        if self.path == "/" or self.path == "/index.html":
+            body = open(os.path.join(os.path.dirname(__file__), "index.html"), "rb").read()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        elif self.path == "/api/engines":
+            self.send_json(200, engines_json())
+        elif self.path == "/api/machine":
+            mem = {}
+            for line in open("/proc/meminfo"):
+                k, v = line.split(":")
+                mem[k] = int(v.split()[0]) // 1024
+            vram, why = read_vram()
+            self.send_json(200, {
+                "ram": {"used_mb": mem["MemTotal"] - mem["MemAvailable"],
+                        "total_mb": mem["MemTotal"]},
+                "vram": vram if vram else {"unavailable": why},
+                "gpu_engine": gpu_holder(registry()),
+            })
+        elif m := re.fullmatch(r"/api/engines/([\w.-]+)/(voices|params)", self.path):
+            self.proxy(m.group(1), f"/v1/{m.group(2)}")
+        else:
+            self.send_json(404, {"error": "not found"})
+
+    def do_POST(self):
+        if m := re.fullmatch(r"/api/engines/([\w.-]+)/(up|down)", self.path):
+            name, verb = m.groups()
+            if not self.engine_or_404(name):
+                return
+            self.send_json(*(start_engine if verb == "up" else stop_engine)(name))
+        elif m := re.fullmatch(r"/api/engines/([\w.-]+)/speech", self.path):
+            self.proxy(m.group(1), "/v1/audio/speech")
+        else:
+            self.send_json(404, {"error": "not found"})
+
+    def log_message(self, fmt, *args):
+        msg = fmt % args
+        if "GET /api/" in msg:
+            return  # quiet the 2s polling; actions and errors still print
+        print(self.log_date_time_string(), msg)
+
+
+if __name__ == "__main__":
+    srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    print(f"console on http://127.0.0.1:{PORT} (loopback only, by design)")
+    srv.serve_forever()

@@ -1,0 +1,120 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TTS console</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font: 14px/1.45 system-ui, sans-serif; background: #14161a; color: #dde1e6;
+         max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.15rem; } h1 small { color: #7a8290; font-weight: normal; }
+  .bars { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .meter { flex: 1; min-width: 260px; }
+  .meter .lbl { display: flex; justify-content: space-between; color: #9aa3af; font-size: .85rem; }
+  .meter .track { background: #262a31; border-radius: 4px; height: 10px; margin-top: 4px; }
+  .meter .fill { background: #4c8dd6; height: 100%; border-radius: 4px; transition: width .5s; }
+  .meter .fill.hot { background: #d6844c; }
+  .unavail { color: #b08a4c; font-size: .85rem; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid #262a31; }
+  th { color: #7a8290; font-weight: normal; font-size: .8rem; text-transform: uppercase; }
+  .chip { font-size: .75rem; padding: .1rem .45rem; border-radius: 3px; background: #262a31; }
+  .chip.gpu { color: #8ec07c; } .chip.cpu { color: #83a598; }
+  .st { font-weight: 600; }
+  .st.ready { color: #8ec07c; } .st.loading { color: #d6b44c; } .st.stopped { color: #6c7480; }
+  button { background: #2d333b; color: #dde1e6; border: 1px solid #3a414b;
+           border-radius: 4px; padding: .25rem .8rem; cursor: pointer; }
+  button:hover { background: #3a414b; }
+  button:disabled { opacity: .4; cursor: default; }
+  .err { color: #e07a7a; font-size: .85rem; margin-top: .2rem; white-space: pre-wrap; }
+  .note { color: #9aa3af; font-size: .8rem; }
+  .detail { color: #7a8290; font-size: .8rem; }
+  a { color: #4c8dd6; }
+  #gpuline { color: #9aa3af; margin: 0 0 1rem; font-size: .9rem; }
+</style>
+
+<h1>TTS console <small>— engines on this machine, loopback only</small></h1>
+
+<div class="bars">
+  <div class="meter"><div class="lbl"><span>RAM</span><span id="ramtxt">…</span></div>
+    <div class="track"><div class="fill" id="rambar" style="width:0"></div></div></div>
+  <div class="meter"><div class="lbl"><span>VRAM</span><span id="vramtxt">…</span></div>
+    <div class="track"><div class="fill" id="vrambar" style="width:0"></div></div>
+    <div class="unavail" id="vramwhy" hidden></div></div>
+</div>
+<p id="gpuline">…</p>
+
+<table>
+  <thead><tr><th>engine</th><th>device</th><th>state</th><th>vram</th><th>uptime</th><th></th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+
+<script>
+const $ = id => document.getElementById(id);
+const mb = v => v >= 1024 ? (v/1024).toFixed(1) + ' GB' : v + ' MB';
+const dur = s => s == null ? '' : s < 60 ? s + 's' : s < 3600 ?
+  Math.floor(s/60) + 'm' + (s%60) + 's' : Math.floor(s/3600) + 'h' + Math.floor(s%3600/60) + 'm';
+let clickErr = {};   // engine -> message from a refused POST /up
+let loadingSince = {};
+
+function bar(el, txt, used, total, hotAt) {
+  el.style.width = (100*used/total).toFixed(1) + '%';
+  el.classList.toggle('hot', used/total > (hotAt ?? .85));
+  txt.textContent = mb(used) + ' / ' + mb(total);
+}
+
+async function refresh() {
+  let m, engines;
+  try {
+    [m, engines] = await Promise.all([
+      fetch('/api/machine').then(r => r.json()),
+      fetch('/api/engines').then(r => r.json())]);
+  } catch (e) { $('gpuline').textContent = 'console server unreachable: ' + e; return; }
+
+  bar($('rambar'), $('ramtxt'), m.ram.used_mb, m.ram.total_mb);
+  if (m.vram.unavailable) {
+    $('vramtxt').textContent = 'unavailable';
+    $('vramwhy').hidden = false; $('vramwhy').textContent = m.vram.unavailable;
+  } else {
+    $('vramwhy').hidden = true;
+    bar($('vrambar'), $('vramtxt'), m.vram.used_mb, m.vram.total_mb);
+  }
+  $('gpuline').textContent = m.gpu_engine
+    ? `GPU: held by ${m.gpu_engine} — one 24 GB card fits one big model; stop it to load another.`
+    : 'GPU: free.';
+
+  $('rows').replaceChildren(...engines.map(e => {
+    const tr = document.createElement('tr');
+    if (e.state === 'loading') loadingSince[e.name] ??= Date.now();
+    else delete loadingSince[e.name];
+    const elapsed = loadingSince[e.name] ? Math.floor((Date.now()-loadingSince[e.name])/1000) : 0;
+    const blocked = e.gpu === 'gpu' && e.state === 'stopped' && m.gpu_engine && m.gpu_engine !== e.name;
+    const err = clickErr[e.name] || e.error;
+    tr.innerHTML = `
+      <td>${e.state === 'ready' ? `<a href="http://127.0.0.1:${e.port}/" target="_blank">${e.name}</a>` : e.name}
+        ${err ? `<div class="err"></div>` : ''}
+        ${e.state === 'loading' && e.detail ? `<div class="detail"></div>` : ''}</td>
+      <td><span class="chip ${e.gpu}">${e.gpu}</span> <span class="note">:${e.port}</span></td>
+      <td><span class="st ${e.state}">${e.state}${e.state === 'loading' ? ' ' + elapsed + 's' : ''}</span></td>
+      <td>${e.vram_mb != null ? mb(e.vram_mb) : ''}</td>
+      <td>${dur(e.uptime_s)}</td>
+      <td>${e.state === 'stopped'
+            ? `<button data-act="up">start</button>` +
+              (blocked ? `<div class="note">card held by ${m.gpu_engine} — stop it first</div>` : '')
+            : `<button data-act="down">stop</button>`}</td>`;
+    if (err) tr.querySelector('.err').textContent = err;
+    if (e.state === 'loading' && e.detail) tr.querySelector('.detail').textContent = e.detail;
+    tr.querySelector('button')?.addEventListener('click', () => act(e.name, tr.querySelector('button').dataset.act));
+    return tr;
+  }));
+}
+
+async function act(name, verb) {
+  delete clickErr[name];
+  const r = await fetch(`/api/engines/${name}/${verb}`, {method: 'POST'});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) clickErr[name] = j.error || (verb + ' failed: HTTP ' + r.status);
+  refresh();
+}
+
+refresh();
+setInterval(refresh, 2000);
+</script>
