@@ -14,7 +14,7 @@ from typing import Optional, Generator
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 from chatterbox.tts_turbo import ChatterboxTurboTTS
@@ -95,6 +95,11 @@ def startup():
     print("Loading Chatterbox Nano...")
     models["en"] = ChatterboxTurboTTS.from_pretrained(device=DEVICE, nano=True)
     print("Chatterbox Nano engine ready")
+
+
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")
