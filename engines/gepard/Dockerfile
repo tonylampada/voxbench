@@ -14,9 +14,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cu128 \
         torch torchaudio
 
+# build-essential: nemo-toolkit[tts] pulls sdists (texterrors, kaldi-python-io)
+# that compile C++ at install time. Separate layer to keep the torch layer cached.
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# uv for the rest: pip's resolver backtracks for >10 min on nemo-toolkit's
+# dependency tree (vendor's own setup scripts use uv for the same reason).
+RUN pip install --no-cache-dir uv
+
 # NeMo supplies the NanoCodec (AudioCodecModel). nemo-toolkit pins an older
 # transformers — deliberately overwritten by the gepard install below.
-RUN pip install --no-cache-dir "nemo-toolkit[tts]==2.4.0"
+RUN uv pip install --system --no-cache "nemo-toolkit[tts]==2.4.0"
 
 # Vendor reference inference stack, pinned commit (their upstream moves).
 # The [inference] extra re-pins transformers==5.3.0 — the version the model
@@ -25,7 +34,7 @@ RUN pip install --no-cache-dir "nemo-toolkit[tts]==2.4.0"
 # workaround only covers for 5.3.0.
 RUN git clone https://github.com/nineninesix-ai/gepard-inference.git /opt/gepard \
     && git -C /opt/gepard checkout fa19f5793db3f9f8413da6da69bd32659bd4ac4d \
-    && pip install --no-cache-dir "/opt/gepard[inference]"
+    && uv pip install --system --no-cache "/opt/gepard[inference]"
 
 COPY server.py /app/server.py
 WORKDIR /app
