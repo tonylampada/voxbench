@@ -45,3 +45,6 @@ syn_out/
 checkpoints/
 .gradio
 *out.wav
+
+# test-bench phrase library (user data, seeds live in console/server.py)
+console/phrases.json

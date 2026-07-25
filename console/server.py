@@ -26,6 +26,33 @@ lock = threading.Lock()
 ops = {}  # name -> {"proc": Popen, "log": [lines], "t0": epoch} while `tts up` runs
 last_error = {}  # name -> last failed `tts up` message, cleared on next up/down
 
+# ── Phrase library ───────────────────────────────────────────────────────────
+# The test screen's phrases. Seeds are the bench texts (short/medium/long, en
+# and pt); user additions/deletions persist in a JSON file next to this server.
+# No file until the first change — the seeds live here and always come back.
+PHRASES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "phrases.json")
+SEED_PHRASES = [
+    {"label": "short · en", "text": "The quick brown fox jumps over the lazy dog. It barked back, quite offended. Nobody expected that."},
+    {"label": "short · pt", "text": "Um cachorro latiu para o carteiro, que fingiu não ouvir. Ninguém esperava por isso."},
+    {"label": "medium · en", "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."},
+    {"label": "medium · pt", "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."},
+    {"label": "long · en", "text": "The quick brown fox jumps over the lazy dog. " * 8},
+    {"label": "long · pt", "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Os barcos balançavam devagar, presos aos seus cabos, e um cheiro de sal e madeira molhada subia do cais. Um velho pescador consertava a rede sem pressa, como quem já viu todas as tempestades que o mar sabe fazer. Não aconteceu grande coisa naquele dia, e era exatamente isso que todo mundo esperava."},
+]
+
+
+def load_phrases():
+    if os.path.exists(PHRASES_FILE):
+        return json.load(open(PHRASES_FILE))
+    return [{"id": i + 1, **p} for i, p in enumerate(SEED_PHRASES)]
+
+
+def save_phrases(phrases):
+    tmp = PHRASES_FILE + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(phrases, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, PHRASES_FILE)
+
 
 def run(argv, **kw):
     return subprocess.run(argv, capture_output=True, text=True, timeout=120, **kw)
@@ -228,14 +255,22 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(chunk)
         conn.close()
 
+    def send_html(self, filename):
+        body = open(os.path.join(os.path.dirname(__file__), filename), "rb").read()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
         if self.path == "/" or self.path == "/index.html":
-            body = open(os.path.join(os.path.dirname(__file__), "index.html"), "rb").read()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            self.send_html("index.html")
+        elif self.path == "/test":
+            self.send_html("test.html")
+        elif self.path == "/api/phrases":
+            with lock:
+                self.send_json(200, {"phrases": load_phrases()})
         elif self.path == "/api/engines":
             self.send_json(200, engines_json())
         elif self.path == "/api/machine":
@@ -260,13 +295,40 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(404, {"error": "not found"})
 
     def do_POST(self):
-        if m := re.fullmatch(r"/api/engines/([\w.-]+)/(up|down)", self.path):
+        if self.path == "/api/phrases":
+            try:
+                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            except ValueError:
+                return self.send_json(400, {"error": "body must be JSON"})
+            text = (body.get("text") or "").strip()
+            if not text:
+                return self.send_json(400, {"error": "text is required"})
+            with lock:
+                phrases = load_phrases()
+                p = {"id": max((q["id"] for q in phrases), default=0) + 1,
+                     "label": "custom", "text": text}
+                phrases.append(p)
+                save_phrases(phrases)
+            self.send_json(200, p)
+        elif m := re.fullmatch(r"/api/engines/([\w.-]+)/(up|down)", self.path):
             name, verb = m.groups()
             if not self.engine_or_404(name):
                 return
             self.send_json(*(start_engine if verb == "up" else stop_engine)(name))
         elif m := re.fullmatch(r"/api/engines/([\w.-]+)/speech", self.path):
             self.proxy(m.group(1), "/v1/audio/speech")
+        else:
+            self.send_json(404, {"error": "not found"})
+
+    def do_DELETE(self):
+        if m := re.fullmatch(r"/api/phrases/(\d+)", self.path):
+            with lock:
+                phrases = load_phrases()
+                keep = [p for p in phrases if p["id"] != int(m.group(1))]
+                if len(keep) == len(phrases):
+                    return self.send_json(404, {"error": "no such phrase"})
+                save_phrases(keep)
+            self.send_json(200, {"deleted": int(m.group(1))})
         else:
             self.send_json(404, {"error": "not found"})
 
