@@ -1,28 +1,26 @@
 #!/usr/bin/env python3
 """
-Higgs TTS 3 adapter — translates the shared benchmark contract
-(/health, /voices, /tts, /tts/stream) to the SGLang-Omni
-OpenAI-compatible /v1/audio/speech API running on localhost:8000
-in the same container.
+Higgs TTS 3 adapter — serves the bench contract (docs/contract.md) by
+translating it to the SGLang-Omni OpenAI-compatible /v1/audio/speech API
+running on localhost:8000 in the same container. Upstream already speaks the
+contract's shape, so this adapter mostly validates and proxies — including
+native PCM streaming, passed through untouched.
 
 The upstream server (sgl-omni serve) is launched as a subprocess at
 startup; /health answers 200 only once it accepts requests, which
 happens only after the 4B model is loaded.
 """
-import io
 import json
 import os
-import re
-import struct
 import subprocess
 import sys
 import urllib.error
 import urllib.request
-import wave
 from pathlib import Path
 from typing import Generator, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
@@ -32,19 +30,39 @@ VOICES_DIR = Path("/app/voices")
 # Higgs is a single multilingual model: the language comes from the text
 # itself, there is no lang parameter upstream. Both en and pt sit in its
 # sub-5% WER tier, so both are accepted; anything else is refused loudly.
-SUPPORTED_LANGS = {"en", "pt"}
+LANGS = ["en", "pt"]
+
+PARAMS = {
+    "temperature": {"type": "number", "min": 0.0, "max": 2.0, "default": 1.0,
+                    "description": "sampling temperature; higher = more varied takes, lower = more stable"},
+    "top_k": {"type": "integer", "min": 0, "max": 200, "default": 50,
+              "description": "top-k sampling cutoff (0 = disabled)"},
+}
+
+# Library manifest + clips, mounted live at /app/voices.
+LIBRARY_DIR = VOICES_DIR / "library"
+_manifest_file = LIBRARY_DIR / "manifest.json"
+MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file.exists() else []
+REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 
 app = FastAPI(title="Higgs TTS 3 Adapter")
 
 
-class TTSRequest(BaseModel):
-    text: str
-    lang: str = "en"
+@app.exception_handler(RequestValidationError)
+async def validation_to_400(request, exc):  # the contract has no 422s
+    e = exc.errors()[0]
+    where = ".".join(str(p) for p in e["loc"] if p != "body")
+    return JSONResponse(status_code=400, content={"detail": f"{where or 'body'}: {e['msg']}"})
+
+
+class SpeechRequest(BaseModel):
+    input: str = ""
     voice: Optional[str] = None
-    chunk_size: int = 3  # accepted for contract parity; native streaming ignores it
-    temperature: Optional[float] = None
-    top_k: Optional[int] = None
-    max_new_tokens: Optional[int] = None
+    lang: Optional[str] = None
+    response_format: Optional[str] = None
+    speed: Optional[float] = None  # OpenAI-compat alias; this engine has no speed knob
+    stream: bool = False
+    params: dict = {}
 
 
 def start_upstream() -> None:
@@ -67,49 +85,62 @@ def start_upstream() -> None:
     subprocess.Popen(args, stdout=sys.stdout, stderr=sys.stderr)
 
 
-def resolve_references(voice: Optional[str]) -> list:
-    """Map a voice name to upstream `references`. None/'default' → builtin
-    voice (no references). Otherwise the name must be a clip in /app/voices;
-    a sibling .txt transcript is passed along when present (improves cloning)."""
-    if not voice or voice == "default":
+def bad(msg: str):
+    raise HTTPException(status_code=400, detail=msg)
+
+
+def resolve_references(req: SpeechRequest) -> list:
+    """-> upstream `references` (empty = the builtin voice), enforcing the 400 catalogue."""
+    lang = req.lang
+    if lang is not None and lang not in LANGS:
+        bad(f"lang '{lang}' not supported — this engine speaks {LANGS}")
+    if req.voice is None or req.voice == "default":
         return []
-    candidates = [VOICES_DIR / voice] + [
-        VOICES_DIR / f"{voice}{ext}" for ext in (".flac", ".wav", ".mp3")
-    ]
-    for clip in candidates:
-        if clip.is_file():
-            ref = {"audio_path": str(clip)}
-            txt = clip.with_suffix(".txt")
-            if txt.is_file():
-                ref["text"] = txt.read_text().strip()
-            return [ref]
-    raise HTTPException(status_code=400, detail=f"voice '{voice}' not found in voices/")
+    if req.voice not in REFERENCES:
+        bad(f"unknown voice '{req.voice}' — see /v1/voices")
+    entry = REFERENCES[req.voice]
+    if lang is not None and lang != entry["lang"]:
+        bad(f"voice '{req.voice}' speaks '{entry['lang']}', not '{lang}'")
+    if entry["lang"] not in LANGS:
+        bad(f"voice '{req.voice}' speaks '{entry['lang']}', which this engine cannot — see /v1/voices")
+    clip = LIBRARY_DIR / entry["file"]
+    ref = {"audio_path": str(clip)}
+    txt = clip.with_suffix(".txt")  # sibling transcript improves cloning when present
+    if txt.is_file():
+        ref["text"] = txt.read_text().strip()
+    return [ref]
 
 
-def upstream_body(req: TTSRequest) -> dict:
-    if req.lang not in SUPPORTED_LANGS:
-        raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
-    if not req.text.strip():
-        raise HTTPException(status_code=400, detail="text is empty")
-    body = {"model": MODEL, "voice": "default", "input": req.text}
-    refs = resolve_references(req.voice)
-    if refs:
-        body["references"] = refs
-    for knob in ("temperature", "top_k", "max_new_tokens"):
-        v = getattr(req, knob)
-        if v is not None:
-            body[knob] = v
-    return body
+def effective_params(req: SpeechRequest) -> dict:
+    if not isinstance(req.params, dict):
+        bad("params must be an object")
+    knobs = {}
+    for k, v in req.params.items():
+        if k not in PARAMS:
+            bad(f"unknown param '{k}' — this engine has {sorted(PARAMS)} (see /v1/params)")
+        p = PARAMS[k]
+        if p["type"] == "integer":
+            if isinstance(v, bool) or not isinstance(v, int):
+                bad(f"params.{k} must be an integer")
+        elif isinstance(v, bool) or not isinstance(v, (int, float)):
+            bad(f"params.{k} must be a number")
+        if not p["min"] <= v <= p["max"]:
+            bad(f"params.{k} {v} out of range [{p['min']}, {p['max']}]")
+        knobs[k] = v
+    if req.speed is not None and req.speed != 1.0:
+        bad("this engine has no speed knob — only the no-op speed 1.0 is accepted")
+    return knobs
 
 
-def pcm_to_wav(pcm: bytes, sample_rate: int) -> bytes:
-    buf = io.BytesIO()
-    with wave.open(buf, "wb") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(sample_rate)
-        w.writeframes(pcm)
-    return buf.getvalue()
+def upstream_speech(body: dict, timeout: float = 600):
+    r = urllib.request.Request(f"{UPSTREAM}/v1/audio/speech",
+                               data=json.dumps(body).encode(),
+                               headers={"Content-Type": "application/json"})
+    try:
+        return urllib.request.urlopen(r, timeout=timeout)
+    except urllib.error.HTTPError as e:
+        raise HTTPException(status_code=502,
+                            detail=f"higgs upstream error: {e.read().decode(errors='replace')[:500]}")
 
 
 @app.get("/")
@@ -126,78 +157,54 @@ async def health():
             pass
     except Exception:
         return JSONResponse(status_code=503, content={"status": "loading"})
-    return {"status": "ok", "engine": "higgs-tts-3", "models_loaded": [MODEL], "queue_size": 0}
+    return {"status": "ok", "engine": "higgs-tts-3"}
 
 
-@app.get("/voices")
+@app.get("/v1/voices")
 async def voices():
-    # "default" is the model's builtin voice; the rest are reference clips
-    # mounted at /app/voices, used for zero-shot cloning.
-    names = ["default"]
-    if VOICES_DIR.is_dir():
-        names += sorted(f.name for f in VOICES_DIR.iterdir()
-                        if f.suffix.lower() in (".flac", ".wav", ".mp3"))
-    return {"voices": names}
+    out = [{"id": "default", "name": "Default", "kind": "builtin",
+            "langs": LANGS, "gender": "unknown"}]
+    out += [{"id": vid, "name": e["voice"], "kind": "reference", "origin": e["engine"],
+             "langs": [e["lang"]], "gender": e.get("gender", "unknown"), "seconds": e["seconds"]}
+            for vid, e in sorted(REFERENCES.items())]
+    return {"voices": out}
 
 
-@app.post("/tts")
-async def tts(request: TTSRequest):
-    body = upstream_body(request)
-    req = urllib.request.Request(
-        f"{UPSTREAM}/v1/audio/speech",
-        data=json.dumps(body).encode(),
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=600) as r:
-            return Response(content=r.read(), media_type="audio/wav")
-    except urllib.error.HTTPError as e:
-        raise HTTPException(status_code=502,
-                            detail=f"higgs upstream error: {e.read().decode(errors='replace')[:500]}")
+@app.get("/v1/params")
+async def params():
+    return {"params": PARAMS}
 
 
-@app.post("/tts/stream")
-async def tts_stream(request: TTSRequest):
-    # Native streaming: upstream emits raw 16-bit mono PCM chunks as the
-    # vocoder produces them (sub-second first audio). Each chunk is wrapped
-    # in its own WAV and framed [4-byte BE length][WAV]. chunk_size (a
-    # sentences-per-chunk knob for engines that fake streaming) is ignored.
-    body = upstream_body(request) | {"stream": True, "response_format": "pcm"}
-    req = urllib.request.Request(
-        f"{UPSTREAM}/v1/audio/speech",
-        data=json.dumps(body).encode(),
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        resp = urllib.request.urlopen(req, timeout=600)
-    except urllib.error.HTTPError as e:
-        raise HTTPException(status_code=502,
-                            detail=f"higgs upstream error: {e.read().decode(errors='replace')[:500]}")
-    sample_rate = int(resp.headers.get("x-sample-rate", 24000))
+@app.post("/v1/audio/speech")
+async def speech(req: SpeechRequest):
+    if not req.input.strip():
+        bad("input is required and must be non-empty")
+    refs = resolve_references(req)
+    knobs = effective_params(req)
+    body = {"model": MODEL, "voice": "default", "input": req.input, **knobs}
+    if refs:
+        body["references"] = refs
+    if req.stream:
+        if req.response_format not in (None, "pcm"):
+            bad(f"response_format '{req.response_format}' with stream: streaming is raw PCM — omit it or say 'pcm'")
+        # Native streaming: upstream emits raw 16-bit mono PCM as the vocoder
+        # produces it — passed through untouched. Small reads matter: read(N)
+        # blocks until N bytes arrive, so a big N would add artificial
+        # first-audio latency. 4 KB = 85 ms of audio at 24 kHz.
+        resp = upstream_speech(body | {"stream": True, "response_format": "pcm"})
+        sample_rate = resp.headers.get("x-sample-rate", "24000")
 
-    def gen() -> Generator[bytes, None, None]:
-        # Coalesce vocoder chunks to ≥0.2 s per frame so the bench isn't
-        # flooded with tiny WAVs; the first frame flushes as soon as it fills.
-        min_bytes = int(sample_rate * 2 * 0.2)
-        pending = b""
-        with resp:
-            while True:
-                # Small reads matter: read(N) blocks until N bytes arrive, so
-                # a big N would add N/48000 seconds of artificial first-audio
-                # latency (64 KB cost 1.3 s here). 4 KB = 85 ms of audio.
-                chunk = resp.read(4096)
-                if not chunk:
-                    break
-                pending += chunk
-                if len(pending) >= min_bytes:
-                    wav = pcm_to_wav(pending, sample_rate)
-                    yield struct.pack(">I", len(wav)) + wav
-                    pending = b""
-        if pending:
-            wav = pcm_to_wav(pending, sample_rate)
-            yield struct.pack(">I", len(wav)) + wav
+        def gen() -> Generator[bytes, None, None]:
+            with resp:
+                while chunk := resp.read(4096):
+                    yield chunk
 
-    return StreamingResponse(gen(), media_type="application/octet-stream")
+        return StreamingResponse(gen(), media_type="application/octet-stream",
+                                 headers={"x-sample-rate": sample_rate})
+    if (req.response_format or "wav") != "wav":
+        bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
+    with upstream_speech(body) as r:
+        return Response(content=r.read(), media_type="audio/wav")
 
 
 start_upstream()
