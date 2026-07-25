@@ -25,6 +25,7 @@ ENV HF_HOME=/root/.cache/huggingface
 ENV HF_HUB_OFFLINE=0
 
 WORKDIR /app
+COPY engines/testpage.html /app/testpage.html
 COPY engines/chatterbox-nano/server.py ./server.py
 
 EXPOSE 8877

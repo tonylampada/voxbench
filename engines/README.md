@@ -1,6 +1,6 @@
 # TTS engine fleet
 
-Nine TTS engines, each in its own container, all speaking the **same HTTP
+Eleven TTS engines, each in its own container, all speaking the **same HTTP
 contract** — so switching engines is switching a port. They exist to benchmark
 pt-BR (and en) synthesis against each other; each `engines/<name>/README.md`
 carries that engine's pins, measurements and warts.
@@ -12,6 +12,7 @@ for these by hand.
 
 ```
 engines/tts up <engine>        # build image if missing, start, wait until healthy
+engines/tts up chatterbox-nano --cpu   # nano only: run the model on CPU (no GPU flags)
 engines/tts down <engine>      # stop it
 engines/tts ls                 # dashboard: port / image / container / health
 engines/tts logs <engine> [-f] # tail its logs
@@ -89,7 +90,12 @@ Verdicts are from the bake-off measurements recorded in each engine's README.
 | omnivoice-brpt | 8887 | conflicted (Apache tag on CC-BY-NC base) | Best measured pt-BR: WER 0.040 / CER 0.038; research-only until the licence conflict resolves |
 | piper | 8888 | GPL-3.0 engine, MIT voices | CPU-only and instant; no cloning; GPL applies if embedded in a product |
 | kokoro | 8889 | Apache-2.0 | 82M, ~100× realtime; Portuguese is pan-lusophone "D" grade, not Brazilian |
-| higgs-tts-3 | 8893 | Boson Research & Non-Commercial | 4B multilingual (102 langs, en+pt both top tier); served by SGLang-Omni, native PCM streaming; see its README for measurements |
+| chatterbox-flash | 8890 | MIT | **English-only** (`lang: "pt"` → 400); marketed ~13× realtime, measured 5.4× with 0.42 s first audio — slower than the plain turbo path; if it wins, it wins on sound |
+| chatterbox-nano | 8891 | MIT | **English-only** (`lang: "pt"` → 400); 110M, 12× realtime on GPU and the only engine that both clones voices and runs acceptably on CPU (~1.8×, `up chatterbox-nano --cpu`) |
+| higgs-tts-3 | 8893 | Boson Research & Non-Commercial | 4B multilingual (102 languages, en and pt both top tier); served by SGLang-Omni, native PCM streaming; see `higgs-tts-3/README.md` for measurements |
+
+Ports 8892 and 8894 are reserved in the registry for engines still in flight:
+fish-s2-pro (8892, merged but not yet registered), voxtral-tts (8894).
 
 ## The GPU workaround (pre-reboot)
 

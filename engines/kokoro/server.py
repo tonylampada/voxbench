@@ -18,8 +18,14 @@ from pydantic import BaseModel
 UPSTREAM = "http://127.0.0.1:8880"
 DEFAULT_VOICE = {"en": "af_heart", "pt": "pf_dora"}
 # Kokoro picks the G2P language from the voice name prefix:
-# a/b = English (US/UK), p = Brazilian Portuguese (via espeak-ng).
-LANG_PREFIXES = {"en": ("a", "b"), "pt": ("p",)}
+# a/b = English (US/UK), p = Brazilian Portuguese, e = Spanish, f = French,
+# h = Hindi, i = Italian, j = Japanese, z = Mandarin. The bench contract only
+# promises en/pt; the other langs are accepted so every shipped voice can be
+# rendered in its own language (they have no default voice — pass one).
+LANG_PREFIXES = {
+    "en": ("a", "b"), "pt": ("p",), "es": ("e",), "fr": ("f",),
+    "hi": ("h",), "it": ("i",), "ja": ("j",), "zh": ("z",),
+}
 
 app = FastAPI(title="Kokoro TTS Adapter")
 
@@ -39,8 +45,10 @@ def upstream_get(path: str, timeout: float = 5.0) -> dict:
 
 def resolve_voice(lang: str, voice: Optional[str]) -> str:
     if lang not in LANG_PREFIXES:
-        raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
+        raise HTTPException(status_code=400, detail=f"lang must be one of {sorted(LANG_PREFIXES)}")
     if not voice:
+        if lang not in DEFAULT_VOICE:
+            raise HTTPException(status_code=400, detail=f"no default voice for lang '{lang}' — pass one")
         return DEFAULT_VOICE[lang]
     if not voice.startswith(LANG_PREFIXES[lang]):
         raise HTTPException(
