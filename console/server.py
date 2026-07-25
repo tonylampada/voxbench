@@ -3,6 +3,7 @@
 # drives containers by shelling out to engines/tts (the registry of record —
 # nothing about names/ports/gpu is restated here). Loopback only: the engines
 # have no auth and neither does this; the network boundary is the auth boundary.
+import argparse
 import json
 import os
 import re
@@ -351,6 +352,21 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
-    print(f"console on http://127.0.0.1:{PORT} (loopback only, by design)")
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--host", default="127.0.0.1",
+                    help="address to listen on (default loopback). A specific "
+                         "address (e.g. this box's tailnet IP) is a deliberate, "
+                         "bounded choice; 0.0.0.0 is refused.")
+    args = ap.parse_args()
+    # This console has NO authentication and it drives docker: whoever reaches
+    # it can start and stop containers on this machine. The network boundary is
+    # the auth boundary, so binding every interface — including whatever wifi
+    # this box is on — is never a bounded choice.
+    if args.host == "0.0.0.0":
+        raise SystemExit("refusing --host 0.0.0.0: this console has no auth and "
+                         "commands docker. Bind a specific address instead "
+                         "(e.g. this box's tailnet IP).")
+    srv = ThreadingHTTPServer((args.host, PORT), Handler)
+    where = "loopback only, by design" if args.host == "127.0.0.1" else f"reachable at {args.host}"
+    print(f"console on http://{args.host}:{PORT} ({where})")
     srv.serve_forever()
