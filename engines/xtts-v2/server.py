@@ -8,7 +8,7 @@ from typing import Optional
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 MODEL_NAME = "tts_models/multilingual/multi-dataset/xtts_v2"
@@ -113,8 +113,13 @@ def list_voices():
     return {"voices": sorted(model.speakers) if model else []}
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 def health():
     if model is None:
         raise HTTPException(status_code=503, detail="model still loading")
-    return {"status": "ok", "models_loaded": [MODEL_NAME], "queue_size": 0}
+    return {"status": "ok", "engine": "xtts-v2", "models_loaded": [MODEL_NAME], "queue_size": 0}

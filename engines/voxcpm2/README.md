@@ -13,16 +13,13 @@ downsampled on purpose; keep that in mind when comparing.
 docker build -f engines/voxcpm2/Dockerfile -t tts-voxcpm2:gpu .
 ```
 
-## Run (pre-reboot GPU workaround for this box)
+## Run
 
 ```
-docker run -d --name tts-voxcpm2 \
-  --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
-  -e LD_LIBRARY_PATH=/opt/nvdrv \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
-  -p 127.0.0.1:8883:8877 tts-voxcpm2:gpu
+../tts up voxcpm2        # port 8883
 ```
+
+(GPU device/driver flags and mounts live in `engines/tts`; see `engines/README.md`.)
 
 Model weights come from the mounted HF cache (`openbmb/VoxCPM2`, public, ~5 GB); first run
 downloads them into the cache.

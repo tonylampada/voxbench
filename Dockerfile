@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir uv && \
 
 # Copy application code
 COPY server.py download_models.py ./
+COPY engines/testpage.html /app/testpage.html
 COPY voices/ ./voices/
 
 # Download models using BuildKit secret (NOT stored in image layers)

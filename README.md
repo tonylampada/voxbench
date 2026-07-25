@@ -238,6 +238,21 @@ audio.play();
 | Chatterbox Turbo | English | 350M | Paralinguistic tags, fast |
 | Chatterbox Multilingual | 23+ languages | 500M | Emotion exaggeration |
 
+## TTS engine bake-off (`engines/`)
+
+Besides this server, the repo carries a fleet of containerized TTS engines
+(Piper, Kokoro, XTTS-v2, Qwen3-TTS, VoxCPM2, Gepard, F5-TTS, OmniVoice, and a
+Chatterbox pt-BR finetune) that all speak one shared HTTP contract, built to
+benchmark pt-BR synthesis. One script runs any of them by name:
+
+```
+engines/tts up piper
+engines/tts say piper "Hello there."
+```
+
+See [engines/README.md](engines/README.md) for the contract, the engine table
+with licences and verdicts, and the GPU notes.
+
 ## License
 
 Based on [Resemble AI's Chatterbox](https://github.com/resemble-ai/chatterbox).

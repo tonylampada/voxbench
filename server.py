@@ -28,7 +28,7 @@ except OSError:
     print("Warning: sounddevice not available (PortAudio not found). /speak endpoint disabled.")
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 # Patch torch.load permanently for CPU loading (workaround for chatterbox bug)
@@ -517,11 +517,17 @@ async def list_voices():
     return {"voices": sorted(voices)}
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 async def health():
     """Health check."""
     return {
         "status": "ok",
+        "engine": "chatterbox",
         "models_loaded": list(models.keys()),
         "queue_size": audio_queue.qsize()
     }

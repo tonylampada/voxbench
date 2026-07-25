@@ -26,19 +26,18 @@ consistency with the other engines).
 ## Build
 
 ```
-docker build -t tts-kokoro:gpu engines/kokoro/
+docker build -f engines/kokoro/Dockerfile -t tts-kokoro:gpu .   # repo root
 ```
 
-## Run (this box's GPU workaround — see repo notes)
+## Run
 
 ```
-docker run -d --name tts-kokoro \
-  --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
-  -e LD_LIBRARY_PATH=/opt/nvdrv \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
-  -p 127.0.0.1:8889:8877 tts-kokoro:gpu
+../tts up kokoro        # port 8889
 ```
+
+(GPU device/driver flags and mounts live in `engines/tts`; see `engines/README.md`.
+The HF cache mount is not actually needed here — the model is baked into the
+vendor image — but the shared run path keeps it for consistency.)
 
 Health is 503 until the model server is up (typically well under a minute),
 then `GET /health` → `{"status": "ok", ...}`.

@@ -12,7 +12,7 @@ import urllib.request
 from typing import Generator, Optional
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 UPSTREAM = "http://127.0.0.1:8880"
@@ -81,6 +81,11 @@ def split_into_sentences(text: str) -> list[str]:
     return [s.strip() for s in sentences if s.strip()]
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 async def health():
     # 200 only once the upstream kokoro server answers — it loads the model
@@ -89,7 +94,7 @@ async def health():
         upstream_get("/v1/audio/voices")
     except Exception:
         return JSONResponse(status_code=503, content={"status": "loading"})
-    return {"status": "ok", "models_loaded": ["kokoro-v1_0"], "queue_size": 0}
+    return {"status": "ok", "engine": "kokoro", "models_loaded": ["kokoro-v1_0"], "queue_size": 0}
 
 
 @app.get("/voices")

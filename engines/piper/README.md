@@ -6,8 +6,7 @@ cloning. ONNX inference via `piper-tts` 1.6.0.
 ## Build
 
 ```
-cd engines/piper
-docker build -t tts-piper:gpu .
+docker build -f engines/piper/Dockerfile -t tts-piper:gpu .   # repo root
 ```
 
 (Image name keeps the fleet's `:gpu` pattern for uniformity; it uses no GPU.)

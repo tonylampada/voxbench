@@ -10,16 +10,13 @@ finetune, shipped 2026-06-10, reported CER 0.35%, MIT, ungated) plus
 docker build -f engines/chatterbox-ptbr/Dockerfile -t tts-chatterbox-ptbr:gpu .
 ```
 
-## Run (broken-driver-stack recipe for this box)
+## Run
 
 ```
-docker run -d --name tts-chatterbox-ptbr \
-  --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
-  -e LD_LIBRARY_PATH=/opt/nvdrv \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
-  -p 127.0.0.1:8881:8877 tts-chatterbox-ptbr:gpu
+../tts up chatterbox-ptbr        # port 8881
 ```
+
+(GPU device/driver flags and mounts live in `engines/tts`; see `engines/README.md`.)
 
 Weights come from the mounted HF cache (downloaded on first start if missing —
 ~2 GB for the finetune). Nothing is baked into the image.

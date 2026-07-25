@@ -24,7 +24,7 @@ card), so no separate `vocab.txt` download is needed.
 ## Build
 
 ```bash
-docker build -t tts-f5-tts-ptbr:gpu engines/f5-tts-ptbr/
+docker build -f engines/f5-tts-ptbr/Dockerfile -t tts-f5-tts-ptbr:gpu .   # repo root
 ```
 
 Base image is the official `ghcr.io/swivid/f5-tts:main` (21.9 GB, CUDA +
@@ -42,19 +42,13 @@ Only other addition: `num2words`; fastapi/uvicorn already ship in the base.
 
 ## Run
 
-Uses the explicit-device-nodes GPU recipe for this box (broken nvidia-container-toolkit
-pre-reboot; see repo notes). Weights come from the mounted host HF cache — first
-run downloads ~1.4 GB (finetune) + base v1 model + vocos vocoder into it.
-
 ```bash
-docker run -d --name tts-f5-tts-ptbr \
-  --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
-  -e LD_LIBRARY_PATH=/opt/nvdrv \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
-  -v "$(pwd)/voices:/app/voices:ro" \
-  -p 127.0.0.1:8884:8877 tts-f5-tts-ptbr:gpu
+../tts up f5-tts-ptbr        # port 8884
 ```
+
+(GPU device/driver flags and the `voices/` mount live in `engines/tts`; see
+`engines/README.md`.) Weights come from the mounted host HF cache — first
+run downloads ~1.4 GB (finetune) + base v1 model + vocos vocoder into it.
 
 (The server binds 0.0.0.0 *inside* the container; the host publish is
 loopback-only, as required.)
