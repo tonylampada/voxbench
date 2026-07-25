@@ -92,9 +92,10 @@ Verdicts are from the bake-off measurements recorded in each engine's README.
 | kokoro | 8889 | Apache-2.0 | 82M, ~100× realtime; Portuguese is pan-lusophone "D" grade, not Brazilian |
 | chatterbox-flash | 8890 | MIT | **English-only** (`lang: "pt"` → 400); marketed ~13× realtime, measured 5.4× with 0.42 s first audio — slower than the plain turbo path; if it wins, it wins on sound |
 | chatterbox-nano | 8891 | MIT | **English-only** (`lang: "pt"` → 400); 110M, 12× realtime on GPU and the only engine that both clones voices and runs acceptably on CPU (~1.8×, `up chatterbox-nano --cpu`) |
+| higgs-tts-3 | 8893 | Boson Research & Non-Commercial | 4B multilingual (102 languages, en and pt both top tier); served by SGLang-Omni, native PCM streaming; see `higgs-tts-3/README.md` for measurements |
 
-Ports 8892–8894 are reserved in the registry for engines still in flight:
-fish-s2-pro (8892, PR open), higgs-tts-3 (8893), voxtral-tts (8894).
+Ports 8892 and 8894 are reserved in the registry for engines still in flight:
+fish-s2-pro (8892, merged but not yet registered), voxtral-tts (8894).
 
 ## The GPU workaround (pre-reboot)
 
