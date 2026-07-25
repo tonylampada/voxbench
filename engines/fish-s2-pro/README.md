@@ -42,6 +42,12 @@ The HF cache is mounted at `/hf` (not `/root/.cache`) because the container runs
 (`fish`), which cannot traverse `/root`. Model load takes ~1–2 min; `/health` returns 503
 until the upstream server is actually ready.
 
+**KV-cache cap (the big wart):** the shipped `config.json` declares `max_seq_len: 32768`,
+which makes the server preallocate a ~4.8 GB KV cache → ~16.5 GB total, and it OOMs next to
+the resident 8 GB chatterbox-gpu on the 24 GB card. The entrypoint symlink-copies the
+snapshot and patches `max_seq_len` to 4096 (~3 minutes of audio at the codec's 21 Hz —
+far beyond any bench utterance). Weights are untouched; override with `-e FISH_MAX_SEQ_LEN=N`.
+
 ## Contract notes
 
 - `lang`: both `en` (Tier 1) and `pt` (Tier 2) are supported; the model infers language from
@@ -64,6 +70,12 @@ and is what the round-one engines were also measured against (vendor-default ser
 
 ## Observed
 
-- VRAM: see PR smoke-test output (measured via nvidia-smi in-container at run time).
+- VRAM: **14.27 GiB** for the server process (NVML per-process query in-container), with the
+  4096-token KV cache. With the stock 32768 config it wants ~16.5 GB and OOMs under
+  contention.
+- Latency: ~6.5–7.6 s per ~6 s utterance, non-streaming, while sharing the GPU with
+  chatterbox-gpu (not a clean benchmark number — the bench measures properly).
+- `uv run` re-syncs the venv at container start (re-downloads ~300 MB of nvidia wheels,
+  cu129→cu126 downgrade) unless `UV_NO_SYNC=1` is set — the entrypoint sets it.
 - Warts: host `pyenv` shims are broken in this worktree (`.python-version` wants a missing
   3.11), so use `uvx` for the HF download, not `huggingface-cli`.
