@@ -7,6 +7,9 @@ FROM ghcr.io/remsky/kokoro-fastapi-gpu:v0.2.4-master
 
 COPY --chown=appuser:appuser engines/kokoro/server.py /app/shim_server.py
 COPY --chown=appuser:appuser engines/testpage.html /app/testpage.html
+# Voice-library metadata for /v1/voices (kokoro only needs the manifest, not the
+# clips — it can't clone; kokoro-origin entries resolve back to builtins).
+COPY --chown=appuser:appuser voices/library/manifest.json /app/voices_manifest.json
 COPY --chown=appuser:appuser engines/kokoro/start.sh /app/start_engine.sh
 
 EXPOSE 8877
