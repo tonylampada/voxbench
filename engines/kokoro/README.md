@@ -74,5 +74,13 @@ realtime on GPU).
 
 ## Observed
 
-- VRAM: TBD
-- Warts: TBD
+- **NOT YET SMOKE-TESTED.** The base-image pull deadlocked in the local docker
+  daemon for 2+ hours (all layers "Download complete", never registered) behind
+  concurrent sibling pulls of shared layers on a saturated link — a known moby
+  shared-layer lock issue, not an engine problem. Every command above is
+  written from the vendor's v0.2.4 Dockerfile/entrypoint (verified against the
+  tag's source) but has not been executed end-to-end on this box.
+- VRAM: not measured (expected <1 GB per the survey).
+- Wart: `docker pull` of the base image needs ghcr auth refresh if the stored
+  token is stale (`gh auth token | docker login ghcr.io -u <user> --password-stdin`);
+  anonymous HEAD returns an unhelpful `denied: denied`.
