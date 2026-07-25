@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""OmniVoice pt-BR adapter — edwixx/omnivoice-brpt-v15 finetune of k2-fsa/OmniVoice."""
+"""OmniVoice pt-BR adapter — edwixx/omnivoice-brpt-v15 finetune of k2-fsa/OmniVoice.
+Cloning engine; serves the bench contract (docs/contract.md)."""
 import io
-import re
+import json
 import threading
 import wave
 from pathlib import Path
@@ -10,36 +11,60 @@ from typing import Optional
 import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, Response, StreamingResponse
-from omnivoice import OmniVoice
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 MODEL_ID = "edwixx/omnivoice-brpt-v15"
-VOICES_DIR = Path("/app/voices")
+LANGS = ["en", "pt"]
+DEFAULT_LANG = "en"
 # The refine data was trained with this instruction (per the model card); used
 # for pt requests with no voice so auto-mode output matches the finetune's setup.
 PT_INSTRUCT = "portuguese accent"
 
+PARAMS = {
+    "speed": {"type": "number", "min": 0.5, "max": 2.0, "default": 1.0,
+              "description": "playback speed multiplier (1.0 = normal)"},
+    "num_step": {"type": "integer", "min": 4, "max": 64, "default": 32,
+                 "description": "diffusion steps; fewer is faster at some quality cost"},
+    "instruct": {"type": "string", "default": "",
+                 "description": "voice-design attributes (e.g. 'female, low pitch'); only valid without a voice"},
+}
+
+# Library manifest + clips, mounted live at /app/voices (baked copy as fallback).
+LIBRARY_DIR = Path("/app/voices/library")
+_manifest_file = LIBRARY_DIR / "manifest.json"
+MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file.exists() else []
+REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
+
 model = None
-prompts = {}  # voice file name -> VoiceClonePrompt (first use auto-loads Whisper to transcribe the clip)
+prompts = {}  # voice id -> VoiceClonePrompt (first use auto-loads Whisper to transcribe the clip)
 gen_lock = threading.Lock()  # endpoints are sync (threadpool); serialize GPU work
 
 app = FastAPI(title="OmniVoice pt-BR TTS Server")
 
 
-class TTSRequest(BaseModel):
-    text: str
-    lang: str = "en"
+@app.exception_handler(RequestValidationError)
+async def validation_to_400(request, exc):  # the contract has no 422s
+    e = exc.errors()[0]
+    where = ".".join(str(p) for p in e["loc"] if p != "body")
+    return JSONResponse(status_code=400, content={"detail": f"{where or 'body'}: {e['msg']}"})
+
+
+class SpeechRequest(BaseModel):
+    input: str = ""
     voice: Optional[str] = None
-    chunk_size: int = 3  # sentences per chunk (stream only)
-    speed: Optional[float] = None  # >1.0 faster, <1.0 slower
-    num_step: Optional[int] = None  # diffusion steps (default 32; 16 is faster)
-    instruct: Optional[str] = None  # voice-design attributes, only used when no voice given
+    lang: Optional[str] = None
+    response_format: Optional[str] = None
+    speed: Optional[float] = None  # OpenAI-compat alias for params.speed
+    stream: bool = False
+    params: dict = {}
 
 
 @app.on_event("startup")
 def load_model():
     global model
+    from omnivoice import OmniVoice
     print(f"Loading {MODEL_ID}...")
     # asr_device="cpu": Whisper only transcribes a ~5s reference clip once per
     # voice; on GPU it OOMs when sibling engines fill the card.
@@ -49,36 +74,57 @@ def load_model():
     print("Model loaded.")
 
 
-def list_voice_files() -> list[str]:
-    if not VOICES_DIR.exists():
-        return []
-    return sorted(f.name for f in VOICES_DIR.iterdir() if f.suffix in (".flac", ".wav", ".mp3"))
+def bad(msg: str):
+    raise HTTPException(status_code=400, detail=msg)
 
 
-def resolve_voice(voice: str) -> Path:
-    for candidate in (voice, f"{voice}.flac", f"{voice}.wav", f"{voice}.mp3"):
-        p = VOICES_DIR / candidate
-        if p.is_file():
-            return p
-    raise HTTPException(status_code=400, detail=f"unknown voice {voice!r}; available: {list_voice_files()}")
+def resolve(req: SpeechRequest) -> tuple[Optional[Path], str]:
+    """-> (reference clip path or None for auto-voice, lang), enforcing the 400 catalogue."""
+    lang = req.lang
+    if lang is not None and lang not in LANGS:
+        bad(f"lang '{lang}' not supported — this engine speaks {LANGS}")
+    if req.voice is None:
+        return None, lang or DEFAULT_LANG
+    if req.voice not in REFERENCES:
+        bad(f"unknown voice '{req.voice}' — see /v1/voices")
+    entry = REFERENCES[req.voice]
+    if lang is not None and lang != entry["lang"]:
+        bad(f"voice '{req.voice}' speaks '{entry['lang']}', not '{lang}'")
+    if entry["lang"] not in LANGS:
+        bad(f"voice '{req.voice}' speaks '{entry['lang']}', which this engine cannot — see /v1/voices")
+    return LIBRARY_DIR / entry["file"], entry["lang"]
 
 
-def synth(req: TTSRequest, text: str) -> np.ndarray:
-    kwargs = {"language": req.lang}
+def effective_params(req: SpeechRequest) -> dict:
+    if not isinstance(req.params, dict):
+        bad("params must be an object")
+    knobs = {}
+    for k, v in req.params.items():
+        if k not in PARAMS:
+            bad(f"unknown param '{k}' — this engine has {sorted(PARAMS)} (see /v1/params)")
+        p = PARAMS[k]
+        if p["type"] == "string":
+            if not isinstance(v, str):
+                bad(f"params.{k} must be a string")
+        elif p["type"] == "integer":
+            if isinstance(v, bool) or not isinstance(v, int):
+                bad(f"params.{k} must be an integer")
+            if not p["min"] <= v <= p["max"]:
+                bad(f"params.{k} {v} out of range [{p['min']}, {p['max']}]")
+        else:
+            if isinstance(v, bool) or not isinstance(v, (int, float)):
+                bad(f"params.{k} must be a number")
+            if not p["min"] <= v <= p["max"]:
+                bad(f"params.{k} {v} out of range [{p['min']}, {p['max']}]")
+        knobs[k] = v
     if req.speed is not None:
-        kwargs["speed"] = req.speed
-    if req.num_step is not None:
-        kwargs["num_step"] = req.num_step
-    if req.voice:
-        path = resolve_voice(req.voice)
-        if req.voice not in prompts:
-            prompts[req.voice] = model.create_voice_clone_prompt(ref_audio=str(path))
-        kwargs["voice_clone_prompt"] = prompts[req.voice]
-    elif req.instruct:
-        kwargs["instruct"] = req.instruct
-    elif req.lang == "pt":
-        kwargs["instruct"] = PT_INSTRUCT
-    return model.generate(text=text, **kwargs)[0]
+        if "speed" in knobs:
+            bad("speed given both top-level and in params — pick one place")
+        p = PARAMS["speed"]
+        if not p["min"] <= req.speed <= p["max"]:
+            bad(f"speed {req.speed} out of range [{p['min']}, {p['max']}]")
+        knobs["speed"] = float(req.speed)
+    return knobs
 
 
 def to_wav_bytes(audio: np.ndarray) -> bytes:
@@ -92,47 +138,6 @@ def to_wav_bytes(audio: np.ndarray) -> bytes:
     return buf.getvalue()
 
 
-def check_lang(lang: str):
-    if lang not in ("en", "pt"):
-        raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
-
-
-def split_into_sentences(text: str) -> list[str]:
-    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
-
-
-@app.post("/tts")
-def tts(req: TTSRequest):
-    check_lang(req.lang)
-    with gen_lock:
-        wav_bytes = to_wav_bytes(synth(req, req.text))
-    return Response(content=wav_bytes, media_type="audio/wav")
-
-
-@app.post("/tts/stream")
-def tts_stream(req: TTSRequest):
-    """No native streaming upstream — sentence-chunk fallback, one framed WAV per chunk."""
-    check_lang(req.lang)
-    sentences = split_into_sentences(req.text) or [req.text]
-    chunks = [
-        " ".join(sentences[i : i + req.chunk_size])
-        for i in range(0, len(sentences), req.chunk_size)
-    ]
-
-    def gen():
-        for chunk in chunks:
-            with gen_lock:
-                wav_bytes = to_wav_bytes(synth(req, chunk))
-            yield len(wav_bytes).to_bytes(4, "big") + wav_bytes
-
-    return StreamingResponse(gen(), media_type="application/octet-stream")
-
-
-@app.get("/voices")
-def voices():
-    return {"voices": list_voice_files()}
-
-
 @app.get("/")
 def testpage():
     return FileResponse("/app/testpage.html")
@@ -141,5 +146,48 @@ def testpage():
 @app.get("/health")
 def health():
     if model is None:
-        raise HTTPException(status_code=503, detail="model still loading")
-    return {"status": "ok", "engine": "omnivoice-brpt", "models_loaded": [MODEL_ID], "queue_size": 0}
+        return JSONResponse(status_code=503, content={"status": "loading"})
+    return {"status": "ok", "engine": "omnivoice-brpt"}
+
+
+@app.get("/v1/voices")
+def voices():
+    # No builtins: with no voice the model invents one (auto-voice mode) — the
+    # catalogue is the cloning library.
+    return {"voices": [
+        {"id": vid, "name": e["voice"], "kind": "reference", "origin": e["engine"],
+         "langs": [e["lang"]], "gender": e.get("gender", "unknown"), "seconds": e["seconds"]}
+        for vid, e in sorted(REFERENCES.items())]}
+
+
+@app.get("/v1/params")
+def params():
+    return {"params": PARAMS}
+
+
+@app.post("/v1/audio/speech")
+def speech(req: SpeechRequest):
+    if not req.input.strip():
+        bad("input is required and must be non-empty")
+    clip, lang = resolve(req)
+    knobs = effective_params(req)
+    instruct = knobs.pop("instruct", "")
+    if instruct and clip is not None:
+        bad("params.instruct only applies in auto-voice mode — omit it when a voice is given")
+    if req.stream:
+        bad("this engine cannot stream — OmniVoice has no incremental synthesis API; "
+            "use stream: false")
+    if (req.response_format or "wav") != "wav":
+        bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
+    kwargs = {"language": lang, **knobs}
+    if instruct:
+        kwargs["instruct"] = instruct
+    elif clip is None and lang == "pt":
+        kwargs["instruct"] = PT_INSTRUCT
+    with gen_lock:
+        if clip is not None:
+            if req.voice not in prompts:
+                prompts[req.voice] = model.create_voice_clone_prompt(ref_audio=str(clip))
+            kwargs["voice_clone_prompt"] = prompts[req.voice]
+        audio = model.generate(text=req.input, **kwargs)[0]
+    return Response(content=to_wav_bytes(audio), media_type="audio/wav")
