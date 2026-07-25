@@ -1,97 +1,138 @@
 #!/usr/bin/env python3
-"""Piper TTS adapter — CPU-only ONNX engine, built-in voices, no cloning."""
+"""Piper TTS adapter — CPU-only ONNX engine, built-in voices, no cloning.
+Serves the bench contract (docs/contract.md)."""
 import io
-import re
+import json
 import wave
-from typing import Optional
+from pathlib import Path
+from typing import Generator, Optional
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, Response, StreamingResponse
-from pydantic import BaseModel
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from piper import PiperVoice, SynthesisConfig
+from pydantic import BaseModel
 
 VOICES_DIR = "/voices"
-VOICE_NAMES = [
-    "pt_BR-faber-medium",
-    "pt_BR-cadu-medium",
-    "pt_BR-edresson-low",
-    "pt_BR-jeff-medium",
-    "en_US-lessac-medium",
-]
+# name -> (lang, gender); gender per the rhasspy/piper-voices dataset cards
+BUILTIN = {
+    "pt_BR-faber-medium": ("pt", "male"),
+    "pt_BR-cadu-medium": ("pt", "male"),
+    "pt_BR-edresson-low": ("pt", "male"),
+    "pt_BR-jeff-medium": ("pt", "male"),
+    "en_US-lessac-medium": ("en", "female"),
+}
 DEFAULT_VOICE = {"pt": "pt_BR-faber-medium", "en": "en_US-lessac-medium"}
+DEFAULT_LANG = "en"
+LANGS = sorted(set(l for l, _ in BUILTIN.values()))
+
+PARAMS = {
+    "speed": {"type": "number", "min": 0.25, "max": 4.0, "default": 1.0,
+              "description": "playback speed multiplier (1.0 = normal; maps to Piper's inverse length_scale)"},
+    "noise_scale": {"type": "number", "min": 0.0, "max": 2.0, "default": 0.667,
+                    "description": "phoneme noise: higher = more expressive variation, lower = flatter delivery"},
+    "noise_w_scale": {"type": "number", "min": 0.0, "max": 2.0, "default": 0.8,
+                      "description": "phoneme duration noise: higher = more varied speech rhythm"},
+}
+
+# Library manifest: mounted live if voices/ is mounted, else the copy baked at build.
+_manifest_file = next((p for p in (Path("/app/voices/library/manifest.json"),
+                                   Path("/app/voices_manifest.json")) if p.exists()), None)
+MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file else []
+REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 
 voices = {}
 
-app = FastAPI(title="Piper TTS Server")
+app = FastAPI(title="Piper TTS Adapter")
 
 
-class TTSRequest(BaseModel):
-    text: str
-    lang: str = "en"
+@app.exception_handler(RequestValidationError)
+async def validation_to_400(request, exc):  # the contract has no 422s
+    e = exc.errors()[0]
+    where = ".".join(str(p) for p in e["loc"] if p != "body")
+    return JSONResponse(status_code=400, content={"detail": f"{where or 'body'}: {e['msg']}"})
+
+
+class SpeechRequest(BaseModel):
+    input: str = ""
     voice: Optional[str] = None
-    chunk_size: int = 3  # sentences per chunk (stream only)
-    length_scale: Optional[float] = None  # optional speed knob: >1.0 slower, <1.0 faster
+    lang: Optional[str] = None
+    response_format: Optional[str] = None
+    speed: Optional[float] = None  # OpenAI-compat alias for params.speed
+    stream: bool = False
+    params: dict = {}
 
 
 @app.on_event("startup")
 def load_voices():
-    for name in VOICE_NAMES:
+    for name in BUILTIN:
         print(f"Loading {name}...")
         voices[name] = PiperVoice.load(f"{VOICES_DIR}/{name}.onnx")
     print("All voices loaded.")
 
 
-def pick_voice(lang: str, voice: Optional[str]) -> PiperVoice:
-    if lang not in DEFAULT_VOICE:
-        raise HTTPException(status_code=400, detail="lang must be 'en' or 'pt'")
-    name = voice or DEFAULT_VOICE[lang]
-    if name not in voices:
-        raise HTTPException(
-            status_code=400,
-            detail=f"unknown voice {name!r}; available: {sorted(voices)}",
-        )
-    return voices[name]
+def bad(msg: str):
+    raise HTTPException(status_code=400, detail=msg)
 
 
-def synth_wav(voice: PiperVoice, text: str, length_scale: Optional[float]) -> bytes:
-    syn_config = SynthesisConfig(length_scale=length_scale) if length_scale else None
-    buf = io.BytesIO()
-    with wave.open(buf, "wb") as wf:
-        voice.synthesize_wav(text, wf, syn_config=syn_config)
-    return buf.getvalue()
+def pretty(name: str) -> str:
+    return name.split("-")[1].title()  # pt_BR-faber-medium -> Faber
 
 
-def split_into_sentences(text: str) -> list[str]:
-    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
+def resolve(req: SpeechRequest) -> str:
+    """-> builtin voice name, enforcing the contract's 400 catalogue."""
+    lang = req.lang
+    if lang is not None and lang not in LANGS:
+        bad(f"lang '{lang}' not supported — this engine speaks {LANGS}")
+    if req.voice is None:
+        return DEFAULT_VOICE[lang or DEFAULT_LANG]
+    voice = req.voice
+    if voice in REFERENCES:
+        entry = REFERENCES[voice]
+        if entry["engine"] != "piper":
+            bad(f"'{voice}' is a cloning reference rendered by {entry['engine']}; "
+                f"piper cannot clone — use a builtin or piper-origin voice id")
+        if lang is not None and lang != entry["lang"]:
+            bad(f"voice '{voice}' speaks '{entry['lang']}', not '{lang}'")
+        voice = entry["voice"]
+    if voice not in BUILTIN:
+        bad(f"unknown voice '{req.voice}' — see /v1/voices")
+    if lang is not None and lang != BUILTIN[voice][0]:
+        bad(f"voice '{voice}' speaks '{BUILTIN[voice][0]}', not '{lang}'")
+    return voice
 
 
-@app.post("/tts")
-def tts(req: TTSRequest):
-    voice = pick_voice(req.lang, req.voice)
-    wav_bytes = synth_wav(voice, req.text, req.length_scale)
-    return Response(content=wav_bytes, media_type="audio/wav")
+def effective_params(req: SpeechRequest) -> dict:
+    if not isinstance(req.params, dict):
+        bad("params must be an object")
+    knobs = {}
+    for k, v in req.params.items():
+        if k not in PARAMS:
+            bad(f"unknown param '{k}' — this engine has {sorted(PARAMS)} (see /v1/params)")
+        p = PARAMS[k]
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
+            bad(f"params.{k} must be a {p['type']}")
+        if not p["min"] <= v <= p["max"]:
+            bad(f"params.{k} {v} out of range [{p['min']}, {p['max']}]")
+        knobs[k] = float(v)
+    if req.speed is not None:
+        if "speed" in knobs:
+            bad("speed given both top-level and in params — pick one place")
+        p = PARAMS["speed"]
+        if not p["min"] <= req.speed <= p["max"]:
+            bad(f"speed {req.speed} out of range [{p['min']}, {p['max']}]")
+        knobs["speed"] = float(req.speed)
+    return knobs
 
 
-@app.post("/tts/stream")
-def tts_stream(req: TTSRequest):
-    voice = pick_voice(req.lang, req.voice)
-    sentences = split_into_sentences(req.text) or [req.text]
-    chunks = [
-        " ".join(sentences[i : i + req.chunk_size])
-        for i in range(0, len(sentences), req.chunk_size)
-    ]
-
-    def gen():
-        for chunk in chunks:
-            wav_bytes = synth_wav(voice, chunk, req.length_scale)
-            yield len(wav_bytes).to_bytes(4, "big") + wav_bytes
-
-    return StreamingResponse(gen(), media_type="application/octet-stream")
-
-
-@app.get("/voices")
-def list_voices():
-    return {"voices": sorted(voices)}
+def syn_config(knobs: dict) -> Optional[SynthesisConfig]:
+    if not knobs:
+        return None
+    return SynthesisConfig(
+        length_scale=1.0 / knobs["speed"] if "speed" in knobs else None,
+        noise_scale=knobs.get("noise_scale"),
+        noise_w_scale=knobs.get("noise_w_scale"),
+    )
 
 
 @app.get("/")
@@ -101,6 +142,48 @@ def testpage():
 
 @app.get("/health")
 def health():
-    if len(voices) < len(VOICE_NAMES):
-        raise HTTPException(status_code=503, detail="voices still loading")
-    return {"status": "ok", "engine": "piper", "models_loaded": sorted(voices), "queue_size": 0}
+    if len(voices) < len(BUILTIN):
+        return JSONResponse(status_code=503, content={"status": "loading"})
+    return {"status": "ok", "engine": "piper"}
+
+
+@app.get("/v1/voices")
+def list_voices():
+    out = [{"id": v, "name": pretty(v), "kind": "builtin", "langs": [lang], "gender": gender}
+           for v, (lang, gender) in sorted(BUILTIN.items())]
+    out += [{"id": vid, "name": pretty(e["voice"]) if e["engine"] == "piper" else e["voice"],
+             "kind": "reference", "origin": e["engine"], "langs": [e["lang"]],
+             "gender": e.get("gender", "unknown"), "seconds": e["seconds"]}
+            for vid, e in sorted(REFERENCES.items())]
+    return {"voices": out}
+
+
+@app.get("/v1/params")
+def params():
+    return {"params": PARAMS}
+
+
+@app.post("/v1/audio/speech")
+def speech(req: SpeechRequest):
+    if not req.input.strip():
+        bad("input is required and must be non-empty")
+    voice = voices[resolve(req)]
+    cfg = syn_config(effective_params(req))
+    if req.stream:
+        if req.response_format not in (None, "pcm"):
+            bad(f"response_format '{req.response_format}' with stream: streaming is raw PCM — omit it or say 'pcm'")
+
+        # Native incremental synthesis: PiperVoice.synthesize yields audio
+        # chunks as the ONNX model produces them, one per sentence.
+        def gen() -> Generator[bytes, None, None]:
+            for chunk in voice.synthesize(req.input, syn_config=cfg):
+                yield chunk.audio_int16_bytes
+
+        return StreamingResponse(gen(), media_type="application/octet-stream",
+                                 headers={"x-sample-rate": str(voice.config.sample_rate)})
+    if (req.response_format or "wav") != "wav":
+        bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        voice.synthesize_wav(req.input, wf, syn_config=cfg)
+    return Response(content=buf.getvalue(), media_type="audio/wav")
