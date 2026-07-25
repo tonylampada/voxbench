@@ -9,8 +9,14 @@ including native PCM streaming, passed through untouched.
 The upstream server (vllm serve --omni) is launched as a subprocess at
 startup; /health answers 200 only once it accepts requests, which happens
 only after the 4B model is loaded and both pipeline stages are up.
+
+The PUBLIC checkpoint cannot clone: ref_audio needs audio-encoder weights
+Mistral did not ship, and worse, a forwarded ref_audio request raises inside
+the EngineCore and kills the whole upstream engine (every later request 500s
+until the container restarts). So this adapter never forwards ref_audio —
+reference voices resolve back to the builtin preset when their origin is
+this engine, and are refused with a 400 otherwise.
 """
-import base64
 import json
 import os
 import subprocess
@@ -121,8 +127,8 @@ def bad(msg: str):
 
 
 def resolve_voice(req: SpeechRequest) -> dict:
-    """-> upstream fields for the chosen voice ({'voice': ...} or {'ref_audio': ...}),
-    enforcing the 400 catalogue."""
+    """-> upstream fields for the chosen voice, enforcing the 400 catalogue.
+    Always a preset: this engine cannot clone (see module docstring)."""
     lang = req.lang
     if lang is not None and lang not in LANGS:
         bad(f"lang '{lang}' not supported — this engine speaks {LANGS}")
@@ -135,10 +141,11 @@ def resolve_voice(req: SpeechRequest) -> dict:
     entry = REFERENCES[req.voice]
     if lang is not None and lang != entry["lang"]:
         bad(f"voice '{req.voice}' speaks '{entry['lang']}', not '{lang}'")
-    if entry["lang"] not in LANGS:
-        bad(f"voice '{req.voice}' speaks '{entry['lang']}', which this engine cannot — see /v1/voices")
-    clip = LIBRARY_DIR / entry["file"]
-    return {"ref_audio": base64.b64encode(clip.read_bytes()).decode()}
+    if entry["engine"] != "voxtral-tts":
+        bad(f"voice '{req.voice}' is a cloning reference from '{entry['engine']}', and the "
+            "public Voxtral checkpoint cannot clone (no audio-encoder weights) — use a "
+            "builtin preset or a reference whose origin is voxtral-tts")
+    return {"voice": entry["voice"]}  # own clip — resolve back to the preset it was rendered from
 
 
 def effective_params(req: SpeechRequest) -> dict:
@@ -178,11 +185,6 @@ def upstream_speech(body: dict, timeout: float = 600):
         return urllib.request.urlopen(r, timeout=timeout)
     except urllib.error.HTTPError as e:
         detail = e.read().decode(errors="replace")[:500]
-        if "encoder weights" in detail or "encode_waveforms" in detail:
-            # The public checkpoint ships no audio encoder — cloning is a
-            # capability of the gated weights only.
-            bad("voice cloning is unavailable: the public Voxtral checkpoint has no "
-                "audio encoder weights — use one of the 20 builtin presets instead")
         raise HTTPException(status_code=502, detail=f"voxtral upstream error: {detail}")
 
 

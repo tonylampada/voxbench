@@ -40,6 +40,9 @@ SEED = {
     "it": "Il porto era tranquillo quella mattina, e la luce arrivava di lato sull'acqua. Non successe granché, ed era esattamente quello che tutti speravano.",
     "ja": "その朝、港は静かで、光が水面に斜めに差し込んでいた。特に何も起こらなかったが、それこそ皆が望んでいたことだった。",
     "zh": "那天早晨，港口很安静，光线斜斜地照在水面上。没有发生什么大事，而这正是大家所希望的。",
+    "de": "Der Hafen war still an jenem Morgen, und das Licht fiel schräg über das Wasser. Es geschah nicht viel, und genau das hatten alle gehofft.",
+    "nl": "De haven was stil die ochtend, en het licht viel schuin over het water. Er gebeurde niet veel, en dat was precies waar iedereen op had gehoopt.",
+    "ar": "كان الميناء هادئًا في ذلك الصباح، وكان الضوء يأتي مائلًا فوق الماء. لم يحدث شيء يُذكر، وهذا بالضبط ما كان يتمناه الجميع.",
 }
 
 # Kokoro voice prefix → language (first letter) and gender (second letter,
@@ -70,12 +73,23 @@ def plan_piper(voices):
         yield v, lang, "unknown"
 
 
+def plan_voxtral(voices):
+    # Presets are language-flavoured (de_male, pt_female, …) with gender in
+    # the name; each is rendered once, in its native language, so cloners
+    # inherit the right accent. The unprefixed presets are English.
+    for v in voices:
+        prefix, _, gender = v.partition("_")
+        lang = prefix if prefix in SEED else "en"
+        yield v, lang, gender if gender in ("female", "male") else "unknown"
+
+
 # engine name (as in the engines/tts registry) → which langs each voice gets
 ENGINES = [
     ("piper", plan_piper),
     ("kokoro", plan_kokoro),
     ("qwen3-tts", plan_multilingual),
     ("xtts-v2", plan_multilingual),
+    ("voxtral-tts", plan_voxtral),
 ]
 
 
@@ -134,14 +148,16 @@ def down(engine):
 
 
 def get_voices(port):
-    with urllib.request.urlopen(f"http://127.0.0.1:{port}/voices", timeout=10) as r:
-        return json.load(r)["voices"]
+    # v2 contract: /v1/voices lists builtins AND every library reference —
+    # only the engine's own builtins are library material.
+    with urllib.request.urlopen(f"http://127.0.0.1:{port}/v1/voices", timeout=10) as r:
+        return [v["id"] for v in json.load(r)["voices"] if v["kind"] == "builtin"]
 
 
 def render(port, text, lang, voice, out_path):
-    body = json.dumps({"text": text, "lang": lang, "voice": voice}).encode()
+    body = json.dumps({"input": text, "lang": lang, "voice": voice}).encode()
     req = urllib.request.Request(
-        f"http://127.0.0.1:{port}/tts", data=body,
+        f"http://127.0.0.1:{port}/v1/audio/speech", data=body,
         headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=600) as r:
         out_path.write_bytes(fix_wav_sizes(r.read()))
