@@ -1,0 +1,40 @@
+{
+  "engine": "chatterbox-nano-cpu",
+  "port": 8891,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 3.33,
+        "audio_s": 5.96,
+        "realtime_x": 1.79,
+        "bytes": 286124
+      },
+      "long": {
+        "gen_s": 12.64,
+        "audio_s": 22.04,
+        "realtime_x": 1.74,
+        "bytes": 1057964
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — chatterbox-nano synthesizes the whole utterance at once; use stream: false"
+      }
+    },
+    "pt": {
+      "short": {
+        "error": "400: lang 'pt' not supported — Chatterbox Nano is English-only"
+      },
+      "long": {
+        "error": "400: lang 'pt' not supported — Chatterbox Nano is English-only"
+      },
+      "stream": {
+        "no_streaming": "lang 'pt' not supported — Chatterbox Nano is English-only"
+      }
+    }
+  },
+  "ram_idle_mib": 3041,
+  "ram_peak_mib": 3318
+}

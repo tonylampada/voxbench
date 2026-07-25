@@ -30,13 +30,11 @@ working in-container before anything was built on top (the round-one F5-TTS less
 ## Run
 
 ```
-docker run -d --name tts-fish-s2-pro \
-  --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
-  -e LD_LIBRARY_PATH=/opt/nvdrv \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.cache/huggingface:/hf:ro \
-  -p 127.0.0.1:8892:8877 tts-fish-s2-pro:gpu
+engines/tts up fish-s2-pro
 ```
+
+Registered on port 8892 with mounts `voices` (the live voice library, for reference
+cloning) and `hf` (the host HF cache at `/hf:ro`).
 
 The HF cache is mounted at `/hf` (not `/root/.cache`) because the container runs as uid 1000
 (`fish`), which cannot traverse `/root`. Model load takes ~1–2 min; `/health` returns 503
@@ -48,21 +46,20 @@ the resident 8 GB chatterbox-gpu on the 24 GB card. The entrypoint symlink-copie
 snapshot and patches `max_seq_len` to 4096 (~3 minutes of audio at the codec's 21 Hz —
 far beyond any bench utterance). Weights are untouched; override with `-e FISH_MAX_SEQ_LEN=N`.
 
-## Contract notes
+## Contract notes (v2)
 
 - `lang`: both `en` (Tier 1) and `pt` (Tier 2) are supported; the model infers language from
   the text, there is no explicit language switch upstream.
-- `/voices` → `["default"]` only. s2-pro is a voice-cloning model with no built-in speaker
-  list; fish-speech reference cloning needs an (audio, transcript) pair and the repo's
-  `voices/` clips have no transcripts, so only the model's unconditioned voice is offered.
-  Any other `voice` value → 400. To enable cloning: add a sibling `<clip>.txt` transcript
-  per clip in `voices/` (the f5-tts-ptbr convention), then teach the adapter to send
-  `references=[{audio, text}]` to upstream `/v1/tts` — the fish-speech API already
-  supports it.
-- `/tts/stream` is adapter-side sentence chunking (one framed WAV per `chunk_size` sentences),
-  not fish-speech's native streaming — upstream native streaming emits raw PCM chunks, and
-  re-framing those into per-chunk WAVs honestly is more code than it is worth for the bench.
-- Optional passthrough knobs: `temperature`, `top_p`, `seed`, `chunk_length`.
+- `/v1/voices` → the `default` builtin (the model's unconditioned voice) plus the full
+  shared library as `reference` voices. **Cloning works for any library clip**: every clip
+  reads the bench seed sentence in its own language (`bench/mkvoicelib.py`), so the adapter
+  knows each clip's transcript by construction and sends `references=[{audio, text}]`
+  (base64 audio over JSON — the fish-speech schema decodes it) to upstream `/v1/tts`.
+- `stream: true` → **400**. fish-speech's `streaming: true` is cosmetic for s2-pro: measured
+  against upstream directly, every PCM byte of an 8-sentence text arrives in one burst at
+  the end (TTFB == total; its WAV-header and final-blob yields are numpy arrays its own
+  async wrapper silently drops). The contract says don't fake it.
+- `/v1/params`: `temperature`, `top_p`. No `speed` knob — `speed` other than 1.0 → 400.
 - Inline control tags (`[whisper]`, `[laughing]`, …) pass straight through in the text.
 
 ## Serving path

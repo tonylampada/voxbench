@@ -1,0 +1,54 @@
+{
+  "engine": "omnivoice-brpt",
+  "port": 8887,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 0.41,
+        "audio_s": 5.12,
+        "realtime_x": 12.6,
+        "bytes": 245804
+      },
+      "long": {
+        "gen_s": 0.69,
+        "audio_s": 19.92,
+        "realtime_x": 28.81,
+        "bytes": 956204
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — OmniVoice has no incremental synthesis API; use stream: false"
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 0.41,
+        "audio_s": 5.24,
+        "realtime_x": 12.89,
+        "bytes": 251564
+      },
+      "long": {
+        "gen_s": 0.7,
+        "audio_s": 22.4,
+        "realtime_x": 31.8,
+        "bytes": 1075244
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — OmniVoice has no incremental synthesis API; use stream: false"
+      }
+    }
+  },
+  "ram_idle_mib": 4327,
+  "vram_idle_mib": 2531,
+  "vram_busy_mib": 3689,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 3506
+    }
+  ],
+  "ram_peak_mib": 5180
+}

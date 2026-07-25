@@ -13,7 +13,10 @@ cd "$(dirname "$0")/.."  # repo root; every path below is relative to it
 # engines/testpage.html and some also bake in voices/.
 # extra-mount: comma-separated list. voices = repo voices/ dir at /app/voices,
 # voicesroot = same dir at /voices (xtts-v2 resolves clips there),
-# ttscache = coqui model cache, shm = 32 GB /dev/shm, - = none.
+# ttscache = coqui model cache, shm = 32 GB /dev/shm,
+# hf = host HF cache at /hf read-only (fish-s2-pro runs as uid 1000 and cannot
+# traverse /root, so the default /root/.cache/huggingface mount is useless to it),
+# - = none.
 REGISTRY='
 chatterbox-ptbr  8881  gpu  .  voices
 qwen3-tts        8882  gpu  .  -
@@ -26,7 +29,7 @@ piper            8888  cpu  .  -
 kokoro           8889  gpu  .  -
 chatterbox-flash 8890  gpu  .  voices
 chatterbox-nano  8891  gpu  .  voices
-# 8892 reserved: fish-s2-pro (verified, PR open, not on master yet; needs HF cache at /hf)
+fish-s2-pro      8892  gpu  .  voices,hf
 higgs-tts-3      8893  gpu  .  voices,shm
 # 8894 reserved: voxtral-tts (not built)
 '
@@ -139,6 +142,7 @@ cmd_up() {
     voices)   RUN_ARGS+=(-v "$PWD/voices:/app/voices:ro") ;;
     voicesroot) RUN_ARGS+=(-v "$PWD/voices:/voices:ro") ;;  # xtts-v2 resolves clips at /voices
     ttscache) RUN_ARGS+=(-v /home/ai/.local/share/tts:/root/.local/share/tts) ;;
+    hf)       RUN_ARGS+=(-v /home/ai/.cache/huggingface:/hf:ro) ;;
     # SGLang-based engines want a big /dev/shm (vendor docs say 32g); the
     # 64 MB default starves torch's IPC.
     shm)      RUN_ARGS+=(--shm-size 32g) ;;

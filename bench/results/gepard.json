@@ -1,0 +1,54 @@
+{
+  "engine": "gepard",
+  "port": 8886,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 1.42,
+        "audio_s": 5.94,
+        "realtime_x": 4.2,
+        "bytes": 262188
+      },
+      "long": {
+        "gen_s": 2.44,
+        "audio_s": 10.5,
+        "realtime_x": 4.3,
+        "bytes": 462892
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — Gepard's native streaming lives in the vLLM serving path, not the eager one used here; use stream: false"
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 1.58,
+        "audio_s": 6.69,
+        "realtime_x": 4.23,
+        "bytes": 294956
+      },
+      "long": {
+        "gen_s": 0.34,
+        "audio_s": 1.21,
+        "realtime_x": 3.57,
+        "bytes": 53292
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — Gepard's native streaming lives in the vLLM serving path, not the eager one used here; use stream: false"
+      }
+    }
+  },
+  "ram_idle_mib": 3307,
+  "vram_idle_mib": 2347,
+  "vram_busy_mib": 2651,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 2468
+    }
+  ],
+  "ram_peak_mib": 4094
+}

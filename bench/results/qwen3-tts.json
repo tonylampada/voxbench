@@ -1,0 +1,54 @@
+{
+  "engine": "qwen3-tts",
+  "port": 8882,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 4.4,
+        "audio_s": 6.48,
+        "realtime_x": 1.47,
+        "bytes": 311084
+      },
+      "long": {
+        "gen_s": 16.1,
+        "audio_s": 23.68,
+        "realtime_x": 1.47,
+        "bytes": 1136684
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — qwen-tts 0.1.1 exposes no streaming output API; use stream: false"
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 6.16,
+        "audio_s": 9.04,
+        "realtime_x": 1.47,
+        "bytes": 433964
+      },
+      "long": {
+        "gen_s": 22.32,
+        "audio_s": 33.28,
+        "realtime_x": 1.49,
+        "bytes": 1597484
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — qwen-tts 0.1.1 exposes no streaming output API; use stream: false"
+      }
+    }
+  },
+  "ram_idle_mib": 5518,
+  "vram_idle_mib": 4743,
+  "vram_busy_mib": 5961,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 5778
+    }
+  ],
+  "ram_peak_mib": 6564
+}

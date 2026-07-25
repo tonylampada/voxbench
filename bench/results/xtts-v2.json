@@ -1,0 +1,54 @@
+{
+  "engine": "xtts-v2",
+  "port": 8885,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 0.84,
+        "audio_s": 6.58,
+        "realtime_x": 7.8,
+        "bytes": 316012
+      },
+      "long": {
+        "gen_s": 2.98,
+        "audio_s": 22.91,
+        "realtime_x": 7.68,
+        "bytes": 1099948
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — XTTS synthesizes whole utterances through the coqui TTS api; use stream: false"
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 1.09,
+        "audio_s": 8.48,
+        "realtime_x": 7.8,
+        "bytes": 407148
+      },
+      "long": {
+        "gen_s": 3.97,
+        "audio_s": 30.17,
+        "realtime_x": 7.59,
+        "bytes": 1448108
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream — XTTS synthesizes whole utterances through the coqui TTS api; use stream: false"
+      }
+    }
+  },
+  "ram_idle_mib": 1660,
+  "vram_idle_mib": 2407,
+  "vram_busy_mib": 3227,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 3044
+    }
+  ],
+  "ram_peak_mib": 2361
+}
