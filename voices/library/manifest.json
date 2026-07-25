@@ -1,0 +1,1650 @@
+[
+ {
+  "file": "kokoro-af-alloy-en.wav",
+  "engine": "kokoro",
+  "voice": "af_alloy",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.27
+ },
+ {
+  "file": "kokoro-af-aoede-en.wav",
+  "engine": "kokoro",
+  "voice": "af_aoede",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.72
+ },
+ {
+  "file": "kokoro-af-bella-en.wav",
+  "engine": "kokoro",
+  "voice": "af_bella",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 9.25
+ },
+ {
+  "file": "kokoro-af-heart-en.wav",
+  "engine": "kokoro",
+  "voice": "af_heart",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 9.07
+ },
+ {
+  "file": "kokoro-af-jadzia-en.wav",
+  "engine": "kokoro",
+  "voice": "af_jadzia",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.5
+ },
+ {
+  "file": "kokoro-af-jessica-en.wav",
+  "engine": "kokoro",
+  "voice": "af_jessica",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 7.81
+ },
+ {
+  "file": "kokoro-af-kore-en.wav",
+  "engine": "kokoro",
+  "voice": "af_kore",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.87
+ },
+ {
+  "file": "kokoro-af-nicole-en.wav",
+  "engine": "kokoro",
+  "voice": "af_nicole",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 13.53
+ },
+ {
+  "file": "kokoro-af-nova-en.wav",
+  "engine": "kokoro",
+  "voice": "af_nova",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.1
+ },
+ {
+  "file": "kokoro-af-river-en.wav",
+  "engine": "kokoro",
+  "voice": "af_river",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 7.71
+ },
+ {
+  "file": "kokoro-af-sarah-en.wav",
+  "engine": "kokoro",
+  "voice": "af_sarah",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.94
+ },
+ {
+  "file": "kokoro-af-sky-en.wav",
+  "engine": "kokoro",
+  "voice": "af_sky",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.64
+ },
+ {
+  "file": "kokoro-af-v0-en.wav",
+  "engine": "kokoro",
+  "voice": "af_v0",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.54
+ },
+ {
+  "file": "kokoro-af-v0bella-en.wav",
+  "engine": "kokoro",
+  "voice": "af_v0bella",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.92
+ },
+ {
+  "file": "kokoro-af-v0irulan-en.wav",
+  "engine": "kokoro",
+  "voice": "af_v0irulan",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 7.9
+ },
+ {
+  "file": "kokoro-af-v0nicole-en.wav",
+  "engine": "kokoro",
+  "voice": "af_v0nicole",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 13.4
+ },
+ {
+  "file": "kokoro-af-v0sarah-en.wav",
+  "engine": "kokoro",
+  "voice": "af_v0sarah",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.31
+ },
+ {
+  "file": "kokoro-af-v0sky-en.wav",
+  "engine": "kokoro",
+  "voice": "af_v0sky",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 7.89
+ },
+ {
+  "file": "kokoro-am-adam-en.wav",
+  "engine": "kokoro",
+  "voice": "am_adam",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.67
+ },
+ {
+  "file": "kokoro-am-echo-en.wav",
+  "engine": "kokoro",
+  "voice": "am_echo",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.28
+ },
+ {
+  "file": "kokoro-am-eric-en.wav",
+  "engine": "kokoro",
+  "voice": "am_eric",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 7.74
+ },
+ {
+  "file": "kokoro-am-fenrir-en.wav",
+  "engine": "kokoro",
+  "voice": "am_fenrir",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.87
+ },
+ {
+  "file": "kokoro-am-liam-en.wav",
+  "engine": "kokoro",
+  "voice": "am_liam",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.13
+ },
+ {
+  "file": "kokoro-am-michael-en.wav",
+  "engine": "kokoro",
+  "voice": "am_michael",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 9.89
+ },
+ {
+  "file": "kokoro-am-onyx-en.wav",
+  "engine": "kokoro",
+  "voice": "am_onyx",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.2
+ },
+ {
+  "file": "kokoro-am-puck-en.wav",
+  "engine": "kokoro",
+  "voice": "am_puck",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.51
+ },
+ {
+  "file": "kokoro-am-santa-en.wav",
+  "engine": "kokoro",
+  "voice": "am_santa",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 9.4
+ },
+ {
+  "file": "kokoro-am-v0adam-en.wav",
+  "engine": "kokoro",
+  "voice": "am_v0adam",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 7.75
+ },
+ {
+  "file": "kokoro-am-v0gurney-en.wav",
+  "engine": "kokoro",
+  "voice": "am_v0gurney",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 10.14
+ },
+ {
+  "file": "kokoro-am-v0michael-en.wav",
+  "engine": "kokoro",
+  "voice": "am_v0michael",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 9.49
+ },
+ {
+  "file": "kokoro-bf-alice-en.wav",
+  "engine": "kokoro",
+  "voice": "bf_alice",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.56
+ },
+ {
+  "file": "kokoro-bf-emma-en.wav",
+  "engine": "kokoro",
+  "voice": "bf_emma",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.45
+ },
+ {
+  "file": "kokoro-bf-lily-en.wav",
+  "engine": "kokoro",
+  "voice": "bf_lily",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 8.5
+ },
+ {
+  "file": "kokoro-bf-v0emma-en.wav",
+  "engine": "kokoro",
+  "voice": "bf_v0emma",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 7.32
+ },
+ {
+  "file": "kokoro-bf-v0isabella-en.wav",
+  "engine": "kokoro",
+  "voice": "bf_v0isabella",
+  "lang": "en",
+  "gender": "female",
+  "seconds": 7.87
+ },
+ {
+  "file": "kokoro-bm-daniel-en.wav",
+  "engine": "kokoro",
+  "voice": "bm_daniel",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.08
+ },
+ {
+  "file": "kokoro-bm-fable-en.wav",
+  "engine": "kokoro",
+  "voice": "bm_fable",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.31
+ },
+ {
+  "file": "kokoro-bm-george-en.wav",
+  "engine": "kokoro",
+  "voice": "bm_george",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 9.53
+ },
+ {
+  "file": "kokoro-bm-lewis-en.wav",
+  "engine": "kokoro",
+  "voice": "bm_lewis",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 9.48
+ },
+ {
+  "file": "kokoro-bm-v0george-en.wav",
+  "engine": "kokoro",
+  "voice": "bm_v0george",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 9.59
+ },
+ {
+  "file": "kokoro-bm-v0lewis-en.wav",
+  "engine": "kokoro",
+  "voice": "bm_v0lewis",
+  "lang": "en",
+  "gender": "male",
+  "seconds": 8.94
+ },
+ {
+  "file": "kokoro-ef-dora-es.wav",
+  "engine": "kokoro",
+  "voice": "ef_dora",
+  "lang": "es",
+  "gender": "female",
+  "seconds": 8.29
+ },
+ {
+  "file": "kokoro-em-alex-es.wav",
+  "engine": "kokoro",
+  "voice": "em_alex",
+  "lang": "es",
+  "gender": "male",
+  "seconds": 8.34
+ },
+ {
+  "file": "kokoro-em-santa-es.wav",
+  "engine": "kokoro",
+  "voice": "em_santa",
+  "lang": "es",
+  "gender": "male",
+  "seconds": 8.52
+ },
+ {
+  "file": "kokoro-ff-siwis-fr.wav",
+  "engine": "kokoro",
+  "voice": "ff_siwis",
+  "lang": "fr",
+  "gender": "female",
+  "seconds": 9.23
+ },
+ {
+  "file": "kokoro-hf-alpha-hi.wav",
+  "engine": "kokoro",
+  "voice": "hf_alpha",
+  "lang": "hi",
+  "gender": "female",
+  "seconds": 8.3
+ },
+ {
+  "file": "kokoro-hf-beta-hi.wav",
+  "engine": "kokoro",
+  "voice": "hf_beta",
+  "lang": "hi",
+  "gender": "female",
+  "seconds": 7.45
+ },
+ {
+  "file": "kokoro-hm-omega-hi.wav",
+  "engine": "kokoro",
+  "voice": "hm_omega",
+  "lang": "hi",
+  "gender": "male",
+  "seconds": 8.69
+ },
+ {
+  "file": "kokoro-hm-psi-hi.wav",
+  "engine": "kokoro",
+  "voice": "hm_psi",
+  "lang": "hi",
+  "gender": "male",
+  "seconds": 9.08
+ },
+ {
+  "file": "kokoro-if-sara-it.wav",
+  "engine": "kokoro",
+  "voice": "if_sara",
+  "lang": "it",
+  "gender": "female",
+  "seconds": 8.63
+ },
+ {
+  "file": "kokoro-im-nicola-it.wav",
+  "engine": "kokoro",
+  "voice": "im_nicola",
+  "lang": "it",
+  "gender": "male",
+  "seconds": 9.46
+ },
+ {
+  "file": null,
+  "engine": "kokoro",
+  "voice": "jf_alpha",
+  "lang": "ja",
+  "gender": "female",
+  "error": "{\"detail\":\"kokoro upstream error: {\\\"detail\\\":{\\\"error\\\":\\\"processing_error\\\",\\\"message\\\":\\\"list index out of range\\\",\\\"type\\\":\\\"server_error\\\"}}\"}"
+ },
+ {
+  "file": null,
+  "engine": "kokoro",
+  "voice": "jf_gongitsune",
+  "lang": "ja",
+  "gender": "female",
+  "error": "{\"detail\":\"kokoro upstream error: {\\\"detail\\\":{\\\"error\\\":\\\"processing_error\\\",\\\"message\\\":\\\"list index out of range\\\",\\\"type\\\":\\\"server_error\\\"}}\"}"
+ },
+ {
+  "file": null,
+  "engine": "kokoro",
+  "voice": "jf_nezumi",
+  "lang": "ja",
+  "gender": "female",
+  "error": "{\"detail\":\"kokoro upstream error: {\\\"detail\\\":{\\\"error\\\":\\\"processing_error\\\",\\\"message\\\":\\\"list index out of range\\\",\\\"type\\\":\\\"server_error\\\"}}\"}"
+ },
+ {
+  "file": null,
+  "engine": "kokoro",
+  "voice": "jf_tebukuro",
+  "lang": "ja",
+  "gender": "female",
+  "error": "{\"detail\":\"kokoro upstream error: {\\\"detail\\\":{\\\"error\\\":\\\"processing_error\\\",\\\"message\\\":\\\"list index out of range\\\",\\\"type\\\":\\\"server_error\\\"}}\"}"
+ },
+ {
+  "file": null,
+  "engine": "kokoro",
+  "voice": "jm_kumo",
+  "lang": "ja",
+  "gender": "male",
+  "error": "{\"detail\":\"kokoro upstream error: {\\\"detail\\\":{\\\"error\\\":\\\"processing_error\\\",\\\"message\\\":\\\"list index out of range\\\",\\\"type\\\":\\\"server_error\\\"}}\"}"
+ },
+ {
+  "file": "kokoro-pf-dora-pt.wav",
+  "engine": "kokoro",
+  "voice": "pf_dora",
+  "lang": "pt",
+  "gender": "female",
+  "seconds": 8.42
+ },
+ {
+  "file": "kokoro-pm-alex-pt.wav",
+  "engine": "kokoro",
+  "voice": "pm_alex",
+  "lang": "pt",
+  "gender": "male",
+  "seconds": 8.57
+ },
+ {
+  "file": "kokoro-pm-santa-pt.wav",
+  "engine": "kokoro",
+  "voice": "pm_santa",
+  "lang": "pt",
+  "gender": "male",
+  "seconds": 8.69
+ },
+ {
+  "file": "kokoro-zf-xiaobei-zh.wav",
+  "engine": "kokoro",
+  "voice": "zf_xiaobei",
+  "lang": "zh",
+  "gender": "female",
+  "seconds": 10.0
+ },
+ {
+  "file": "kokoro-zf-xiaoni-zh.wav",
+  "engine": "kokoro",
+  "voice": "zf_xiaoni",
+  "lang": "zh",
+  "gender": "female",
+  "seconds": 8.57
+ },
+ {
+  "file": "kokoro-zf-xiaoxiao-zh.wav",
+  "engine": "kokoro",
+  "voice": "zf_xiaoxiao",
+  "lang": "zh",
+  "gender": "female",
+  "seconds": 8.38
+ },
+ {
+  "file": "kokoro-zf-xiaoyi-zh.wav",
+  "engine": "kokoro",
+  "voice": "zf_xiaoyi",
+  "lang": "zh",
+  "gender": "female",
+  "seconds": 8.05
+ },
+ {
+  "file": "kokoro-zm-yunjian-zh.wav",
+  "engine": "kokoro",
+  "voice": "zm_yunjian",
+  "lang": "zh",
+  "gender": "male",
+  "seconds": 8.22
+ },
+ {
+  "file": "kokoro-zm-yunxi-zh.wav",
+  "engine": "kokoro",
+  "voice": "zm_yunxi",
+  "lang": "zh",
+  "gender": "male",
+  "seconds": 7.67
+ },
+ {
+  "file": "kokoro-zm-yunxia-zh.wav",
+  "engine": "kokoro",
+  "voice": "zm_yunxia",
+  "lang": "zh",
+  "gender": "male",
+  "seconds": 8.62
+ },
+ {
+  "file": "kokoro-zm-yunyang-zh.wav",
+  "engine": "kokoro",
+  "voice": "zm_yunyang",
+  "lang": "zh",
+  "gender": "male",
+  "seconds": 7.53
+ },
+ {
+  "file": "piper-en-us-lessac-medium-en.wav",
+  "engine": "piper",
+  "voice": "en_US-lessac-medium",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.24
+ },
+ {
+  "file": "piper-pt-br-cadu-medium-pt.wav",
+  "engine": "piper",
+  "voice": "pt_BR-cadu-medium",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.05
+ },
+ {
+  "file": "piper-pt-br-edresson-low-pt.wav",
+  "engine": "piper",
+  "voice": "pt_BR-edresson-low",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.08
+ },
+ {
+  "file": "piper-pt-br-faber-medium-pt.wav",
+  "engine": "piper",
+  "voice": "pt_BR-faber-medium",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 7.83
+ },
+ {
+  "file": "piper-pt-br-jeff-medium-pt.wav",
+  "engine": "piper",
+  "voice": "pt_BR-jeff-medium",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.15
+ },
+ {
+  "file": "qwen3-tts-aiden-en.wav",
+  "engine": "qwen3-tts",
+  "voice": "aiden",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.36
+ },
+ {
+  "file": "qwen3-tts-aiden-pt.wav",
+  "engine": "qwen3-tts",
+  "voice": "aiden",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.52
+ },
+ {
+  "file": "qwen3-tts-dylan-en.wav",
+  "engine": "qwen3-tts",
+  "voice": "dylan",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 12.08
+ },
+ {
+  "file": "qwen3-tts-dylan-pt.wav",
+  "engine": "qwen3-tts",
+  "voice": "dylan",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 9.36
+ },
+ {
+  "file": "qwen3-tts-eric-en.wav",
+  "engine": "qwen3-tts",
+  "voice": "eric",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.92
+ },
+ {
+  "file": "qwen3-tts-eric-pt.wav",
+  "engine": "qwen3-tts",
+  "voice": "eric",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.88
+ },
+ {
+  "file": "qwen3-tts-ono-anna-en.wav",
+  "engine": "qwen3-tts",
+  "voice": "ono_anna",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.4
+ },
+ {
+  "file": "qwen3-tts-ono-anna-pt.wav",
+  "engine": "qwen3-tts",
+  "voice": "ono_anna",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.0
+ },
+ {
+  "file": "qwen3-tts-ryan-en.wav",
+  "engine": "qwen3-tts",
+  "voice": "ryan",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.4
+ },
+ {
+  "file": "qwen3-tts-ryan-pt.wav",
+  "engine": "qwen3-tts",
+  "voice": "ryan",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.36
+ },
+ {
+  "file": "qwen3-tts-serena-en.wav",
+  "engine": "qwen3-tts",
+  "voice": "serena",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 12.32
+ },
+ {
+  "file": "qwen3-tts-serena-pt.wav",
+  "engine": "qwen3-tts",
+  "voice": "serena",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.08
+ },
+ {
+  "file": "qwen3-tts-sohee-en.wav",
+  "engine": "qwen3-tts",
+  "voice": "sohee",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.36
+ },
+ {
+  "file": "qwen3-tts-sohee-pt.wav",
+  "engine": "qwen3-tts",
+  "voice": "sohee",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 9.68
+ },
+ {
+  "file": "qwen3-tts-uncle-fu-en.wav",
+  "engine": "qwen3-tts",
+  "voice": "uncle_fu",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.88
+ },
+ {
+  "file": "qwen3-tts-uncle-fu-pt.wav",
+  "engine": "qwen3-tts",
+  "voice": "uncle_fu",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 9.92
+ },
+ {
+  "file": "qwen3-tts-vivian-en.wav",
+  "engine": "qwen3-tts",
+  "voice": "vivian",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 11.2
+ },
+ {
+  "file": "qwen3-tts-vivian-pt.wav",
+  "engine": "qwen3-tts",
+  "voice": "vivian",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.32
+ },
+ {
+  "file": "xtts-v2-aaron-dreschner-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Aaron Dreschner",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.0
+ },
+ {
+  "file": "xtts-v2-aaron-dreschner-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Aaron Dreschner",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.66
+ },
+ {
+  "file": "xtts-v2-abrahan-mack-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Abrahan Mack",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.78
+ },
+ {
+  "file": "xtts-v2-abrahan-mack-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Abrahan Mack",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.9
+ },
+ {
+  "file": "xtts-v2-adde-michal-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Adde Michal",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.51
+ },
+ {
+  "file": "xtts-v2-adde-michal-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Adde Michal",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.63
+ },
+ {
+  "file": "xtts-v2-alexandra-hisakawa-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Alexandra Hisakawa",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.56
+ },
+ {
+  "file": "xtts-v2-alexandra-hisakawa-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Alexandra Hisakawa",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.01
+ },
+ {
+  "file": "xtts-v2-alison-dietlinde-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Alison Dietlinde",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.19
+ },
+ {
+  "file": "xtts-v2-alison-dietlinde-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Alison Dietlinde",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.08
+ },
+ {
+  "file": "xtts-v2-alma-maria-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Alma María",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.6
+ },
+ {
+  "file": "xtts-v2-alma-maria-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Alma María",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.76
+ },
+ {
+  "file": "xtts-v2-ana-florence-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Ana Florence",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.67
+ },
+ {
+  "file": "xtts-v2-ana-florence-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Ana Florence",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.83
+ },
+ {
+  "file": "xtts-v2-andrew-chipper-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Andrew Chipper",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.69
+ },
+ {
+  "file": "xtts-v2-andrew-chipper-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Andrew Chipper",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.86
+ },
+ {
+  "file": "xtts-v2-annmarie-nele-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Annmarie Nele",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.97
+ },
+ {
+  "file": "xtts-v2-annmarie-nele-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Annmarie Nele",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.61
+ },
+ {
+  "file": "xtts-v2-asya-anara-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Asya Anara",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.79
+ },
+ {
+  "file": "xtts-v2-asya-anara-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Asya Anara",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.76
+ },
+ {
+  "file": "xtts-v2-badr-odhiambo-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Badr Odhiambo",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.97
+ },
+ {
+  "file": "xtts-v2-badr-odhiambo-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Badr Odhiambo",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.11
+ },
+ {
+  "file": "xtts-v2-baldur-sanjin-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Baldur Sanjin",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.51
+ },
+ {
+  "file": "xtts-v2-baldur-sanjin-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Baldur Sanjin",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 13.55
+ },
+ {
+  "file": "xtts-v2-barbora-maclean-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Barbora MacLean",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.69
+ },
+ {
+  "file": "xtts-v2-barbora-maclean-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Barbora MacLean",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.99
+ },
+ {
+  "file": "xtts-v2-brenda-stern-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Brenda Stern",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.35
+ },
+ {
+  "file": "xtts-v2-brenda-stern-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Brenda Stern",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.25
+ },
+ {
+  "file": "xtts-v2-camilla-holmstrom-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Camilla Holmström",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.58
+ },
+ {
+  "file": "xtts-v2-camilla-holmstrom-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Camilla Holmström",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 9.55
+ },
+ {
+  "file": "xtts-v2-chandra-macfarland-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Chandra MacFarland",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.92
+ },
+ {
+  "file": "xtts-v2-chandra-macfarland-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Chandra MacFarland",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.22
+ },
+ {
+  "file": "xtts-v2-claribel-dervla-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Claribel Dervla",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.25
+ },
+ {
+  "file": "xtts-v2-claribel-dervla-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Claribel Dervla",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.0
+ },
+ {
+  "file": "xtts-v2-craig-gutsy-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Craig Gutsy",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.95
+ },
+ {
+  "file": "xtts-v2-craig-gutsy-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Craig Gutsy",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.29
+ },
+ {
+  "file": "xtts-v2-daisy-studious-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Daisy Studious",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.85
+ },
+ {
+  "file": "xtts-v2-daisy-studious-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Daisy Studious",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.72
+ },
+ {
+  "file": "xtts-v2-damien-black-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Damien Black",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.13
+ },
+ {
+  "file": "xtts-v2-damien-black-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Damien Black",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.97
+ },
+ {
+  "file": "xtts-v2-damjan-chapman-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Damjan Chapman",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.99
+ },
+ {
+  "file": "xtts-v2-damjan-chapman-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Damjan Chapman",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.53
+ },
+ {
+  "file": "xtts-v2-dionisio-schuyler-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Dionisio Schuyler",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.28
+ },
+ {
+  "file": "xtts-v2-dionisio-schuyler-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Dionisio Schuyler",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.15
+ },
+ {
+  "file": "xtts-v2-eugenio-matarac-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Eugenio Mataracı",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 12.61
+ },
+ {
+  "file": "xtts-v2-eugenio-matarac-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Eugenio Mataracı",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.32
+ },
+ {
+  "file": "xtts-v2-ferran-simen-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Ferran Simen",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 12.33
+ },
+ {
+  "file": "xtts-v2-ferran-simen-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Ferran Simen",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.04
+ },
+ {
+  "file": "xtts-v2-filip-traverse-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Filip Traverse",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.97
+ },
+ {
+  "file": "xtts-v2-filip-traverse-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Filip Traverse",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.15
+ },
+ {
+  "file": "xtts-v2-gilberto-mathias-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Gilberto Mathias",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.09
+ },
+ {
+  "file": "xtts-v2-gilberto-mathias-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Gilberto Mathias",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.2
+ },
+ {
+  "file": "xtts-v2-gitta-nikolina-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Gitta Nikolina",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.02
+ },
+ {
+  "file": "xtts-v2-gitta-nikolina-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Gitta Nikolina",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.53
+ },
+ {
+  "file": "xtts-v2-gracie-wise-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Gracie Wise",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.57
+ },
+ {
+  "file": "xtts-v2-gracie-wise-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Gracie Wise",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.11
+ },
+ {
+  "file": "xtts-v2-henriette-usha-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Henriette Usha",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.42
+ },
+ {
+  "file": "xtts-v2-henriette-usha-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Henriette Usha",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.71
+ },
+ {
+  "file": "xtts-v2-ige-behringer-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Ige Behringer",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.88
+ },
+ {
+  "file": "xtts-v2-ige-behringer-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Ige Behringer",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.07
+ },
+ {
+  "file": "xtts-v2-ilkin-urbano-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Ilkin Urbano",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.34
+ },
+ {
+  "file": "xtts-v2-ilkin-urbano-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Ilkin Urbano",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.4
+ },
+ {
+  "file": "xtts-v2-kazuhiko-atallah-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Kazuhiko Atallah",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.04
+ },
+ {
+  "file": "xtts-v2-kazuhiko-atallah-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Kazuhiko Atallah",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.9
+ },
+ {
+  "file": "xtts-v2-kumar-dahl-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Kumar Dahl",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 11.22
+ },
+ {
+  "file": "xtts-v2-kumar-dahl-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Kumar Dahl",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.57
+ },
+ {
+  "file": "xtts-v2-lidiya-szekeres-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Lidiya Szekeres",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.78
+ },
+ {
+  "file": "xtts-v2-lidiya-szekeres-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Lidiya Szekeres",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.57
+ },
+ {
+  "file": "xtts-v2-lilya-stainthorpe-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Lilya Stainthorpe",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.76
+ },
+ {
+  "file": "xtts-v2-lilya-stainthorpe-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Lilya Stainthorpe",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 9.6
+ },
+ {
+  "file": "xtts-v2-ludvig-milivoj-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Ludvig Milivoj",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.58
+ },
+ {
+  "file": "xtts-v2-ludvig-milivoj-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Ludvig Milivoj",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.16
+ },
+ {
+  "file": "xtts-v2-luis-moray-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Luis Moray",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.09
+ },
+ {
+  "file": "xtts-v2-luis-moray-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Luis Moray",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.63
+ },
+ {
+  "file": "xtts-v2-maja-ruoho-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Maja Ruoho",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.51
+ },
+ {
+  "file": "xtts-v2-maja-ruoho-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Maja Ruoho",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.69
+ },
+ {
+  "file": "xtts-v2-marcos-rudaski-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Marcos Rudaski",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.6
+ },
+ {
+  "file": "xtts-v2-marcos-rudaski-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Marcos Rudaski",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.29
+ },
+ {
+  "file": "xtts-v2-narelle-moon-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Narelle Moon",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.67
+ },
+ {
+  "file": "xtts-v2-narelle-moon-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Narelle Moon",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.01
+ },
+ {
+  "file": "xtts-v2-nova-hogarth-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Nova Hogarth",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.1
+ },
+ {
+  "file": "xtts-v2-nova-hogarth-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Nova Hogarth",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.13
+ },
+ {
+  "file": "xtts-v2-rosemary-okafor-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Rosemary Okafor",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.16
+ },
+ {
+  "file": "xtts-v2-rosemary-okafor-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Rosemary Okafor",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.51
+ },
+ {
+  "file": "xtts-v2-royston-min-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Royston Min",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.67
+ },
+ {
+  "file": "xtts-v2-royston-min-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Royston Min",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.63
+ },
+ {
+  "file": "xtts-v2-sofia-hellen-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Sofia Hellen",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.09
+ },
+ {
+  "file": "xtts-v2-sofia-hellen-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Sofia Hellen",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.44
+ },
+ {
+  "file": "xtts-v2-suad-qasim-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Suad Qasim",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.29
+ },
+ {
+  "file": "xtts-v2-suad-qasim-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Suad Qasim",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 13.51
+ },
+ {
+  "file": "xtts-v2-szofi-granger-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Szofi Granger",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.88
+ },
+ {
+  "file": "xtts-v2-szofi-granger-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Szofi Granger",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.92
+ },
+ {
+  "file": "xtts-v2-tammie-ema-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Tammie Ema",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.48
+ },
+ {
+  "file": "xtts-v2-tammie-ema-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Tammie Ema",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 9.93
+ },
+ {
+  "file": "xtts-v2-tammy-grit-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Tammy Grit",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.25
+ },
+ {
+  "file": "xtts-v2-tammy-grit-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Tammy Grit",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 9.6
+ },
+ {
+  "file": "xtts-v2-tanja-adelina-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Tanja Adelina",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.95
+ },
+ {
+  "file": "xtts-v2-tanja-adelina-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Tanja Adelina",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.16
+ },
+ {
+  "file": "xtts-v2-torcull-diarmuid-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Torcull Diarmuid",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.93
+ },
+ {
+  "file": "xtts-v2-torcull-diarmuid-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Torcull Diarmuid",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.01
+ },
+ {
+  "file": "xtts-v2-uta-obando-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Uta Obando",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.02
+ },
+ {
+  "file": "xtts-v2-uta-obando-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Uta Obando",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.22
+ },
+ {
+  "file": "xtts-v2-viktor-eka-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Viktor Eka",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.42
+ },
+ {
+  "file": "xtts-v2-viktor-eka-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Viktor Eka",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.6
+ },
+ {
+  "file": "xtts-v2-viktor-menelaos-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Viktor Menelaos",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 8.58
+ },
+ {
+  "file": "xtts-v2-viktor-menelaos-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Viktor Menelaos",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.49
+ },
+ {
+  "file": "xtts-v2-vjollca-johnnie-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Vjollca Johnnie",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.93
+ },
+ {
+  "file": "xtts-v2-vjollca-johnnie-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Vjollca Johnnie",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.36
+ },
+ {
+  "file": "xtts-v2-wulf-carlevaro-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Wulf Carlevaro",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.56
+ },
+ {
+  "file": "xtts-v2-wulf-carlevaro-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Wulf Carlevaro",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.83
+ },
+ {
+  "file": "xtts-v2-xavier-hayasaka-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Xavier Hayasaka",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 9.97
+ },
+ {
+  "file": "xtts-v2-xavier-hayasaka-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Xavier Hayasaka",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 11.28
+ },
+ {
+  "file": "xtts-v2-zacharie-aimilios-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Zacharie Aimilios",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.29
+ },
+ {
+  "file": "xtts-v2-zacharie-aimilios-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Zacharie Aimilios",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 10.95
+ },
+ {
+  "file": "xtts-v2-zofija-kendrick-en.wav",
+  "engine": "xtts-v2",
+  "voice": "Zofija Kendrick",
+  "lang": "en",
+  "gender": "unknown",
+  "seconds": 10.95
+ },
+ {
+  "file": "xtts-v2-zofija-kendrick-pt.wav",
+  "engine": "xtts-v2",
+  "voice": "Zofija Kendrick",
+  "lang": "pt",
+  "gender": "unknown",
+  "seconds": 12.19
+ }
+]
