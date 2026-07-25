@@ -55,7 +55,10 @@ far beyond any bench utterance). Weights are untouched; override with `-e FISH_M
 - `/voices` → `["default"]` only. s2-pro is a voice-cloning model with no built-in speaker
   list; fish-speech reference cloning needs an (audio, transcript) pair and the repo's
   `voices/` clips have no transcripts, so only the model's unconditioned voice is offered.
-  Any other `voice` value → 400.
+  Any other `voice` value → 400. To enable cloning: add a sibling `<clip>.txt` transcript
+  per clip in `voices/` (the f5-tts-ptbr convention), then teach the adapter to send
+  `references=[{audio, text}]` to upstream `/v1/tts` — the fish-speech API already
+  supports it.
 - `/tts/stream` is adapter-side sentence chunking (one framed WAV per `chunk_size` sentences),
   not fish-speech's native streaming — upstream native streaming emits raw PCM chunks, and
   re-framing those into per-chunk WAVs honestly is more code than it is worth for the bench.

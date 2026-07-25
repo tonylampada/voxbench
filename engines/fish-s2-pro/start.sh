@@ -3,7 +3,9 @@ set -euo pipefail
 
 # Weights come from the host HuggingFace cache mounted at /hf (never baked
 # into the image). Resolve the snapshot dir at runtime so the SHA can change.
-SNAP=$(ls -d /hf/hub/models--fishaudio--s2-pro/snapshots/*/ | head -1)
+# `|| true` because set -e would otherwise kill the script on an unmatched
+# glob before the readable error below ever prints.
+SNAP=$(ls -d /hf/hub/models--fishaudio--s2-pro/snapshots/*/ 2>/dev/null | head -1 || true)
 if [ -z "${SNAP}" ]; then
   echo "FATAL: fishaudio/s2-pro not found under /hf — mount the HF cache" >&2
   exit 1
