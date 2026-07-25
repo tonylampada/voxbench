@@ -1,0 +1,48 @@
+{
+  "engine": "fish-s2-pro",
+  "port": 8892,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 6.3,
+        "audio_s": 5.2,
+        "realtime_x": 0.83,
+        "bytes": 458796
+      },
+      "long": {
+        "gen_s": 25.22,
+        "audio_s": 21.41,
+        "realtime_x": 0.85,
+        "bytes": 1888300
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream: fish-speech buffers the whole synthesis before sending — request stream: false and play the WAV"
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 7.05,
+        "audio_s": 5.85,
+        "realtime_x": 0.83,
+        "bytes": 516140
+      },
+      "long": {
+        "gen_s": 26.92,
+        "audio_s": 22.89,
+        "realtime_x": 0.85,
+        "bytes": 2019372
+      },
+      "stream": {
+        "no_streaming": "this engine cannot stream: fish-speech buffers the whole synthesis before sending — request stream: false and play the WAV"
+      }
+    }
+  },
+  "vram_idle_mib": 14799,
+  "vram_busy_mib": 14803,
+  "ram_idle_mib": 5733,
+  "ram_peak_mib": 5732
+}
