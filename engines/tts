@@ -9,18 +9,19 @@ cd "$(dirname "$0")/.."  # repo root; every path below is relative to it
 # Adding an engine = ONE line here (plus its engines/<name>/ dir).
 # Derived, not listed: dockerfile is always engines/<name>/Dockerfile, image is
 # tts-<name>:gpu, container is tts-<name>, the server always listens on 8877
-# inside. Context "." means the repo root (those builds bake in voices/).
+# inside. Context is always "." (the repo root) — every build needs
+# engines/testpage.html and some also bake in voices/.
 # extra-mount: voices = repo voices/ dir, ttscache = coqui model cache, - = none.
 REGISTRY='
-chatterbox-ptbr  8881  gpu  .                    -
-qwen3-tts        8882  gpu  engines/qwen3-tts    -
-voxcpm2          8883  gpu  .                    -
-f5-tts-ptbr      8884  gpu  engines/f5-tts-ptbr  voices
-xtts-v2          8885  gpu  engines/xtts-v2      ttscache
-gepard           8886  gpu  engines/gepard       -
-omnivoice-brpt   8887  gpu  .                    -
-piper            8888  cpu  engines/piper        -
-kokoro           8889  gpu  engines/kokoro       -
+chatterbox-ptbr  8881  gpu  .  -
+qwen3-tts        8882  gpu  .  -
+voxcpm2          8883  gpu  .  -
+f5-tts-ptbr      8884  gpu  .  voices
+xtts-v2          8885  gpu  .  ttscache
+gepard           8886  gpu  .  -
+omnivoice-brpt   8887  gpu  .  -
+piper            8888  cpu  .  -
+kokoro           8889  gpu  .  -
 '
 
 die() { echo "tts: $*" >&2; exit 1; }
@@ -55,14 +56,27 @@ gpu_run_args() {  # appends to RUN_ARGS
 }
 
 cmd_up() {
-  local e=$1 force=${2:-}
+  local e=$1 force='' host=${TTS_HOST:-127.0.0.1}; shift
+  while [ $# -gt 0 ]; do case $1 in
+    --force) force=1; shift ;;
+    --host) host=${2:?--host needs an address}; shift 2 ;;
+    '') shift ;;
+    *) die "up: unknown flag '$1' (--force, --host <addr>)" ;;
+  esac; done
+  # No engine has any authentication — the network boundary IS the auth
+  # boundary. A specific address (loopback, a tailnet IP) is a deliberate,
+  # bounded choice; 0.0.0.0 would expose an unauthenticated TTS service on
+  # every interface, including whatever public wifi this laptop is on.
+  if [ "$host" = 0.0.0.0 ]; then
+    die "refusing --host 0.0.0.0: these engines have no auth, the network boundary is the auth boundary. Bind a specific address instead (e.g. this box's tailnet IP)."
+  fi
   require "$e"
   if [ "$(state "$e")" = running ]; then
-    if healthy "$e"; then echo "tts-$e already up: http://127.0.0.1:$PORT"; return; fi
+    if healthy "$e"; then echo "tts-$e already up: http://127.0.0.1:$PORT (test page)"; return; fi
     echo "tts-$e is running but not healthy yet — waiting"; wait_healthy "$e"; return
   fi
   # There is ONE 24 GB card — refuse to start a second GPU engine.
-  if [ "$GPU" = gpu ] && [ "$force" != --force ]; then
+  if [ "$GPU" = gpu ] && [ -z "$force" ]; then
     local o
     for o in $(engines); do
       if [ "$o" != "$e" ] && [ "$(field "$o" 3)" = gpu ] && [ "$(state "$o")" = running ]; then
@@ -79,7 +93,10 @@ cmd_up() {
     docker build -f "engines/$e/Dockerfile" -t "tts-$e:gpu" "$CTX"
   fi
   docker rm -f "tts-$e" >/dev/null 2>&1 || true  # clear a stopped leftover
+  # Loopback is ALWAYS published — every local tool (say, ls, the benchmark
+  # harness) talks to 127.0.0.1. --host ADDS a second publish on the same port.
   RUN_ARGS=(-d --name "tts-$e" -p "127.0.0.1:$PORT:8877")
+  if [ "$host" != 127.0.0.1 ]; then RUN_ARGS+=(-p "$host:$PORT:8877"); fi
   if [ "$GPU" = gpu ]; then
     gpu_run_args
     RUN_ARGS+=(-v /home/ai/.cache/huggingface:/root/.cache/huggingface)
@@ -90,6 +107,7 @@ cmd_up() {
   esac
   docker run "${RUN_ARGS[@]}" "tts-$e:gpu" >/dev/null
   wait_healthy "$e"
+  if [ "$host" != 127.0.0.1 ]; then echo "also published on http://$host:$PORT"; fi
 }
 
 wait_healthy() {
@@ -104,7 +122,7 @@ wait_healthy() {
     fi
     sleep 5; echo "  still loading... ($((SECONDS - t0))s)"
   done
-  echo "tts-$e healthy in $((SECONDS - t0))s: http://127.0.0.1:$PORT"
+  echo "tts-$e healthy in $((SECONDS - t0))s: http://127.0.0.1:$PORT (test page)"
 }
 
 cmd_down() {
@@ -158,20 +176,24 @@ cmd_voices() {
 usage() {
   cat <<'EOF'
 usage: engines/tts <command> [args]
-  up <engine> [--force]   build image if missing, start, wait until healthy
+  up <engine> [--force] [--host <addr>]
+                          build image if missing, start, wait until healthy;
+                          --host publishes on <addr> IN ADDITION to 127.0.0.1
+                          (0.0.0.0 is refused: no auth on these engines)
   down <engine>           stop it
   ls                      dashboard: port / image / container / health
   logs <engine> [-f]      tail its logs
   say <engine> "text" [--lang en|pt] [--voice V] [--out FILE]
                           synthesize a WAV (default /tmp/<engine>-<lang>.wav)
   voices <engine>         list its voices
-env: TTS_GPU_MODE=nvdrv|gpus-all (default nvdrv until the reboot), TTS_UP_TIMEOUT=secs
+env: TTS_GPU_MODE=nvdrv|gpus-all (default nvdrv until the reboot), TTS_UP_TIMEOUT=secs,
+     TTS_HOST=addr (same as --host, set once per session)
 EOF
   exit 1
 }
 
 case "${1:-}" in
-  up)     cmd_up "${2:?usage: tts up <engine> [--force]}" "${3:-}" ;;
+  up)     shift; [ $# -ge 1 ] || usage; cmd_up "$@" ;;
   down)   cmd_down "${2:?usage: tts down <engine>}" ;;
   ls)     cmd_ls ;;
   logs)   shift; cmd_logs "${@:?usage: tts logs <engine> [-f]}" ;;

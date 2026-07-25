@@ -13,8 +13,7 @@ it isn't already local:
 
 ```
 docker build -t chatterbox-tts:gpu .            # repo root (skip if image exists)
-cd engines/xtts-v2
-docker build -t tts-xtts-v2:gpu .               # ~2 min on top of the base
+docker build -f engines/xtts-v2/Dockerfile -t tts-xtts-v2:gpu .  # repo root, ~2 min on top of the base
 ```
 
 Why not a pytorch/pytorch base: on benchmark night this box's WiFi couldn't

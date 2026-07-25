@@ -5,8 +5,9 @@
 # We add a thin shim on 8877 that translates our /tts contract to it.
 FROM ghcr.io/remsky/kokoro-fastapi-gpu:v0.2.4-master
 
-COPY --chown=appuser:appuser server.py /app/shim_server.py
-COPY --chown=appuser:appuser start.sh /app/start_engine.sh
+COPY --chown=appuser:appuser engines/kokoro/server.py /app/shim_server.py
+COPY --chown=appuser:appuser engines/testpage.html /app/testpage.html
+COPY --chown=appuser:appuser engines/kokoro/start.sh /app/start_engine.sh
 
 EXPOSE 8877
 CMD ["bash", "/app/start_engine.sh"]

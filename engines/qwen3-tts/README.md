@@ -5,8 +5,7 @@ Wraps `Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice` (Alibaba, Apache-2.0, not gated) be
 ## Build
 
 ```bash
-cd engines/qwen3-tts
-docker build -t tts-qwen3-tts:gpu .
+docker build -f engines/qwen3-tts/Dockerfile -t tts-qwen3-tts:gpu .   # repo root
 ```
 
 ## Run

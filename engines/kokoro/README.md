@@ -26,7 +26,7 @@ consistency with the other engines).
 ## Build
 
 ```
-docker build -t tts-kokoro:gpu engines/kokoro/
+docker build -f engines/kokoro/Dockerfile -t tts-kokoro:gpu .   # repo root
 ```
 
 ## Run

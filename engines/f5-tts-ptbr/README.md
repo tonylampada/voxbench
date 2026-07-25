@@ -24,7 +24,7 @@ card), so no separate `vocab.txt` download is needed.
 ## Build
 
 ```bash
-docker build -t tts-f5-tts-ptbr:gpu engines/f5-tts-ptbr/
+docker build -f engines/f5-tts-ptbr/Dockerfile -t tts-f5-tts-ptbr:gpu .   # repo root
 ```
 
 Base image is the official `ghcr.io/swivid/f5-tts:main` (21.9 GB, CUDA +

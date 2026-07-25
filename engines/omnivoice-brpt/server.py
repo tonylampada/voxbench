@@ -10,7 +10,7 @@ from typing import Optional
 import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from omnivoice import OmniVoice
 from pydantic import BaseModel
 
@@ -133,8 +133,13 @@ def voices():
     return {"voices": list_voice_files()}
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 def health():
     if model is None:
         raise HTTPException(status_code=503, detail="model still loading")
-    return {"status": "ok", "models_loaded": [MODEL_ID], "queue_size": 0}
+    return {"status": "ok", "engine": "omnivoice-brpt", "models_loaded": [MODEL_ID], "queue_size": 0}

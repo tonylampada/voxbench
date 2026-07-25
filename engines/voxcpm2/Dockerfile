@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir --no-deps voxcpm==2.0.3 && \
 
 WORKDIR /app
 COPY engines/voxcpm2/server.py /app/server.py
+COPY engines/testpage.html /app/testpage.html
 COPY voices/ /app/voices/
 
 EXPOSE 8877

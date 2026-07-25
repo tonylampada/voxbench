@@ -6,7 +6,7 @@ import wave
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 from piper import PiperVoice, SynthesisConfig
 
@@ -94,8 +94,13 @@ def list_voices():
     return {"voices": sorted(voices)}
 
 
+@app.get("/")
+def testpage():
+    return FileResponse("/app/testpage.html")
+
+
 @app.get("/health")
 def health():
     if len(voices) < len(VOICE_NAMES):
         raise HTTPException(status_code=503, detail="voices still loading")
-    return {"status": "ok", "models_loaded": sorted(voices), "queue_size": 0}
+    return {"status": "ok", "engine": "piper", "models_loaded": sorted(voices), "queue_size": 0}

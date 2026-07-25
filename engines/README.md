@@ -34,7 +34,21 @@ line there). `up` polls `/health` with a heartbeat until the model is loaded; a
 first run may also download weights into the shared HF cache, so give it
 minutes, not seconds (`TTS_UP_TIMEOUT` to extend). It refuses to start a second
 GPU engine while one is running — there is one 24 GB card — unless you pass
-`--force`. Everything publishes on `127.0.0.1` only.
+`--force`.
+
+Everything publishes on `127.0.0.1`, always — local tools depend on it. To
+also reach an engine (and its test page) from another tailnet device — the
+captain's phone — `--host` adds a second publish on this box's tailnet
+address, same port:
+
+```
+engines/tts up piper --host 100.114.197.65   # or: export TTS_HOST=100.114.197.65
+```
+
+`0.0.0.0` is refused outright: these engines have no authentication of any
+kind, so the network boundary is the auth boundary. A tailnet address is a
+bounded, deliberate choice; `0.0.0.0` would put an unauthenticated TTS service
+on every interface, including whatever public wifi the laptop is on.
 
 ## The contract
 
@@ -42,7 +56,8 @@ Every engine serves, on container port 8877 (published on its host port below):
 
 | Endpoint | Method | Behaviour |
 |---|---|---|
-| `/health` | GET | 200 `{"status": "ok", ...}` once the model is loaded; 503 (or no answer) while loading |
+| `/` | GET | serves `engines/testpage.html` — a browser test page (type a sentence, hear it, see timings). Part of the contract: every engine ships it |
+| `/health` | GET | 200 `{"status": "ok", "engine": "<name>", ...}` once the model is loaded; 503 (or no answer) while loading |
 | `/voices` | GET | `{"voices": [...]}` — names accepted in the `voice` field |
 | `/tts` | POST | WAV binary (mono 16-bit; sample rate per engine, see its README) |
 | `/tts/stream` | POST | framed stream: repeated `[4-byte big-endian length][complete WAV]` |

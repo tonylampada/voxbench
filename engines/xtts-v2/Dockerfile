@@ -18,6 +18,7 @@ RUN pip install --no-cache-dir coqui-tts==0.27.5 "transformers>=4.57,<4.58"
 ENV COQUI_TOS_AGREED=1
 
 WORKDIR /app
-COPY server.py .
+COPY engines/xtts-v2/server.py .
+COPY engines/testpage.html /app/testpage.html
 EXPOSE 8877
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8877"]

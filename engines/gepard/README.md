@@ -9,8 +9,7 @@ just synthesizes.
 ## Build
 
 ```
-cd engines/gepard
-docker build -t tts-gepard:gpu .
+docker build -f engines/gepard/Dockerfile -t tts-gepard:gpu .   # repo root
 ```
 
 ## Run
