@@ -49,15 +49,17 @@ class TTSRequest(BaseModel):
 
 def start_upstream() -> None:
     args = [
-        "sgl-omni", "serve",
+        "/opt/omni/bin/sgl-omni", "serve",
         "--model-path", MODEL,
         "--port", "8000",
         "--host", "127.0.0.1",
-        # 24 GB card: the model declares 8192 ctx, but bench sentences are
-        # tiny — capping the declared context bounds KV/CUDA-graph allocation
-        # (sibling engine Fish S2 Pro OOMed exactly here).
-        "--context-length", os.environ.get("HIGGS_CONTEXT_LEN", "4096"),
     ]
+    # 24 GB card, 9.3 GB weights: sgl-omni serve has NO --context-length
+    # flag; the OOM headroom knob it does expose is --mem-fraction-static.
+    # Unset → SGLang picks automatically.
+    mem_frac = os.environ.get("HIGGS_MEM_FRACTION")
+    if mem_frac:
+        args += ["--mem-fraction-static", mem_frac]
     # Reference clips are mounted at /app/voices; upstream refuses to read
     # local files outside --allowed-local-media-path.
     if VOICES_DIR.is_dir():

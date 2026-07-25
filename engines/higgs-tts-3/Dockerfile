@@ -16,4 +16,7 @@ COPY engines/testpage.html /app/testpage.html
 COPY engines/higgs-tts-3/server.py /app/server.py
 
 EXPOSE 8877
-CMD ["python3", "/app/server.py"]
+# The sgl-omni stack lives in the image's /opt/omni python3.11 venv (the
+# system python3 has neither sgl_omni nor its CLI) — run the adapter with it
+# so fastapi/uvicorn/sgl-omni all come from one env.
+CMD ["/opt/omni/bin/python3", "/app/server.py"]

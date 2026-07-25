@@ -55,7 +55,16 @@ codebooks at 25 fps, Higgs tokenizer + vocoder bundled in the serving stack.
 
 ## Pins and why
 
-(filled after first successful boot)
+- Base `lmsysorg/sglang-omni:dev` (44.5 GB extracted, 18 GB pull). No package
+  is installed by the build — the stack is already in the image, but **only**
+  inside the `/opt/omni` python3.11 venv (`/opt/omni/bin/sgl-omni`); the
+  system `python3` has neither `sgl_omni` nor the CLI, and the model card's
+  "clone and pip install" step is unnecessary. Both the adapter and the
+  upstream launch therefore use the venv's binaries.
+- `sgl-omni serve` has **no `--context-length` flag** (the sibling trick of
+  capping declared context does not apply here). The memory headroom knob is
+  `--mem-fraction-static`, exposed as env `HIGGS_MEM_FRACTION` — unset by
+  default so SGLang auto-sizes.
 
 ## Measurements
 
