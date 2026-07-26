@@ -42,6 +42,7 @@ REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 app = FastAPI(title="VoxCPM2 TTS Server")
 model = None
 SAMPLE_RATE = 48000  # overwritten from the loaded model at startup
+FATAL = None  # set once the CUDA context is gone; see latch() — only a restart clears it
 
 
 @app.exception_handler(RequestValidationError)
@@ -99,13 +100,51 @@ def effective_params(req: SpeechRequest) -> dict:
     return knobs
 
 
+# How much text goes into ONE decode. Measured on this model: a decode stays
+# well-behaved to ~800 characters and degenerates past it — 995 characters of
+# run-on text produced 113 s of dragging audio (8.8 chars/s against a healthy
+# 17), and a long enough decode walks off the model's 8192-entry audio codebook
+# and takes the CUDA context with it. 400 keeps a 2x margin.
+MAX_CHUNK_CHARS = 400
+
+
 def split_into_sentences(text: str) -> list[str]:
     text = text.strip()
     return [s for s in re.split(r"(?<=[.!?…])\s+", text) if s.strip()] if text else []
 
 
-def chunk_sentences(sentences: list[str], size: int = 3) -> list[str]:
-    return [" ".join(sentences[i:i + size]) for i in range(0, len(sentences), size)]
+def cut_to_size(piece: str, limit: int) -> list[str]:
+    """Cut one over-long sentence on the best seam under the limit: a comma-ish
+    pause if there is one, else a space. Punctuation stays with the head, so a
+    chunk still ends on the pause the writer wrote."""
+    out = []
+    while len(piece) > limit:
+        head = piece[:limit]
+        cut = max(head.rfind(", "), head.rfind("; "), head.rfind(": "))
+        if cut < limit // 2:  # too early to be a fair seam — fall back to a word break
+            cut = head.rfind(" ")
+        if cut <= 0:  # a single word longer than the limit
+            cut = limit - 1
+        out.append(piece[:cut + 1].strip())
+        piece = piece[cut + 1:].strip()
+    return out + ([piece] if piece else [])
+
+
+def chunk_text(text: str, limit: int = MAX_CHUNK_CHARS) -> list[str]:
+    """Text -> pieces no longer than `limit`, each one decode's worth. Sentences
+    are the seam when they exist; a sentence longer than the limit is cut anyway,
+    because 'no full stop in it' is not a reason to hand the model a runaway."""
+    chunks, cur = [], ""
+    for sentence in split_into_sentences(text):
+        for piece in cut_to_size(sentence, limit):
+            if cur and len(cur) + 1 + len(piece) > limit:
+                chunks.append(cur)
+                cur = piece
+            else:
+                cur = f"{cur} {piece}".strip()
+    if cur:
+        chunks.append(cur)
+    return chunks
 
 
 def to_int16_bytes(audio: np.ndarray) -> bytes:
@@ -145,6 +184,9 @@ def testpage():
 
 @app.get("/health")
 async def health():
+    if FATAL:
+        return JSONResponse(status_code=503,
+                            content={"status": "unusable", "engine": "voxcpm2", "detail": FATAL})
     if model is None:
         return JSONResponse(status_code=503, content={"status": "loading"})
     return {"status": "ok", "engine": "voxcpm2"}
@@ -163,31 +205,55 @@ async def params():
     return {"params": PARAMS}
 
 
+def latch(exc: BaseException) -> None:
+    """A device-side assert poisons the CUDA context for the life of the process:
+    every later call fails, forever. There is no in-process recovery, so record it
+    and let /health say so. An OOM is not that — the context survives one."""
+    global FATAL
+    if "CUDA" in str(exc) and "out of memory" not in str(exc).lower():
+        FATAL = (f"CUDA context is dead ({type(exc).__name__}: {str(exc).splitlines()[0][:160]}). "
+                 "Every synthesis from here on fails; restart the container "
+                 "(engines/tts down voxcpm2 && engines/tts up voxcpm2).")
+        print(f"FATAL: {FATAL}", flush=True)
+
+
 @app.post("/v1/audio/speech")
 def speech(req: SpeechRequest):
+    if FATAL:
+        raise HTTPException(status_code=503, detail=FATAL)
     if not req.input.strip():
         bad("input is required and must be non-empty")
     voice_path = resolve(req)
     knobs = effective_params(req)
+    # ONE decode gets at most MAX_CHUNK_CHARS characters, on both paths. Streaming
+    # bounds how the audio comes out; this bounds how much text goes in, and only
+    # the second one keeps the model from running away.
+    pieces = chunk_text(req.input) or [req.input]
     if req.stream:
         if req.response_format not in (None, "pcm"):
             bad(f"response_format '{req.response_format}' with stream: streaming is raw PCM — omit it or say 'pcm'")
-        # Native incremental streaming: text is split into 3-sentence pieces
-        # for robust generation; each piece runs through generate_streaming(),
-        # and every chunk the model natively yields goes out as raw int16 PCM.
-        pieces = chunk_sentences(split_into_sentences(req.input)) or [req.input]
-
+        # Each piece runs through generate_streaming(), and every chunk the model
+        # natively yields goes out as raw int16 PCM.
         def gen() -> Generator[bytes, None, None]:
-            for piece in pieces:
-                for audio in model.generate_streaming(
-                        text=piece, reference_wav_path=voice_path, **knobs):
-                    yield to_int16_bytes(audio)
+            try:
+                for piece in pieces:
+                    for audio in model.generate_streaming(
+                            text=piece, reference_wav_path=voice_path, **knobs):
+                        yield to_int16_bytes(audio)
+            except Exception as exc:  # the response already started — latch, then die
+                latch(exc)
+                raise
 
         return StreamingResponse(gen(), media_type="application/octet-stream",
                                  headers={"x-sample-rate": str(SAMPLE_RATE)})
     if (req.response_format or "wav") != "wav":
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
-    audio = model.generate(text=req.input, reference_wav_path=voice_path, **knobs)
+    try:
+        audio = np.concatenate([model.generate(text=p, reference_wav_path=voice_path, **knobs)
+                                for p in pieces])
+    except Exception as exc:
+        latch(exc)
+        raise
     return Response(content=numpy_to_wav_bytes(audio, SAMPLE_RATE), media_type="audio/wav")
 
 

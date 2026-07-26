@@ -48,6 +48,12 @@ state() { docker inspect -f '{{.State.Status}}' "tts-$1" 2>/dev/null | grep . ||
 cpu_mode() { docker inspect -f '{{.Config.Env}}' "tts-$1" 2>/dev/null | grep -q 'NANO_DEVICE=cpu'; }
 has_image() { docker image inspect "tts-$1:gpu" >/dev/null 2>&1; }
 healthy() { curl -fsS -m 3 "http://127.0.0.1:$(field "$1" 2)/health" >/dev/null 2>&1; }
+# ok | dead | loading — "dead" is an engine that answered honestly that it can no
+# longer synthesize (poisoned CUDA context); waiting for it is pointless, restart it.
+health_word() {
+  local b; b=$(curl -sS -m 3 "http://127.0.0.1:$(field "$1" 2)/health" 2>/dev/null)
+  case "$b" in *'"status":"ok"'*) echo ok ;; *unusable*) echo dead ;; *) echo loading ;; esac
+}
 
 # ── The GPU recipe, in ONE place ─────────────────────────────────────────────
 # Pre-reboot workaround: this box's kernel module (580.159.03) and host libs
@@ -156,6 +162,9 @@ wait_healthy() {
   local e=$1 t0=$SECONDS timeout=${TTS_UP_TIMEOUT:-900}
   echo "waiting for tts-$e to answer /health (big models take minutes; timeout ${timeout}s)"
   while ! healthy "$e"; do
+    if [ "$(health_word "$e")" = dead ]; then
+      die "tts-$e says /health: unusable — its CUDA context is gone and waiting will not fix it. Run 'engines/tts down $e' then up (see: engines/tts logs $e)"
+    fi
     if [ "$(state "$e")" != running ]; then
       die "container tts-$e died while loading — see: engines/tts logs $e"
     fi
@@ -181,7 +190,7 @@ cmd_ls() {
     img=no; if has_image "$e"; then img=yes; fi
     st=$(state "$e")
     if [ "$st" = running ] && cpu_mode "$e"; then GPU=cpu; fi  # honest about the running mode
-    h=-; if [ "$st" = running ]; then if healthy "$e"; then h=ok; else h=loading; fi; fi
+    h=-; if [ "$st" = running ]; then h=$(health_word "$e"); fi
     printf '%-16s %-6s %-4s %-6s %-9s %s\n' "$e" "$PORT" "$GPU" "$img" "$st" "$h"
   done
 }

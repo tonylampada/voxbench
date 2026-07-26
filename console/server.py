@@ -157,7 +157,9 @@ def engines_json():
     for name, e in reg.items():
         with lock:
             op = ops.get(name)
-            state = ("ready" if e["health"] == "ok" else "loading") \
+            # "dead": the engine itself says it can no longer synthesize (poisoned
+            # CUDA context). Never paint that as loading — it will never finish.
+            state = {"ok": "ready", "dead": "dead"}.get(e["health"], "loading") \
                 if e["container"] == "running" else ("loading" if op else "stopped")
             item = {
                 "name": name, "port": e["port"],
