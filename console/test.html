@@ -158,19 +158,6 @@
                   margin-right: .5rem; }
   .err { color: var(--fault); font-size: .82rem; }
 
-  /* ?like=mini — a small transport, fixed above the fold of the thumb */
-  #mini { position: fixed; left: 50%; transform: translateX(-50%); bottom: 1rem;
-          display: flex; gap: .4rem; align-items: center; z-index: 5;
-          background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
-          padding: .4rem .5rem .4rem .9rem; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
-  #mini[hidden] { display: none; }
-  #mini .what { font: .75rem var(--mono); color: var(--muted); max-width: 40vw;
-                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #mini button { width: 2.2rem; height: 2.2rem; border-radius: 50%; cursor: pointer;
-                 background: var(--inset); border: 1px solid var(--line); color: var(--text);
-                 font-size: .8rem; line-height: 1; padding: 0; }
-  #mini button:hover { border-color: var(--signal); }
-
   @media (max-width: 760px) {
     body { padding: .9rem .8rem 2.5rem; }
     .deck { grid-template-columns: 1fr; gap: 1.1rem; }
@@ -238,21 +225,12 @@
 </section>
 </div>
 
-<!-- Live streams play THROUGH this element, not straight out of the AudioContext:
-     the OS keeps a playing media element scheduled when the screen goes off, and
-     suspends a bare page. It renders nothing — no controls, no sound of its own. -->
-<audio id="sink" playsinline></audio>
+<!-- Live speech — the element it leaves through, the transport that stays on
+     screen while it speaks, the lock screen and the three verbs — is speech.js.
+     This page is the bench around it: phrases, engines, takes, timings. -->
+<script type="module">
+import * as speech from './speech.js';
 
-<!-- ?like=mini — the small visible transport. Plain on purpose: it is here to be
-     seen by WebKit and pressed by a thumb, not admired. -->
-<div id="mini" hidden>
-  <span class="what"></span>
-  <button type="button" id="mplay" title="play">▶</button>
-  <button type="button" id="mpause" title="pause">❚❚</button>
-  <button type="button" id="mstop" title="stop">■</button>
-</div>
-
-<script>
 const $ = id => document.getElementById(id);
 const ms = v => v == null ? '—' : v < 1000 ? Math.round(v) + ' ms' : (v/1000).toFixed(2) + ' s';
 
@@ -262,58 +240,6 @@ let current = null;        // selected engine name
 const eng = {};            // name -> {voices, params, values, canStream, busy}
 const takes = [];          // newest first — the memory of the session
 let takeN = 0;
-let audioCtx;
-let sink;                  // MediaStreamAudioDestinationNode, null once refused
-let sinkEl;                // the element sound leaves through
-let primed = false;        // ?like=tap: the board opens its element once, ever
-
-/* ── converging on the board ─────────────────────────────────────────────
-   The board runs the same pauseLive/resumeLive code as this page, and on the
-   captain's phone it never comes back from pause while this page does. Same
-   iOS, same verbs, different result — so the cause is somewhere in what is
-   AROUND them, and the only way to name it is to make this page do what the
-   board does, one difference at a time, until it breaks too.
-
-   ?like=<name>[,<name>…] switches on exactly one of those differences; no
-   query string is today's bench, untouched. `all` is the board.
-
-     hidden     nothing player-like on the take while streaming
-     ctx        a fresh AudioContext per stream at the engine's rate, built
-                after the response headers, closed when the stream ends
-     tap        the element's play() and the lock-screen metadata happen
-                after the headers instead of inside the captain's tap
-     srcobject  closing drops srcObject and the metadata, not just pause
-     element    the element is built by script, not written in the page
-
-   A probe, not a feature. It comes out the moment the difference has a name. */
-const LIKE = new Set((new URLSearchParams(location.search).get('like') || '')
-  .split(',').map(s => s.trim()).filter(Boolean));
-const like = f => LIKE.has(f) || LIKE.has('all');
-
-/* ?like=anchor is the one name here that is not a difference to converge on —
-   it goes the other way. Every element this page owns is fed by a MediaStream,
-   and the reading is that iOS does not hand the lock screen to one of those: it
-   hands it to real media it can see playing. So `anchor` keeps a real one on the
-   page for as long as the stream runs — a WAV of zeros, looping, heard by
-   nobody, playing for no reason but to be something the media session can hold.
-   Combine it with `hidden` (?like=hidden,anchor) to ask whether it is enough, or
-   take it alone to ask whether it was ever needed. Deliberately NOT part of
-   `all`: the board has no anchor, that is the whole point.
-
-   On the phone the anchor alone did not do it, and two things about it could be
-   why, so there are two more names that go the same way:
-
-     loud    the anchor, carrying sound instead of zeros — asks whether WebKit
-             simply refuses to hand the session to silence. Implies `anchor`.
-     ghost   not a second player alongside the live one, but the bench's own take
-             player without the take: one element with a real WAV FILE in it, on
-             the page, played through and then left idle — which is the state the
-             page is in from the second take onward, the state that works.
-     mini    the opposite of `hidden`: a small visible transport — play, pause,
-             stop — on screen for as long as the message speaks, fed by the same
-             MediaStream. Asks whether what WebKit wants is simply a player it
-             can see. It replaces the row's animated bubble while it is up. */
-const anchored = LIKE.has('anchor') || LIKE.has('loud');
 
 /* ── phrases ─────────────────────────────────────────────────────────── */
 const phraseLabel = p => p.lang ? `${p.label} · ${p.lang}` : p.label;
@@ -448,9 +374,13 @@ async function probeStream(name) {
   if (current === name) $('gostream').hidden = !can;
 }
 
+// No "engine default" entry: a take that does not name its voice cannot be
+// compared with one that does, and an unnamed voice is how a page ends up
+// speaking English in a Portuguese room without anyone choosing it.
 function renderVoices(c) {
   const sel = $('voice');
-  sel.replaceChildren(new Option('engine default', ''));
+  sel.replaceChildren();
+  if (!c.voices.length) sel.append(new Option('this engine lists no voices', ''));
   const kinds = [['builtin', 'builtin voices'], ['reference', 'cloned references']];
   for (const [kind, label] of kinds) {
     const vs = c.voices.filter(v => v.kind === kind);
@@ -541,7 +471,7 @@ function buildTakeEl(t) {
       <div class="strip"><div class="fill"></div></div>
       <div class="l2"></div>
     </div>`;
-  li.querySelector('.pp').onclick = () => t.state === 'live' ? stopLive(t) : toggle(t);
+  li.querySelector('.pp').onclick = () => t.state === 'live' ? speech.stop() : toggle(t);
   li.querySelector('.strip').onclick = e => {
     if (!t.audio || !t.audio.duration) return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -552,11 +482,7 @@ function buildTakeEl(t) {
 
 function updateTake(t) {
   const el = t.el;
-  // ?like=hidden — the board puts nothing player-like on screen while it speaks:
-  // no transport, no ● live, no clock. A live take is shown as a busy one.
-  // ?like=mini strips the same row, and puts a real transport up instead.
-  const mute = t.state === 'live' && (like('hidden') || LIKE.has('mini'));
-  el.className = 'take ' + (mute ? 'running' : t.state) + (t.audio && !t.audio.paused ? ' playing' : '');
+  el.className = 'take ' + t.state + (t.audio && !t.audio.paused ? ' playing' : '');
   el.querySelector('.eng').textContent = t.engine;
   el.querySelector('.mk').textContent = t.mode === 'stream' ? '≋ stream' : '';
   el.querySelector('.prov').textContent = `${t.phrase} · ${t.voice}`;
@@ -565,9 +491,8 @@ function updateTake(t) {
   // Stripping the row is a look; stop is the one verb that aborts the request,
   // and an abandoned synthesis is what kills the next one.
   el.querySelector('.pp').disabled = !(t.state === 'done' || t.state === 'live');
-  mini(t);
   const l2 = el.querySelector('.l2');
-  if (t.state === 'running' || mute) {
+  if (t.state === 'running') {
     l2.innerHTML = '<span class="fig">synthesizing…</span>';
   } else if (t.state === 'live') {
     // felt latency, as it happens: first sound the moment the first chunk lands
@@ -595,23 +520,6 @@ function updateTake(t) {
   }
 }
 
-/* ?like=mini — one transport for whichever take is live, up while it speaks and
-   gone the moment it is not. The three buttons are the three verbs the lock
-   screen has, wired to the same three functions, so pressing them on screen and
-   pressing them on the lock screen are the same act. */
-let miniTake = null;
-function mini(t) {
-  if (!LIKE.has('mini')) return;
-  if (t.state === 'live') miniTake = t;
-  else if (miniTake !== t) return;          // some other take changed — not ours
-  else miniTake = null;
-  $('mini').hidden = !miniTake;
-  $('mini').querySelector('.what').textContent = miniTake ? miniTake.phrase : '';
-}
-$('mplay').onclick = resumeLive;
-$('mpause').onclick = pauseLive;
-$('mstop').onclick = () => miniTake && stopLive(miniTake);
-
 function attachAudio(t) {
   const a = t.audio = new Audio();
   a.preload = 'metadata';
@@ -631,17 +539,8 @@ function attachAudio(t) {
 }
 
 function stopAll() {   // one voice at a time — this list is for comparing
-  for (const x of takes) {
-    if (x.audio && !x.audio.paused) x.audio.pause();
-    // A paused take still holds queued buffers — without this they resume on
-    // top of whatever starts next. Drop their onended with them: that callback
-    // closes the sink, and the sink is about to belong to someone else.
-    if (x.live) {
-      for (const s of x.srcs) { s.onended = null; try { s.stop(); } catch {} }
-      x.srcs = []; x.live = 0;
-      closeSink();
-    }
-  }
+  for (const x of takes) if (x.audio && !x.audio.paused) x.audio.pause();
+  speech.stop();
 }
 
 function toggle(t) {
@@ -662,11 +561,10 @@ function run(stream) {
   const p = phrases.find(x => x.id == $('phrase').value);
   if (!p) return;
   const vid = $('voice').value;
-  const body = {input: p.text, stream};
-  if (vid) body.voice = vid;
+  const body = {input: p.text, voice: vid, stream};
   if (Object.keys(c.values).length) body.params = {...c.values};
   const t = addTake({engine: name, phrase: phraseLabel(p), mode: stream ? 'stream' : 'take',
-                     voice: vid ? (c.voices.find(v => v.id === vid)?.name ?? vid) : 'default voice'});
+                     voice: c.voices.find(v => v.id === vid)?.name || vid || 'no voice'});
   c.busy = true; setBusy();
   (stream ? runStream(t, body) : runTake(t, body))
     .finally(() => { c.busy = false; setBusy(); });
@@ -679,7 +577,6 @@ async function errText(r) {
 
 function failTake(t, status, msg) {
   Object.assign(t, {state: 'error', status, error: msg});
-  closeSink();          // nothing is going to be heard — let go of the lock screen
   updateTake(t);
 }
 
@@ -699,272 +596,41 @@ async function runTake(t, body) {
   } catch (err) { failTake(t, 0, String(err)); }
 }
 
-function pcmToWav(chunks, rate) {
-  let len = chunks.reduce((a, c) => a + c.length, 0);
-  len &= ~1;   // 16-bit samples — an odd trailing byte is not audio
-  const buf = new ArrayBuffer(44 + len), v = new DataView(buf), u = new Uint8Array(buf);
-  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
-  w(0, 'RIFF'); v.setUint32(4, 36 + len, true); w(8, 'WAVEfmt ');
-  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
-  v.setUint16(32, 2, true); v.setUint16(34, 16, true);
-  w(36, 'data'); v.setUint32(40, len, true);
-  let o = 44;
-  for (const c of chunks) { const n = Math.min(c.length, len - (o - 44)); u.set(c.subarray(0, n), o); o += n; }
-  return new Blob([buf], {type: 'audio/wav'});
-}
-
-// ?like=element — the board has no element in its HTML; it builds one the first
-// time it speaks and appends it to the body.
-function element() {
-  if (!sinkEl) {
-    if (like('element')) {
-      $('sink').remove();
-      sinkEl = document.createElement('audio');
-      sinkEl.playsInline = true;
-      document.body.appendChild(sinkEl);
-    } else sinkEl = $('sink');
-  }
-  return sinkEl;
-}
-
-// One second at 8 kHz: zeros, or with ?like=loud a 200 Hz tone at 1% of full
-// scale — 40 dB under the speech, genuinely non-zero, nothing anyone notices.
-// 40 samples to the period divides 8000 exactly, so the loop has no click in it.
-function anchorWav() {
-  const pcm = new Int16Array(8000);
-  if (LIKE.has('loud'))
-    for (let i = 0; i < pcm.length; i++) pcm[i] = Math.round(300 * Math.sin(i * Math.PI / 20));
-  return pcmToWav([new Uint8Array(pcm.buffer)], 8000);
-}
-
-// ?like=anchor — the real media element, held alongside the live one. One second
-// on a loop: an <audio> with no controls renders nothing and near-silence sounds
-// like nothing, so it is present to the OS and absent to everyone else.
-let anchorEl;
-function anchor(on) {
-  if (!anchored) return;
-  if (!anchorEl) {
-    anchorEl = document.createElement('audio');
-    anchorEl.playsInline = true;
-    anchorEl.loop = true;
-    anchorEl.src = URL.createObjectURL(anchorWav());
-    document.body.appendChild(anchorEl);
-  }
-  if (on) anchorEl.play().catch(() => {});   // blocked → nothing gained, nothing lost
-  else anchorEl.pause();
-}
-
-/* ?like=ghost — the take player, without the take. `hidden` never removed an
-   element: it only strips the take ROW, and the sink <audio> stays in the page
-   and stays playing. What the sink has never had is a FILE — it is fed a
-   MediaStream. So ghost puts the missing thing on the page: one element with a
-   real WAV in it, appended, played through inside the tap and then left alone,
-   which is exactly what a finished take is. Whatever is in it is beside the
-   point; that it is there, and has played, is the whole question. */
-let ghostEl;
-function ghost() {
-  if (!LIKE.has('ghost') || ghostEl) return;
-  ghostEl = document.createElement('audio');
-  ghostEl.playsInline = true;
-  ghostEl.src = URL.createObjectURL(anchorWav());
-  document.body.appendChild(ghostEl);
-  ghostEl.play().catch(() => {});
-}
-
-/* The route to the speakers. Straight out of audioCtx.destination the sound dies
-   the moment the screen locks — the OS suspends the page and the AudioContext
-   with it. Sent into a MediaStream that the <audio> element is playing, it is
-   real media playback to the OS and keeps going, which is exactly why a plain
-   audio file survives a lock. Same buffers, same seams, one extra hop.
-   Refused (no autoplay, old browser) → the speakers, i.e. today's behaviour,
-   never silence. */
-function openSink() {
-  if (sink === null) return;                        // refused once, refused for good
-  if (!sink) {
-    if (!audioCtx.createMediaStreamDestination) { sink = null; return; }
-    sink = audioCtx.createMediaStreamDestination();
-    element().srcObject = sink.stream;
-  }
-  element().play().catch(() => { sink = null; });   // blocked → the speakers
-}
-
-// ?like=tap — the board's tap only touches the element, once ever, and on a
-// source it has not attached yet. Everything that matters happens later.
-function primeSink() {
-  if (primed) return;
-  primed = true;
-  element().play().catch(() => {});
-}
-
-function closeSink() {
-  element().pause();
-  anchor(false);            // the speech is over — stop holding the lock screen open
-  // ?like=srcobject — the board lets the stream go, so the phone stops showing
-  // a player for speech that is over. This page only pauses.
-  if (like('srcobject')) {
-    element().srcObject = null;
-    if (navigator.mediaSession) navigator.mediaSession.metadata = null;
-  }
-  closeCtx();
-  playbackState('none');
-}
-
-// ?like=ctx — the board's context lives one message and is closed with it.
-function closeCtx() {
-  if (!like('ctx') || !audioCtx) return;
-  const c = audioCtx;
-  audioCtx = undefined; sink = undefined;
-  try { c.close(); } catch {}
-}
-
-/* Lock screen: what is speaking, and three different verbs for it.
-   pause freezes the AudioContext clock — chunks still arriving queue against a
-   stopped clock, so nothing is lost and nothing plays; play unfreezes it. Only
-   stop is destructive, and it has to be: it aborts the request so the ENGINE
-   stops synthesizing. An abandoned synthesis overlapping the next request is
-   what kills voxcpm2's CUDA context. */
-function announce(t) {
-  const s = navigator.mediaSession;
-  if (!s) return;
-  if (window.MediaMetadata) s.metadata = new MediaMetadata({title: t.phrase, artist: t.engine});
-  s.playbackState = 'playing';
-  const on = (a, fn) => { try { s.setActionHandler(a, fn); } catch {} };
-  on('pause', pauseLive);
-  on('play', resumeLive);
-  on('stop', () => stopLive(t));
-}
-
-function playbackState(v) {
-  if (navigator.mediaSession) navigator.mediaSession.playbackState = v;
-}
-
-// BOTH halves stop. Suspending the context alone freezes the buffers but leaves
-// the element pulling on a MediaStream with nothing new in it, and it chews the
-// last fragment over and over — "lá lá lá" in the middle of a word. Pause the
-// element first, so nothing is being pulled while the clock stops.
-function pauseLive() {
-  if (sink) element().pause();
-  anchor(false);            // paused means paused — including the thing holding the screen
-  audioCtx?.suspend();
-  playbackState('paused');
-}
-
-// Back in the same order, inside out: the clock first, then the element.
-function resumeLive() {
-  audioCtx?.resume();
-  if (sink) element().play().catch(() => {});
-  anchor(true);
-  playbackState('playing');
-}
-
-/* Stream plays LIVE: each PCM chunk is queued into the AudioContext the moment
-   it arrives, so sound starts on the first chunk — the whole point is feeling
-   the engine's latency, not reading it afterwards. */
+/* Stream plays LIVE — speech.js does the speaking, this page does the watching:
+   first sound the moment the first chunk lands, elapsed while it runs, and the
+   finished stream becomes a normal, replayable take on the tape. */
 async function runStream(t, body) {
-  // The board cannot open in the tap: its context is built at the engine's own
-  // sample rate, which is not known until the response headers are in. So the
-  // tap only blesses the element and the real opening happens an await later.
-  const late = like('ctx') || like('tap');
-  stopAll();                // synchronous, and before openSink: it closes the sink
-  anchor(true);             // in the tap, like every other play() here — and after
-                            // stopAll, which just turned the previous one off
-  ghost();                  // also in the tap: it has to be allowed to play once
-  if (late) primeSink();
-  else {
-    audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
-    openSink();             // before any await: iOS only allows play() inside the tap
-    announce(t);
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-  }
-  const ac = new AbortController();
-  Object.assign(t, {ac, srcs: [], live: 0, state: 'live'});
+  stopAll();                // synchronous, and in the tap: one voice at a time
+  t.state = 'live';
   updateTake(t);
   const t0 = performance.now();
   t.tick = setInterval(() => {
     const e = t.el.querySelector('.elapsed');
     if (e) e.textContent = ((performance.now() - t0) / 1000).toFixed(1) + ' s';
   }, 100);
-  const chunks = []; let bytes = 0, rate = 24000;
   try {
-    const r = await fetch(`/api/engines/${t.engine}/speech`, {method: 'POST',
-      headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body),
-      signal: ac.signal});
-    if (!r.ok) { clearInterval(t.tick); return failTake(t, r.status, await errText(r)); }
-    rate = parseInt(r.headers.get('x-sample-rate')) || 24000;
-    if (late) {
-      if (like('ctx')) audioCtx = new (window.AudioContext || window.webkitAudioContext)({sampleRate: rate});
-      else audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
-      // The board races resume against 250 ms and calls a context that did not
-      // start a failure — it has no gesture left to wait for out here.
-      if (audioCtx.state !== 'running')
-        await Promise.race([audioCtx.resume().catch(() => {}), new Promise(r2 => setTimeout(r2, 250))]);
-      openSink();
-      announce(t);
-    }
-    const reader = r.body.getReader();
-    let carry = null, nextAt = 0;
-    for (;;) {
-      const {done, value} = await reader.read();
-      if (done) break;
-      if (!value?.length) continue;
-      if (t.ttfs == null) { t.ttfs = performance.now() - t0; updateTake(t); }
-      chunks.push(value); bytes += value.length;
-      let b = value;
-      if (carry) {
-        b = new Uint8Array(carry.length + value.length);
-        b.set(carry); b.set(value, carry.length); carry = null;
-      }
-      const even = b.length & ~1;
-      if (b.length > even) carry = b.slice(even);
-      if (!even) continue;
-      const a = b.slice(0, even);        // fresh buffer — aligned for Int16
-      const i16 = new Int16Array(a.buffer, 0, even >> 1);
-      const abuf = audioCtx.createBuffer(1, i16.length, rate);
-      const ch = abuf.getChannelData(0);
-      for (let i = 0; i < i16.length; i++) ch[i] = i16[i] / 32768;
-      const src = audioCtx.createBufferSource();
-      src.buffer = abuf;
-      src.connect(sink || audioCtx.destination);
-      const at = Math.max(audioCtx.currentTime, nextAt);   // seamless queue
-      src.start(at);
-      nextAt = at + abuf.duration;
-      // The element stays playing until the last buffer has actually been heard —
-      // the stream can run dry mid-sentence and pick up again, and that gap is not
-      // the end. Only "no buffers left AND nothing more coming" is.
-      t.live++;
-      src.onended = () => { if (--t.live === 0 && t.over) closeSink(); };
-      t.srcs.push(src);
-    }
-    t.gen = performance.now() - t0;
-    finalizeStream(t, chunks, bytes, rate);
-  } catch (err) {
+    const out = await speech.speak({
+      url: `/api/engines/${t.engine}/speech`,   // this console's proxy, same origin
+      voice: body.voice, input: body.input, params: body.params,
+      title: t.phrase, artist: t.engine,
+      onFirstSound: firstMs => { t.ttfs = firstMs; updateTake(t); },
+    });
     clearInterval(t.tick);
-    if (err.name === 'AbortError') {
-      t.gen = performance.now() - t0;
-      if (bytes) finalizeStream(t, chunks, bytes, rate);   // keep what was heard
-      else failTake(t, 0, 'stopped before any audio arrived');
-    } else failTake(t, 0, String(err));
+    t.gen = performance.now() - t0;
+    if (!out.bytes) return failTake(t, 0, out.stopped
+      ? 'stopped before any audio arrived'
+      : '200 but no audio arrived — the stream was empty');
+    t.url = URL.createObjectURL(out.blob);
+    t.dur = out.bytes / 2 / out.rate;
+    t.state = 'done';
+    attachAudio(t);      // the live take becomes a normal one — replayable
+    updateTake(t);
+  } catch (err) {
+    // A refusal from the engine arrives here as a refusal: speech.js has no
+    // second way to speak, so nothing is read in some other voice instead.
+    clearInterval(t.tick);
+    failTake(t, err.status || 0, err.message);
   }
-}
-
-function finalizeStream(t, chunks, bytes, rate) {
-  clearInterval(t.tick);
-  t.over = true;                       // nothing more is coming; the last buffer ends it
-  if (!t.live) closeSink();            // …or it already did
-  if (!bytes) return failTake(t, 0, '200 but no audio arrived — the stream was empty');
-  t.url = URL.createObjectURL(pcmToWav(chunks, rate));
-  t.dur = bytes / 2 / rate;
-  t.state = 'done';
-  attachAudio(t);      // the live take becomes a normal one — replayable
-  updateTake(t);
-}
-
-function stopLive(t) {
-  t.ac?.abort();                 // the engine stops synthesizing — the whole point
-  audioCtx?.resume();            // stopped while paused: don't leave a frozen clock behind
-  for (const s of t.srcs || []) { try { s.stop(); } catch {} }
-  closeSink();
 }
 
 loadPhrases();

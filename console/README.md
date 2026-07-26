@@ -13,44 +13,65 @@ voices from `/v1/voices` (filter by lang and kind), one control per knob
 rendered from `/v1/params` and nothing else, and normal vs streaming synthesis
 with time-to-first-audio against total time on screen. Engine refusals (can't
 stream, foreign cloning reference, GPU held) are shown verbatim — they are
-answers, not failures.
+answers, not failures. Every take names the voice it used: there is no "engine
+default" entry, because a take that did not choose its voice cannot be compared
+with one that did. The speaking itself is `speech.js`, below.
 
-A live stream is scheduled into an AudioContext as it arrives, but it leaves
-through a `MediaStreamAudioDestinationNode` into a hidden `<audio>` element
-rather than straight out of the context: to the OS that is media playback, so
-it survives the screen going off, and the phrase and a stop button appear on
-the lock screen. If the element is not allowed to play, the buffers go to the
-speakers as before.
+## speech.js — the speech path
 
-`/test?like=<name>` is a temporary probe, and it is here to settle one question:
-Bridge Commander's board runs the same pause/resume code as this page and never
-comes back from a lock-screen play on the captain's iPhone, while this page
-does. Same iOS, same verbs — so the cause is in what surrounds them. Each name
-makes this page do what the board does for exactly ONE of the differences, so
-they can be walked until one of them breaks pause-then-resume here too:
+`console/speech.js` is the whole speech path as one dependency-free ES module:
+the request to the engine, the streaming PCM read, the route to the speakers,
+the lock screen and the three verbs. The bench imports it; so does anything else
+that wants a message spoken out loud on a phone.
 
-| name | what it copies from the board |
-|---|---|
-| `hidden` | nothing player-like on the take while streaming |
-| `ctx` | a fresh AudioContext per stream at the engine's rate, built after the response headers, closed when the stream ends |
-| `tap` | the element's `play()` and the lock-screen metadata happen after the headers instead of inside the captain's tap |
-| `srcobject` | closing drops `srcObject` and the metadata, not just pause |
-| `element` | the element is built by script, not written in the page |
+```js
+import * as speech from './speech.js';
 
-Several can be combined (`?like=ctx,tap`); `all` is the board. No query string
-is the bench as it has always been. Desktop Chrome resumes every one of them —
-only WebKit tells them apart. **This comes out the moment the difference has a
-name.**
+const out = await speech.speak({
+  url: '/api/engines/voxcpm2/speech',   // required — no default endpoint
+  voice: 'kokoro-pf-dora-pt',           // required — no default voice
+  input: 'Capitão, o deploy passou.',
+  params: {},                           // engine knobs, optional
+  title: 'deploy', artist: 'voxcpm2',   // what the lock screen says
+  onFirstSound: ms => console.log('first sound', ms),
+});
+// out: {blob, bytes, rate, ttfs, stopped} — the same audio, replayable
+speech.pause(); speech.resume(); speech.stop();
+```
 
-One name goes the other way. `anchor` adds something the board has never had: a
-real media element — a WAV of zeros, looping, silent, invisible — held playing
-for as long as the live stream runs. The reading behind it is that iOS does not
-give the lock screen to a MediaStream, only to real media it can see playing,
-and every element this page and the board own is fed by a MediaStream. `hidden`
-is the flag that removes the one real element the bench happens to leave behind
-(the finished take's WAV), which is why `hidden` is the one that breaks worst.
-So `?like=hidden,anchor` asks whether an anchor is enough, and `?like=anchor`
-alone asks whether it was ever needed. It is deliberately not part of `all`.
+Call `speak()` from inside the tap that asked for it: everything iOS insists on
+seeing in a gesture happens before the first await. What the module knows, in
+the order it learned it:
+
+- The sound leaves through an `<audio>` element fed by a
+  `MediaStreamAudioDestinationNode`, not straight out of the AudioContext. To
+  the OS an element playing is media playback and survives the screen locking; a
+  bare page is suspended, and the AudioContext with it.
+- A **visible** transport — the phrase, play, pause, stop — is on screen for as
+  long as the speech runs, and gone when it is not. WebKit hands the lock screen
+  to a player it can see and takes it back from one it cannot; this is the
+  finding an afternoon of probing bought, and it belongs to the module, not to a
+  page. Its three buttons are wired to the same three functions as the lock
+  screen's, so pressing them on screen and on the lock screen are one act.
+- `pause` pauses the element first and then freezes the context clock (pull on a
+  MediaStream with nothing new in it and the last fragment is chewed over and
+  over); `resume` goes back inside out. `stop` aborts the request so the ENGINE
+  stops synthesizing, and resolves the `speak()` promise with what was heard.
+- Both the endpoint and the voice are arguments and neither has a default. An
+  empty voice means "whatever the engine feels like", which is how a page ends
+  up speaking English in a Portuguese room without anyone choosing it.
+- When the engine refuses, `speak()` rejects with the engine's own words and
+  `.status`. The module never quietly finds another way to speak — a caller that
+  hears nothing is told why.
+
+If the element is not allowed to play at all, the buffers go to the speakers:
+sound without the lock screen, never silence.
+
+The `/test?like=<name>` probes are gone. They existed to name why Bridge
+Commander's board behaved differently from this page on the captain's iPhone
+(`hidden`, `ctx`, `tap`, `srcobject`, `element`, `anchor`, `loud`, `ghost`,
+`mini`). The difference has its name — a player WebKit can see — and it is now
+this module's ordinary behaviour, so the questions have no one left to ask.
 
 Runs on the host, outside docker, and drives containers by shelling out to
 `engines/tts` — that script stays the only registry of names, ports and

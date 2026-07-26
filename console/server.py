@@ -279,22 +279,24 @@ class Handler(BaseHTTPRequestHandler):
         finally:
             conn.close()
 
-    def send_html(self, filename):
+    def send_html(self, filename, ctype="text/html; charset=utf-8"):
         body = open(os.path.join(os.path.dirname(__file__), filename), "rb").read()
         self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
 
     def do_GET(self):
-        # A query string belongs to the page, not to this server: /test reads one
-        # to switch its own behaviour, and no route here has ever wanted one.
+        # A query string belongs to the page, not to this server: no route here
+        # has ever wanted one.
         self.path = self.path.split("?", 1)[0]
         if self.path == "/" or self.path == "/index.html":
             self.send_html("index.html")
         elif self.path == "/test":
             self.send_html("test.html")
+        elif self.path == "/speech.js":
+            self.send_html("speech.js", "text/javascript; charset=utf-8")
         elif self.path == "/api/phrases":
             with lock:
                 self.send_json(200, {"phrases": load_phrases()})
