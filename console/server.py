@@ -265,9 +265,19 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Connection", "close")
         self.close_connection = True
         self.end_headers()
-        while chunk := r.read(65536):
-            self.wfile.write(chunk)
-        conn.close()
+        # The page pressing stop aborts its fetch, which breaks this pipe. That is
+        # not an error, it is the message: let go of the engine's connection and
+        # the engine stops synthesizing. Closing here rather than leaving it to the
+        # garbage collector is the difference between "the GPU is freed" and "the
+        # GPU is freed, probably" — and an abandoned synthesis is what poisons the
+        # next one's CUDA context.
+        try:
+            while chunk := r.read(65536):
+                self.wfile.write(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        finally:
+            conn.close()
 
     def send_html(self, filename):
         body = open(os.path.join(os.path.dirname(__file__), filename), "rb").read()
