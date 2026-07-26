@@ -8,6 +8,7 @@ Portuguese -> community finetune firstpixel/F5-TTS-pt-br (old F5TTS_Base arch,
 """
 import io
 import json
+import os
 import re
 import wave
 from importlib.resources import files
@@ -17,6 +18,7 @@ from typing import Optional, Tuple
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from huggingface_hub import hf_hub_download
 from num2words import num2words
@@ -54,6 +56,18 @@ MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file.exists() els
 REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 
 app = FastAPI(title="F5-TTS pt-BR TTS Server")
+
+# CORS: the console calls this engine from a page it does not serve
+# (docs/contract.md, "Cross-origin"). No auth here, so never "*".
+CORS_ORIGINS = os.environ.get("TTS_CORS_ORIGINS", "http://127.0.0.1:*,http://localhost:*")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex="|".join(re.escape(o.strip()).replace(r"\*", ".*")
+                                for o in CORS_ORIGINS.split(",") if o.strip()),
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["content-type"],
+    expose_headers=["x-sample-rate"],  # raw PCM is unplayable without its rate
+)
 models = {}
 
 

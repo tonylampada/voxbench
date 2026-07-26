@@ -15,6 +15,7 @@ from typing import Generator, Optional
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 from voxcpm import VoxCPM
@@ -40,6 +41,18 @@ MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file.exists() els
 REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 
 app = FastAPI(title="VoxCPM2 TTS Server")
+
+# CORS: the console calls this engine from a page it does not serve
+# (docs/contract.md, "Cross-origin"). No auth here, so never "*".
+CORS_ORIGINS = os.environ.get("TTS_CORS_ORIGINS", "http://127.0.0.1:*,http://localhost:*")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex="|".join(re.escape(o.strip()).replace(r"\*", ".*")
+                                for o in CORS_ORIGINS.split(",") if o.strip()),
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["content-type"],
+    expose_headers=["x-sample-rate"],  # raw PCM is unplayable without its rate
+)
 model = None
 SAMPLE_RATE = 48000  # overwritten from the loaded model at startup
 FATAL = None  # set once the CUDA context is gone; see latch() — only a restart clears it

@@ -4,6 +4,7 @@ CustomVoice checkpoint cannot clone). Serves the bench contract (docs/contract.m
 import io
 import json
 import os
+import re
 import threading
 import wave
 from pathlib import Path
@@ -13,6 +14,7 @@ import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
@@ -38,6 +40,18 @@ MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file else []
 REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 
 app = FastAPI(title="Qwen3-TTS Adapter")
+
+# CORS: the console calls this engine from a page it does not serve
+# (docs/contract.md, "Cross-origin"). No auth here, so never "*".
+CORS_ORIGINS = os.environ.get("TTS_CORS_ORIGINS", "http://127.0.0.1:*,http://localhost:*")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex="|".join(re.escape(o.strip()).replace(r"\*", ".*")
+                                for o in CORS_ORIGINS.split(",") if o.strip()),
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["content-type"],
+    expose_headers=["x-sample-rate"],  # raw PCM is unplayable without its rate
+)
 state = {}
 # ponytail: single global lock — one GPU, bench is serial; queue if throughput matters
 gpu_lock = threading.Lock()

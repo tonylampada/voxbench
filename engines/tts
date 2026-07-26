@@ -131,6 +131,8 @@ cmd_up() {
   # harness) talks to 127.0.0.1. --host ADDS a second publish on the same port.
   RUN_ARGS=(-d --name "tts-$e" -p "127.0.0.1:$PORT:8877")
   if [ "$host" != 127.0.0.1 ]; then RUN_ARGS+=(-p "$host:$PORT:8877"); fi
+  # Browser CORS allowlist (docs/contract.md); unset = the engine's loopback default
+  if [ -n "${TTS_CORS_ORIGINS:-}" ]; then RUN_ARGS+=(-e "TTS_CORS_ORIGINS=$TTS_CORS_ORIGINS"); fi
   if [ "$GPU" = gpu ]; then
     gpu_run_args
     RUN_ARGS+=(-v /home/ai/.cache/huggingface:/root/.cache/huggingface)

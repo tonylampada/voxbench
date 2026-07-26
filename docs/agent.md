@@ -122,6 +122,30 @@ In a browser, feed each chunk to an `AudioContext` as `Int16Array` → `Float32A
 that sound starts before synthesis ends — if you buffer to the end, use `stream: false`
 and save yourself the work.
 
+## From a browser
+
+You can call the engine from a page served by something else — it sends CORS
+headers. Two things to know:
+
+- Read the sample rate off `response.headers.get("x-sample-rate")`; the engine
+  exposes that header on purpose, and it is the only way to play the PCM.
+- Your page's origin must be in the engine's allowlist, which is the
+  `TTS_CORS_ORIGINS` env var on the container: comma-separated origins, `*`
+  usable as a wildcard, defaulting to loopback only
+  (`http://127.0.0.1:*,http://localhost:*`). An origin outside it gets no CORS
+  header and the browser blocks the call — that is the allowlist working, not a
+  bug. There is no `*` mode: these engines have no auth, so an unlisted origin
+  is added deliberately or not at all.
+
+```js
+const r = await fetch("http://127.0.0.1:8888/v1/audio/speech", {
+  method: "POST", headers: {"content-type": "application/json"},
+  body: JSON.stringify({input: "Olá, capitão.", lang: "pt", stream: true}),
+});
+const rate = Number(r.headers.get("x-sample-rate"));   // needs the expose header
+for await (const chunk of r.body) { /* Int16Array(chunk.buffer) → play */ }
+```
+
 ## When something is wrong
 
 Every client error is **400** with `{"detail": "<a human sentence>"}`. There are no
