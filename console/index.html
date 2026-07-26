@@ -70,6 +70,8 @@
   .st.loading::before { background: var(--signal); box-shadow: 0 0 5px 1px rgba(230,159,53,.55);
                         animation: pulse 1.1s ease-in-out infinite; }
   .st.stopped { color: var(--faint); }
+  .st.dead { color: var(--fault); }
+  .st.dead::before { background: var(--fault); box-shadow: 0 0 5px 1px rgba(217,123,108,.55); }
   @keyframes pulse { 50% { opacity: .35; } }
   @media (prefers-reduced-motion: reduce) { .st.loading::before { animation: none; } }
 

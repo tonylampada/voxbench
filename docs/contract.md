@@ -128,6 +128,12 @@ answer, not an omission.
 engine can synthesize; `503 {"status": "loading"}` before that. Extra fields
 are allowed; those two are required.
 
+An engine that has hit an unrecoverable fault — a poisoned CUDA context is the
+one we have met — answers `503 {"status": "unusable", "detail": "<what died and
+that only a container restart cures it>"}` from then on. A process that cannot
+synthesize must never answer `ok`: `engines/tts ls` reads that state as `dead`
+and the console paints it red instead of waiting forever for a green light.
+
 ## GET /
 
 `200`, `text/html` — the shared test page, for humans.
