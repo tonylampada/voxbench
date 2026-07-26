@@ -15,6 +15,13 @@ with time-to-first-audio against total time on screen. Engine refusals (can't
 stream, foreign cloning reference, GPU held) are shown verbatim — they are
 answers, not failures.
 
+A live stream is scheduled into an AudioContext as it arrives, but it leaves
+through a `MediaStreamAudioDestinationNode` into a hidden `<audio>` element
+rather than straight out of the context: to the OS that is media playback, so
+it survives the screen going off, and the phrase and a stop button appear on
+the lock screen. If the element is not allowed to play, the buffers go to the
+speakers as before.
+
 Runs on the host, outside docker, and drives containers by shelling out to
 `engines/tts` — that script stays the only registry of names, ports and
 GPU/CPU. `127.0.0.1` is always served, on purpose — local tools depend on it —
