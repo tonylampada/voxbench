@@ -15,7 +15,6 @@ RUN pip install --no-cache-dir torch==2.11.0 torchaudio==2.11.0 --index-url http
 
 WORKDIR /app
 COPY engines/f5-tts-ptbr/server.py .
-COPY engines/testpage.html /app/testpage.html
 
 EXPOSE 8877
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8877"]

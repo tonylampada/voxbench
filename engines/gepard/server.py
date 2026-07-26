@@ -19,7 +19,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from gepard_inference import GepardSession
@@ -151,11 +151,6 @@ def numpy_to_wav_bytes(audio: np.ndarray, sample_rate: int) -> bytes:
         wf.setframerate(sample_rate)
         wf.writeframes(audio_int16.tobytes())
     return buffer.getvalue()
-
-
-@app.get("/")
-def testpage():
-    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")

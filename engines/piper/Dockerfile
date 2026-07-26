@@ -12,7 +12,6 @@ RUN python -m piper.download_voices --download-dir /voices \
 
 WORKDIR /app
 COPY engines/piper/server.py .
-COPY engines/testpage.html /app/testpage.html
 # Voice-library metadata for /v1/voices (piper only needs the manifest, not the
 # clips — it can't clone; piper-origin entries resolve back to builtins).
 COPY voices/library/manifest.json /app/voices_manifest.json

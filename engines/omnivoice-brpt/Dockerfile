@@ -8,7 +8,6 @@ RUN pip install --no-cache-dir omnivoice==0.2.1 fastapi uvicorn
 
 WORKDIR /app
 COPY engines/omnivoice-brpt/server.py .
-COPY engines/testpage.html /app/testpage.html
 # Reference clips for voice cloning (~8 MB total; the "no weights in image" rule
 # targets multi-GB checkpoints — model weights come from the mounted HF cache).
 COPY voices/ /app/voices/

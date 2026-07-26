@@ -79,11 +79,9 @@ def main():
           f"{st} {raw[:80]!r}")
     if st != 200:
         sys.exit("engine not healthy — conform assumes it is already up")
-    st, hdr, raw = http("GET", "/", timeout=5)
-    check("test page", st == 200 and "text/html" in hdr.get("content-type", ""), f"{st}")
 
     # ── old surface is gone ──────────────────────────────────────────────
-    for m, p in [("POST", "/tts"), ("POST", "/tts/stream"), ("GET", "/voices")]:
+    for m, p in [("GET", "/"), ("POST", "/tts"), ("POST", "/tts/stream"), ("GET", "/voices")]:
         st, _, _ = http(m, p, {"text": "x"} if m == "POST" else None, timeout=10)
         check(f"gone: {m} {p}", st == 404, f"got {st}")
 

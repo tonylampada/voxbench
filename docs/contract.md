@@ -19,7 +19,6 @@ you pick it by picking which engine to run.
 | GET | `/v1/voices` | the voice catalogue |
 | GET | `/v1/params` | the engine's tunable knobs |
 | GET | `/health` | readiness |
-| GET | `/` | human test page (HTML) |
 
 Anything else is 404.
 
@@ -133,10 +132,6 @@ one we have met — answers `503 {"status": "unusable", "detail": "<what died an
 that only a container restart cures it>"}` from then on. A process that cannot
 synthesize must never answer `ok`: `engines/tts ls` reads that state as `dead`
 and the console paints it red instead of waiting forever for a green light.
-
-## GET /
-
-`200`, `text/html` — the shared test page, for humans.
 
 ## Cross-origin (CORS)
 

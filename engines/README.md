@@ -29,6 +29,9 @@ ffprobe /tmp/ok.wav        # real WAV, ~2 s
 engines/tts down piper
 ```
 
+To hear an engine in a browser, run the console (`python3 console/server.py`) and
+open its `/test` bench — engines serve no HTML of their own.
+
 `up` needs nothing but the name — port, build context, GPU flags and mounts all
 live in the registry table at the top of the script (adding an engine is one
 line there). `up` polls `/health` with a heartbeat until the model is loaded; a
@@ -38,7 +41,7 @@ GPU engine while one is running — there is one 24 GB card — unless you pass
 `--force`.
 
 Everything publishes on `127.0.0.1`, always — local tools depend on it. To
-also reach an engine (and its test page) from another tailnet device — the
+also reach an engine from another tailnet device — the
 captain's phone — `--host` adds a second publish on this box's tailnet
 address, same port:
 
@@ -57,7 +60,6 @@ Every engine serves, on container port 8877 (published on its host port below):
 
 | Endpoint | Method | Behaviour |
 |---|---|---|
-| `/` | GET | serves `engines/testpage.html` — a browser test page (type a sentence, hear it, see timings). Part of the contract: every engine ships it |
 | `/health` | GET | 200 `{"status": "ok", "engine": "<name>"}` once the model is loaded; 503 while loading |
 | `/v1/voices` | GET | the voice catalogue, built from `voices/library/manifest.json` |
 | `/v1/params` | GET | this engine's tunable knobs, with type, range and a description each |

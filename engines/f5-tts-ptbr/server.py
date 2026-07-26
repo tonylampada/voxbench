@@ -19,7 +19,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import JSONResponse, Response
 from huggingface_hub import hf_hub_download
 from num2words import num2words
 from pydantic import BaseModel
@@ -178,11 +178,6 @@ async def startup():
     # Finetune predates the v1 arch: must load with the old F5TTS_Base config.
     models["pt"] = F5TTS(model="F5TTS_Base", ckpt_file=ckpt)
     print("F5-TTS pt-BR server ready!")
-
-
-@app.get("/")
-def testpage():
-    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")

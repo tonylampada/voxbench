@@ -23,7 +23,7 @@ from typing import Generator, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 UPSTREAM = "http://127.0.0.1:8000"
@@ -155,11 +155,6 @@ def upstream_speech(body: dict, timeout: float = 600):
     except urllib.error.HTTPError as e:
         raise HTTPException(status_code=502,
                             detail=f"higgs upstream error: {e.read().decode(errors='replace')[:500]}")
-
-
-@app.get("/")
-def testpage():
-    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")

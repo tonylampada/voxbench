@@ -12,7 +12,6 @@ FROM lmsysorg/sglang-omni:dev
 ENV HF_HOME=/root/.cache/huggingface
 
 WORKDIR /app
-COPY engines/testpage.html /app/testpage.html
 COPY engines/higgs-tts-3/server.py /app/server.py
 
 EXPOSE 8877

@@ -14,7 +14,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 MODEL_NAME = "tts_models/multilingual/multi-dataset/xtts_v2"
@@ -156,11 +156,6 @@ def synth_wav(text: str, xtts_lang: str, voice_kwargs: dict, knobs: dict) -> byt
         wf.setframerate(SAMPLE_RATE)
         wf.writeframes((audio * 32767).astype(np.int16).tobytes())
     return buf.getvalue()
-
-
-@app.get("/")
-def testpage():
-    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")

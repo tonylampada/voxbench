@@ -24,6 +24,5 @@ ENV COQUI_TOS_AGREED=1
 
 WORKDIR /app
 COPY engines/xtts-v2/server.py .
-COPY engines/testpage.html /app/testpage.html
 EXPOSE 8877
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8877"]

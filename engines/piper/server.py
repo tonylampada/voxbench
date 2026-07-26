@@ -12,7 +12,7 @@ from typing import Generator, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from piper import PiperVoice, SynthesisConfig
 from pydantic import BaseModel
 
@@ -148,11 +148,6 @@ def syn_config(knobs: dict) -> Optional[SynthesisConfig]:
         noise_scale=knobs.get("noise_scale"),
         noise_w_scale=knobs.get("noise_w_scale"),
     )
-
-
-@app.get("/")
-def testpage():
-    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")

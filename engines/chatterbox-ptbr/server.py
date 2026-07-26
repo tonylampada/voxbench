@@ -18,7 +18,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from huggingface_hub import snapshot_download, hf_hub_download
 from safetensors.torch import load_file as load_safetensors
@@ -214,11 +214,6 @@ def startup():
     print("Loading pt-BR finetune...")
     models["pt"] = load_ptbr(DEVICE)
     print("Chatterbox pt-BR engine ready")
-
-
-@app.get("/")
-def testpage():
-    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")

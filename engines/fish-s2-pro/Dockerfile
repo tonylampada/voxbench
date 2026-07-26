@@ -9,7 +9,6 @@
 FROM fishaudio/fish-speech:server-cuda
 
 COPY --chmod=644 engines/fish-s2-pro/server.py /app/engine_adapter.py
-COPY --chmod=644 engines/testpage.html /app/testpage.html
 COPY --chmod=644 voices/library/manifest.json /app/voices_manifest.json
 COPY --chmod=755 engines/fish-s2-pro/start.sh /app/engine_start.sh
 

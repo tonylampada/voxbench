@@ -17,7 +17,6 @@ FROM vllm/vllm-omni:v0.22.0
 ENV HF_HOME=/root/.cache/huggingface
 
 WORKDIR /app
-COPY engines/testpage.html /app/testpage.html
 COPY engines/voxtral-tts/server.py /app/server.py
 
 EXPOSE 8877

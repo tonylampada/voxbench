@@ -19,7 +19,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from chatterbox_flash import ChatterboxFlashTTS
@@ -159,11 +159,6 @@ def startup():
     # Warm the default voice so the first request doesn't pay conditioning prep.
     get_conds(str(LIBRARY_DIR / REFERENCES[DEFAULT_VOICE]["file"]), DEFAULT_EXAGGERATION)
     print("Chatterbox Flash engine ready")
-
-
-@app.get("/")
-def testpage():
-    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")
