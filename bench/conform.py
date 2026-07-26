@@ -34,12 +34,15 @@ def port_for(engine: str) -> int:
     return int(m.group(1))
 
 
-def http(method: str, path: str, body: dict | None = None, timeout: float = 300):
+def http(method: str, path: str, body: dict | None = None, timeout: float = 300,
+         extra: dict | None = None):
     """-> (status, headers, bytes). Never raises on HTTP errors."""
+    headers = {"Content-Type": "application/json"} if body is not None else {}
+    headers.update(extra or {})
     req = urllib.request.Request(
         BASE + path, method=method,
         data=json.dumps(body).encode() if body is not None else None,
-        headers={"Content-Type": "application/json"} if body is not None else {},
+        headers=headers,
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -176,6 +179,35 @@ def main():
             check("stream: honest cannot-stream 400", True, f'"{str(detail)[:90]}"')
         else:
             check("stream", False, f"got {e.code}: {body[:100]!r}")
+
+    # ── CORS ─────────────────────────────────────────────────────────────
+    # The console is a page on another origin; without these headers the
+    # browser blocks the call before the engine ever sees it.
+    origin = "http://127.0.0.1:4780"
+    st, hdr, _ = http("GET", "/v1/voices", timeout=10, extra={"Origin": origin})
+    check("cors: /v1/voices echoes origin",
+          hdr.get("access-control-allow-origin") == origin,
+          f"{st}, got {hdr.get('access-control-allow-origin')!r}")
+    st, hdr, _ = http("POST", "/v1/audio/speech", {"input": "Cross origin."},
+                      extra={"Origin": origin})
+    exposed = hdr.get("access-control-expose-headers", "").lower()
+    check("cors: speech echoes origin + exposes x-sample-rate",
+          hdr.get("access-control-allow-origin") == origin and "x-sample-rate" in exposed,
+          f"{st}, origin {hdr.get('access-control-allow-origin')!r}, expose {exposed!r}")
+    st, hdr, _ = http("OPTIONS", "/v1/audio/speech", timeout=10,
+                      extra={"Origin": origin, "Access-Control-Request-Method": "POST",
+                             "Access-Control-Request-Headers": "content-type"})
+    check("cors: preflight on /v1/audio/speech",
+          st in (200, 204) and hdr.get("access-control-allow-origin") == origin
+          and "POST" in hdr.get("access-control-allow-methods", "").upper()
+          and "content-type" in hdr.get("access-control-allow-headers", "").lower(),
+          f"{st}, methods {hdr.get('access-control-allow-methods')!r}, "
+          f"headers {hdr.get('access-control-allow-headers')!r}")
+    st, hdr, _ = http("GET", "/v1/voices", timeout=10,
+                      extra={"Origin": "https://not-allowed.example.com"})
+    check("cors: unlisted origin gets no header",
+          "access-control-allow-origin" not in hdr,
+          f"{st}, got {hdr.get('access-control-allow-origin')!r}")
 
     # ── the 400 catalogue ────────────────────────────────────────────────
     expect_400("400: empty input", {"input": "   "})

@@ -3,6 +3,8 @@
 Cloning engine; serves the bench contract (docs/contract.md)."""
 import io
 import json
+import os
+import re
 import threading
 import wave
 from pathlib import Path
@@ -12,6 +14,7 @@ import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
@@ -42,6 +45,18 @@ prompts = {}  # voice id -> VoiceClonePrompt (first use auto-loads Whisper to tr
 gen_lock = threading.Lock()  # endpoints are sync (threadpool); serialize GPU work
 
 app = FastAPI(title="OmniVoice pt-BR TTS Server")
+
+# CORS: the console calls this engine from a page it does not serve
+# (docs/contract.md, "Cross-origin"). No auth here, so never "*".
+CORS_ORIGINS = os.environ.get("TTS_CORS_ORIGINS", "http://127.0.0.1:*,http://localhost:*")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex="|".join(re.escape(o.strip()).replace(r"\*", ".*")
+                                for o in CORS_ORIGINS.split(",") if o.strip()),
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["content-type"],
+    expose_headers=["x-sample-rate"],  # raw PCM is unplayable without its rate
+)
 
 
 @app.exception_handler(RequestValidationError)

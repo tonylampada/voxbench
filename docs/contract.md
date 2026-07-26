@@ -138,6 +138,38 @@ and the console paints it red instead of waiting forever for a green light.
 
 `200`, `text/html` — the shared test page, for humans.
 
+## Cross-origin (CORS)
+
+An engine must be callable from a browser page it does not serve — the console
+runs on its own port and talks to the engine directly. Every response carries:
+
+- `Access-Control-Allow-Origin` — the request's own `Origin`, echoed back, plus
+  `Vary: Origin`. Never a hardcoded value.
+- `Access-Control-Expose-Headers: x-sample-rate` — **load-bearing**. Without it
+  the browser hands the page the streaming body but hides the header, and raw
+  PCM without its sample rate is unplayable.
+
+`OPTIONS /v1/audio/speech` answers the preflight with
+`Access-Control-Allow-Methods` (including `POST`) and
+`Access-Control-Allow-Headers: content-type` — the board posts JSON, which is
+not a simple request, so the browser preflights it before every call.
+
+The allowlist is the env var **`TTS_CORS_ORIGINS`**: comma-separated origins,
+`*` allowed as a wildcard (it matches a port, or anything else). Default —
+loopback only:
+
+```
+TTS_CORS_ORIGINS=http://127.0.0.1:*,http://localhost:*
+```
+
+An `Origin` outside the list gets **no CORS header at all**. The request is not
+allowed and the browser's refusal is the correct answer, not a bug.
+
+`Access-Control-Allow-Origin: *` is **not** an option. These engines have no
+authentication of any kind and one of them drives a 24 GB GPU; with `*`, any
+page in any tab of any browser that can route to the port could drive it. The
+allowlist is the only thing standing there.
+
 ## The 400 catalogue
 
 The cases a conforming adapter must reject, each with a helpful `detail`:

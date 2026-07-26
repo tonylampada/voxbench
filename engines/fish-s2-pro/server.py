@@ -10,6 +10,8 @@ The adapter runs on the system python3 instead.
 """
 import base64
 import json
+import os
+import re
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -44,6 +46,14 @@ REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 
 BUILTINS = {"default": {"name": "S2 Pro default", "kind": "builtin",
                         "langs": list(LANGS), "gender": "unknown"}}
+
+# CORS: the console calls this engine from a page it does not serve
+# (docs/contract.md, "Cross-origin"). No auth here, so never "*". Same env var
+# and same default as the FastAPI adapters; this one is hand-rolled because the
+# fish-speech image has no FastAPI (see the module docstring).
+CORS_ORIGINS = os.environ.get("TTS_CORS_ORIGINS", "http://127.0.0.1:*,http://localhost:*")
+CORS_RE = re.compile("|".join(re.escape(o.strip()).replace(r"\*", ".*")
+                              for o in CORS_ORIGINS.split(",") if o.strip()))
 
 
 class Bad(Exception):
@@ -100,6 +110,20 @@ def upstream_tts(body, timeout=600):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def end_headers(self):  # every response, one hook
+        origin = self.headers.get("Origin")
+        if origin and CORS_RE.fullmatch(origin):
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+            self.send_header("Access-Control-Expose-Headers", "x-sample-rate")
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "content-type")
+        self.end_headers()
+
     def _json(self, code, obj):
         payload = json.dumps(obj).encode()
         self.send_response(code)
