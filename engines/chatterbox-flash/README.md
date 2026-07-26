@@ -11,13 +11,11 @@ RTF 0.076, 103 ms time-to-first-packet, Seed-TTS similarity 0.704, WER 1.96.
 docker build -f engines/chatterbox-flash/Dockerfile -t tts-chatterbox-flash:gpu .
 ```
 
-The image is based on the repo's own `chatterbox-tts:gpu` (build that first from the
-repo root if missing: `docker build -t chatterbox-tts:gpu .`) rather than a fresh
-`python:3.11-slim` — this box's link could not re-pull the multi-GB torch wheels, and
-the local base already carries torch 2.6.0+cu124, chatterbox-tts 0.1.7, setuptools<81
-and `voices/`. Same trick as `engines/xtts-v2/`. The Dockerfile overrides the base's
-`HF_HOME` (baked cache at `/app/.cache`) and `HF_HUB_OFFLINE=1`, both of which would
-otherwise break the mounted-host-cache run recipe below.
+The image is based on the repo's shared dependency layer `tts-base:gpu` (build that
+first from the repo root if missing: `docker build -f engines/base/Dockerfile -t
+tts-base:gpu .`) rather than a fresh `python:3.11-slim` — this box's link could not
+re-pull the multi-GB torch wheels, and the base already carries torch 2.6.0+cu124,
+chatterbox-tts 0.1.7, setuptools<81 and `voices/`. Same trick as `engines/xtts-v2/`.
 
 ## Run (broken-driver-stack recipe for this box)
 

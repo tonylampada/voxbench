@@ -8,17 +8,17 @@ other engines against, nothing more.
 
 ## Build
 
-The image derives from the repo's own chatterbox image, so build that first if
+The image derives from the repo's shared dependency layer, so build that first if
 it isn't already local:
 
 ```
-docker build -t chatterbox-tts:gpu .            # repo root (skip if image exists)
+docker build -f engines/base/Dockerfile -t tts-base:gpu .        # repo root (skip if image exists)
 docker build -f engines/xtts-v2/Dockerfile -t tts-xtts-v2:gpu .  # repo root, ~2 min on top of the base
 ```
 
 Why not a pytorch/pytorch base: on benchmark night this box's WiFi couldn't
 pull a 3 GB base image with five engine builds running in parallel (50 min in,
-still pulling). `chatterbox-tts:gpu` was already local and carries torch
+still pulling). `tts-base:gpu` is built once here and carries torch
 2.6.0+cu124, which the idiap fork handles fine.
 
 ## Run
@@ -81,9 +81,9 @@ cold-cache runs. Verified: container reaches healthy with zero interaction.
 
 ## Warts
 
-- The image is coupled to `chatterbox-tts:gpu` being buildable/local (see
-  Build). Swap the FROM back to `pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime`
-  on a box with real bandwidth if that coupling ever bites.
+- The image is coupled to `tts-base:gpu` being buildable/local (see Build). Swap
+  the FROM to `pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime` on a box with real
+  bandwidth if that coupling ever bites.
 - pip warns that chatterbox's own pins conflict with the downgraded
   transformers inside this image. Irrelevant here — chatterbox code is never
   imported in this container — but don't reuse this image to run chatterbox.

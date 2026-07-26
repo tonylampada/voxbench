@@ -12,10 +12,11 @@ token-to-mel decoder.
 docker build -f engines/chatterbox-nano/Dockerfile -t tts-chatterbox-nano:gpu .
 ```
 
-The image is based on the repo's own `chatterbox-tts:gpu` (build that first with
-`docker build -t chatterbox-tts:gpu .` if it is not already local) — chosen over
-a fresh `python:3.11-slim` because this box's link was at ~50 KB/s with several
-engine builds pulling in parallel, and the base already carries torch
+The image is based on the repo's shared dependency layer `tts-base:gpu` (build it
+first with `docker build -f engines/base/Dockerfile -t tts-base:gpu .` if it is
+not already local) — chosen over a fresh `python:3.11-slim` because this box's link
+was at ~50 KB/s with several engine builds pulling in parallel, and the base
+already carries torch
 2.6.0+cu124, the full dependency tree, `setuptools<81`, and `voices/`.
 
 ## Run
