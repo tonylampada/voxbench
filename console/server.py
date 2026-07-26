@@ -388,6 +388,12 @@ if __name__ == "__main__":
                          "(e.g. this box's tailnet IP).")
     extra = args.host if args.host and args.host != "127.0.0.1" else None
     if extra:
+        # An engine started from the page must be reachable wherever this
+        # console is: `tts up` reads TTS_HOST and adds a second publish on it,
+        # so the child processes inherit our own reach. Without this, an engine
+        # restarted from the page comes back loopback-only and every phone on
+        # the tailnet loses its voice.
+        os.environ["TTS_HOST"] = extra
         second = ThreadingHTTPServer((extra, PORT), Handler)
         threading.Thread(target=second.serve_forever, daemon=True).start()
         print(f"console also on http://{extra}:{PORT}")

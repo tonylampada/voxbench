@@ -56,8 +56,11 @@ Runs on the host, outside docker, and drives containers by shelling out to
 `engines/tts` — that script stays the only registry of names, ports and
 GPU/CPU. `127.0.0.1` is always served, on purpose — local tools depend on it —
 and `--host <addr>` ADDS a second listener on that address (same semantics as
-`engines/tts --host`); `0.0.0.0` is refused. The engines have no auth and
-neither does this: the network boundary is the auth boundary.
+`engines/tts --host`); `0.0.0.0` is refused. That address is handed down to the
+engines this console starts (as `TTS_HOST`), so an engine brought up from the
+page is published exactly where the console itself is reachable — not loopback
+only. The engines have no auth and neither does this: the network boundary is
+the auth boundary.
 
 Stdlib only, no dependencies, no build step. `CONSOLE_PORT` overrides the port.
 
