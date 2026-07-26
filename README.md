@@ -116,7 +116,8 @@ Every engine and the console publish on `127.0.0.1` and have **no authentication
 kind** — and the console starts and stops containers. The network boundary is the auth
 boundary.
 
-To reach them from another device on your tailnet, name that address:
+To also reach them from another device on your tailnet, name that address —
+`127.0.0.1` keeps working either way, both add a listener rather than move one:
 
 ```bash
 engines/tts up piper --host 100.x.y.z

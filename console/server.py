@@ -359,10 +359,11 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--host", default="127.0.0.1",
-                    help="address to listen on (default loopback). A specific "
-                         "address (e.g. this box's tailnet IP) is a deliberate, "
-                         "bounded choice; 0.0.0.0 is refused.")
+    ap.add_argument("--host", default=None,
+                    help="ADD a second listener on this address (e.g. this "
+                         "box's tailnet IP), same port. 127.0.0.1 is always "
+                         "served — local tools depend on it. Same semantics as "
+                         "`engines/tts --host`. 0.0.0.0 is refused.")
     args = ap.parse_args()
     # This console has NO authentication and it drives docker: whoever reaches
     # it can start and stop containers on this machine. The network boundary is
@@ -372,7 +373,12 @@ if __name__ == "__main__":
         raise SystemExit("refusing --host 0.0.0.0: this console has no auth and "
                          "commands docker. Bind a specific address instead "
                          "(e.g. this box's tailnet IP).")
-    srv = ThreadingHTTPServer((args.host, PORT), Handler)
-    where = "loopback only, by design" if args.host == "127.0.0.1" else f"reachable at {args.host}"
-    print(f"console on http://{args.host}:{PORT} ({where})")
+    extra = args.host if args.host and args.host != "127.0.0.1" else None
+    if extra:
+        second = ThreadingHTTPServer((extra, PORT), Handler)
+        threading.Thread(target=second.serve_forever, daemon=True).start()
+        print(f"console also on http://{extra}:{PORT}")
+    srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    print(f"console on http://127.0.0.1:{PORT}"
+          + ("" if extra else " (loopback only, by design)"))
     srv.serve_forever()

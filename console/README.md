@@ -17,8 +17,10 @@ answers, not failures.
 
 Runs on the host, outside docker, and drives containers by shelling out to
 `engines/tts` — that script stays the only registry of names, ports and
-GPU/CPU. Loopback only, on purpose: the engines have no auth and neither does
-this; the network boundary is the auth boundary.
+GPU/CPU. `127.0.0.1` is always served, on purpose — local tools depend on it —
+and `--host <addr>` ADDS a second listener on that address (same semantics as
+`engines/tts --host`); `0.0.0.0` is refused. The engines have no auth and
+neither does this: the network boundary is the auth boundary.
 
 Stdlib only, no dependencies, no build step. `CONSOLE_PORT` overrides the port.
 
