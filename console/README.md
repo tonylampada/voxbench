@@ -42,6 +42,16 @@ is the bench as it has always been. Desktop Chrome resumes every one of them —
 only WebKit tells them apart. **This comes out the moment the difference has a
 name.**
 
+One name goes the other way. `anchor` adds something the board has never had: a
+real media element — a WAV of zeros, looping, silent, invisible — held playing
+for as long as the live stream runs. The reading behind it is that iOS does not
+give the lock screen to a MediaStream, only to real media it can see playing,
+and every element this page and the board own is fed by a MediaStream. `hidden`
+is the flag that removes the one real element the bench happens to leave behind
+(the finished take's WAV), which is why `hidden` is the one that breaks worst.
+So `?like=hidden,anchor` asks whether an anchor is enough, and `?like=anchor`
+alone asks whether it was ever needed. It is deliberately not part of `all`.
+
 Runs on the host, outside docker, and drives containers by shelling out to
 `engines/tts` — that script stays the only registry of names, ports and
 GPU/CPU. `127.0.0.1` is always served, on purpose — local tools depend on it —
