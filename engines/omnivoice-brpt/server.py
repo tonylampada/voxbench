@@ -15,7 +15,7 @@ import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 MODEL_ID = "edwixx/omnivoice-brpt-v15"
@@ -151,11 +151,6 @@ def to_wav_bytes(audio: np.ndarray) -> bytes:
         wf.setframerate(int(model.sampling_rate))
         wf.writeframes(audio_int16.tobytes())
     return buf.getvalue()
-
-
-@app.get("/")
-def testpage():
-    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")

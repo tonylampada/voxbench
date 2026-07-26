@@ -16,7 +16,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 from voxcpm import VoxCPM
 
@@ -188,11 +188,6 @@ async def startup():
     )
     SAMPLE_RATE = model.tts_model.sample_rate
     print(f"VoxCPM2 ready, sample rate {SAMPLE_RATE}")
-
-
-@app.get("/")
-def testpage():
-    return FileResponse("/app/testpage.html")
 
 
 @app.get("/health")

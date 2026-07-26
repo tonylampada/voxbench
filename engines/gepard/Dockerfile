@@ -37,7 +37,6 @@ RUN git clone https://github.com/nineninesix-ai/gepard-inference.git /opt/gepard
     && uv pip install --system --no-cache "/opt/gepard[inference]"
 
 COPY engines/gepard/server.py /app/server.py
-COPY engines/testpage.html /app/testpage.html
 WORKDIR /app
 EXPOSE 8877
 CMD ["python", "server.py"]

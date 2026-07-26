@@ -133,17 +133,6 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_GET(self):
-        if self.path == "/":
-            try:
-                page = open("/app/testpage.html", "rb").read()
-            except OSError as e:
-                return self._json(500, {"detail": f"testpage.html not found in image: {e}"})
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(page)))
-            self.end_headers()
-            self.wfile.write(page)
-            return
         if self.path == "/health":
             try:
                 with urllib.request.urlopen(f"{UPSTREAM}/v1/health", timeout=3):
