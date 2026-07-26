@@ -534,7 +534,17 @@ function attachAudio(t) {
 }
 
 function stopAll() {   // one voice at a time — this list is for comparing
-  for (const x of takes) if (x.audio && !x.audio.paused) x.audio.pause();
+  for (const x of takes) {
+    if (x.audio && !x.audio.paused) x.audio.pause();
+    // A paused take still holds queued buffers — without this they resume on
+    // top of whatever starts next. Drop their onended with them: that callback
+    // closes the sink, and the sink is about to belong to someone else.
+    if (x.live) {
+      for (const s of x.srcs) { s.onended = null; try { s.stop(); } catch {} }
+      x.srcs = []; x.live = 0;
+      closeSink();
+    }
+  }
 }
 
 function toggle(t) {
@@ -626,17 +636,39 @@ function openSink() {
 
 function closeSink() {
   $('sink').pause();
-  if (navigator.mediaSession) navigator.mediaSession.playbackState = 'none';
+  playbackState('none');
 }
 
-/* Lock screen: what is speaking, and a way to stop it without unlocking. */
+/* Lock screen: what is speaking, and three different verbs for it.
+   pause freezes the AudioContext clock — chunks still arriving queue against a
+   stopped clock, so nothing is lost and nothing plays; play unfreezes it. Only
+   stop is destructive, and it has to be: it aborts the request so the ENGINE
+   stops synthesizing. An abandoned synthesis overlapping the next request is
+   what kills voxcpm2's CUDA context. */
 function announce(t) {
   const s = navigator.mediaSession;
   if (!s) return;
   if (window.MediaMetadata) s.metadata = new MediaMetadata({title: t.phrase, artist: t.engine});
   s.playbackState = 'playing';
-  for (const a of ['stop', 'pause'])
-    try { s.setActionHandler(a, () => stopLive(t)); } catch {}
+  const on = (a, fn) => { try { s.setActionHandler(a, fn); } catch {} };
+  on('pause', pauseLive);
+  on('play', resumeLive);
+  on('stop', () => stopLive(t));
+}
+
+function playbackState(v) {
+  if (navigator.mediaSession) navigator.mediaSession.playbackState = v;
+}
+
+function pauseLive() {
+  audioCtx?.suspend();
+  playbackState('paused');
+}
+
+function resumeLive() {
+  audioCtx?.resume();
+  if (sink) $('sink').play().catch(() => {});   // the element outlives a freeze, but make sure
+  playbackState('playing');
 }
 
 /* Stream plays LIVE: each PCM chunk is queued into the AudioContext the moment
@@ -644,10 +676,10 @@ function announce(t) {
    the engine's latency, not reading it afterwards. */
 async function runStream(t, body) {
   audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+  stopAll();                // synchronous, and before openSink: it closes the sink
   openSink();               // before any await: iOS only allows play() inside the tap
   announce(t);
   if (audioCtx.state === 'suspended') await audioCtx.resume();
-  stopAll();
   const ac = new AbortController();
   Object.assign(t, {ac, srcs: [], live: 0, state: 'live'});
   updateTake(t);
@@ -722,7 +754,8 @@ function finalizeStream(t, chunks, bytes, rate) {
 }
 
 function stopLive(t) {
-  t.ac?.abort();
+  t.ac?.abort();                 // the engine stops synthesizing — the whole point
+  audioCtx?.resume();            // stopped while paused: don't leave a frozen clock behind
   for (const s of t.srcs || []) { try { s.stop(); } catch {} }
   closeSink();
 }
