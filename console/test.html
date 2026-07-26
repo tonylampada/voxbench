@@ -242,6 +242,31 @@ const takes = [];          // newest first — the memory of the session
 let takeN = 0;
 let audioCtx;
 let sink;                  // MediaStreamAudioDestinationNode, null once refused
+let sinkEl;                // the element sound leaves through
+let primed = false;        // ?like=tap: the board opens its element once, ever
+
+/* ── converging on the board ─────────────────────────────────────────────
+   The board runs the same pauseLive/resumeLive code as this page, and on the
+   captain's phone it never comes back from pause while this page does. Same
+   iOS, same verbs, different result — so the cause is somewhere in what is
+   AROUND them, and the only way to name it is to make this page do what the
+   board does, one difference at a time, until it breaks too.
+
+   ?like=<name>[,<name>…] switches on exactly one of those differences; no
+   query string is today's bench, untouched. `all` is the board.
+
+     hidden     nothing player-like on the take while streaming
+     ctx        a fresh AudioContext per stream at the engine's rate, built
+                after the response headers, closed when the stream ends
+     tap        the element's play() and the lock-screen metadata happen
+                after the headers instead of inside the captain's tap
+     srcobject  closing drops srcObject and the metadata, not just pause
+     element    the element is built by script, not written in the page
+
+   A probe, not a feature. It comes out the moment the difference has a name. */
+const LIKE = new Set((new URLSearchParams(location.search).get('like') || '')
+  .split(',').map(s => s.trim()).filter(Boolean));
+const like = f => LIKE.has(f) || LIKE.has('all');
 
 /* ── phrases ─────────────────────────────────────────────────────────── */
 const phraseLabel = p => p.lang ? `${p.label} · ${p.lang}` : p.label;
@@ -480,14 +505,17 @@ function buildTakeEl(t) {
 
 function updateTake(t) {
   const el = t.el;
-  el.className = 'take ' + t.state + (t.audio && !t.audio.paused ? ' playing' : '');
+  // ?like=hidden — the board puts nothing player-like on screen while it speaks:
+  // no transport, no ● live, no clock. A live take is shown as a busy one.
+  const mute = t.state === 'live' && like('hidden');
+  el.className = 'take ' + (mute ? 'running' : t.state) + (t.audio && !t.audio.paused ? ' playing' : '');
   el.querySelector('.eng').textContent = t.engine;
   el.querySelector('.mk').textContent = t.mode === 'stream' ? '≋ stream' : '';
   el.querySelector('.prov').textContent = `${t.phrase} · ${t.voice}`;
   el.querySelector('.tn').textContent = String(t.id).padStart(2, '0');
-  el.querySelector('.pp').disabled = !(t.state === 'done' || t.state === 'live');
+  el.querySelector('.pp').disabled = !(t.state === 'done' || (t.state === 'live' && !mute));
   const l2 = el.querySelector('.l2');
-  if (t.state === 'running') {
+  if (t.state === 'running' || mute) {
     l2.innerHTML = '<span class="fig">synthesizing…</span>';
   } else if (t.state === 'live') {
     // felt latency, as it happens: first sound the moment the first chunk lands
@@ -617,6 +645,20 @@ function pcmToWav(chunks, rate) {
   return new Blob([buf], {type: 'audio/wav'});
 }
 
+// ?like=element — the board has no element in its HTML; it builds one the first
+// time it speaks and appends it to the body.
+function element() {
+  if (!sinkEl) {
+    if (like('element')) {
+      $('sink').remove();
+      sinkEl = document.createElement('audio');
+      sinkEl.playsInline = true;
+      document.body.appendChild(sinkEl);
+    } else sinkEl = $('sink');
+  }
+  return sinkEl;
+}
+
 /* The route to the speakers. Straight out of audioCtx.destination the sound dies
    the moment the screen locks — the OS suspends the page and the AudioContext
    with it. Sent into a MediaStream that the <audio> element is playing, it is
@@ -629,14 +671,37 @@ function openSink() {
   if (!sink) {
     if (!audioCtx.createMediaStreamDestination) { sink = null; return; }
     sink = audioCtx.createMediaStreamDestination();
-    $('sink').srcObject = sink.stream;
+    element().srcObject = sink.stream;
   }
-  $('sink').play().catch(() => { sink = null; });   // blocked → the speakers
+  element().play().catch(() => { sink = null; });   // blocked → the speakers
+}
+
+// ?like=tap — the board's tap only touches the element, once ever, and on a
+// source it has not attached yet. Everything that matters happens later.
+function primeSink() {
+  if (primed) return;
+  primed = true;
+  element().play().catch(() => {});
 }
 
 function closeSink() {
-  $('sink').pause();
+  element().pause();
+  // ?like=srcobject — the board lets the stream go, so the phone stops showing
+  // a player for speech that is over. This page only pauses.
+  if (like('srcobject')) {
+    element().srcObject = null;
+    if (navigator.mediaSession) navigator.mediaSession.metadata = null;
+  }
+  closeCtx();
   playbackState('none');
+}
+
+// ?like=ctx — the board's context lives one message and is closed with it.
+function closeCtx() {
+  if (!like('ctx') || !audioCtx) return;
+  const c = audioCtx;
+  audioCtx = undefined; sink = undefined;
+  try { c.close(); } catch {}
 }
 
 /* Lock screen: what is speaking, and three different verbs for it.
@@ -665,7 +730,7 @@ function playbackState(v) {
 // last fragment over and over — "lá lá lá" in the middle of a word. Pause the
 // element first, so nothing is being pulled while the clock stops.
 function pauseLive() {
-  if (sink) $('sink').pause();
+  if (sink) element().pause();
   audioCtx?.suspend();
   playbackState('paused');
 }
@@ -673,7 +738,7 @@ function pauseLive() {
 // Back in the same order, inside out: the clock first, then the element.
 function resumeLive() {
   audioCtx?.resume();
-  if (sink) $('sink').play().catch(() => {});
+  if (sink) element().play().catch(() => {});
   playbackState('playing');
 }
 
@@ -681,11 +746,18 @@ function resumeLive() {
    it arrives, so sound starts on the first chunk — the whole point is feeling
    the engine's latency, not reading it afterwards. */
 async function runStream(t, body) {
-  audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+  // The board cannot open in the tap: its context is built at the engine's own
+  // sample rate, which is not known until the response headers are in. So the
+  // tap only blesses the element and the real opening happens an await later.
+  const late = like('ctx') || like('tap');
   stopAll();                // synchronous, and before openSink: it closes the sink
-  openSink();               // before any await: iOS only allows play() inside the tap
-  announce(t);
-  if (audioCtx.state === 'suspended') await audioCtx.resume();
+  if (late) primeSink();
+  else {
+    audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+    openSink();             // before any await: iOS only allows play() inside the tap
+    announce(t);
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+  }
   const ac = new AbortController();
   Object.assign(t, {ac, srcs: [], live: 0, state: 'live'});
   updateTake(t);
@@ -701,6 +773,16 @@ async function runStream(t, body) {
       signal: ac.signal});
     if (!r.ok) { clearInterval(t.tick); return failTake(t, r.status, await errText(r)); }
     rate = parseInt(r.headers.get('x-sample-rate')) || 24000;
+    if (late) {
+      if (like('ctx')) audioCtx = new (window.AudioContext || window.webkitAudioContext)({sampleRate: rate});
+      else audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+      // The board races resume against 250 ms and calls a context that did not
+      // start a failure — it has no gesture left to wait for out here.
+      if (audioCtx.state !== 'running')
+        await Promise.race([audioCtx.resume().catch(() => {}), new Promise(r2 => setTimeout(r2, 250))]);
+      openSink();
+      announce(t);
+    }
     const reader = r.body.getReader();
     let carry = null, nextAt = 0;
     for (;;) {
