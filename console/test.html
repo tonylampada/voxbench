@@ -225,6 +225,11 @@
 </section>
 </div>
 
+<!-- Live streams play THROUGH this element, not straight out of the AudioContext:
+     the OS keeps a playing media element scheduled when the screen goes off, and
+     suspends a bare page. It renders nothing — no controls, no sound of its own. -->
+<audio id="sink" playsinline></audio>
+
 <script>
 const $ = id => document.getElementById(id);
 const ms = v => v == null ? '—' : v < 1000 ? Math.round(v) + ' ms' : (v/1000).toFixed(2) + ' s';
@@ -236,6 +241,7 @@ const eng = {};            // name -> {voices, params, values, canStream, busy}
 const takes = [];          // newest first — the memory of the session
 let takeN = 0;
 let audioCtx;
+let sink;                  // MediaStreamAudioDestinationNode, null once refused
 
 /* ── phrases ─────────────────────────────────────────────────────────── */
 const phraseLabel = p => p.lang ? `${p.label} · ${p.lang}` : p.label;
@@ -566,6 +572,7 @@ async function errText(r) {
 
 function failTake(t, status, msg) {
   Object.assign(t, {state: 'error', status, error: msg});
+  closeSink();          // nothing is going to be heard — let go of the lock screen
   updateTake(t);
 }
 
@@ -600,15 +607,49 @@ function pcmToWav(chunks, rate) {
   return new Blob([buf], {type: 'audio/wav'});
 }
 
+/* The route to the speakers. Straight out of audioCtx.destination the sound dies
+   the moment the screen locks — the OS suspends the page and the AudioContext
+   with it. Sent into a MediaStream that the <audio> element is playing, it is
+   real media playback to the OS and keeps going, which is exactly why a plain
+   audio file survives a lock. Same buffers, same seams, one extra hop.
+   Refused (no autoplay, old browser) → the speakers, i.e. today's behaviour,
+   never silence. */
+function openSink() {
+  if (sink === null) return;                        // refused once, refused for good
+  if (!sink) {
+    if (!audioCtx.createMediaStreamDestination) { sink = null; return; }
+    sink = audioCtx.createMediaStreamDestination();
+    $('sink').srcObject = sink.stream;
+  }
+  $('sink').play().catch(() => { sink = null; });   // blocked → the speakers
+}
+
+function closeSink() {
+  $('sink').pause();
+  if (navigator.mediaSession) navigator.mediaSession.playbackState = 'none';
+}
+
+/* Lock screen: what is speaking, and a way to stop it without unlocking. */
+function announce(t) {
+  const s = navigator.mediaSession;
+  if (!s) return;
+  if (window.MediaMetadata) s.metadata = new MediaMetadata({title: t.phrase, artist: t.engine});
+  s.playbackState = 'playing';
+  for (const a of ['stop', 'pause'])
+    try { s.setActionHandler(a, () => stopLive(t)); } catch {}
+}
+
 /* Stream plays LIVE: each PCM chunk is queued into the AudioContext the moment
    it arrives, so sound starts on the first chunk — the whole point is feeling
    the engine's latency, not reading it afterwards. */
 async function runStream(t, body) {
   audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+  openSink();               // before any await: iOS only allows play() inside the tap
+  announce(t);
   if (audioCtx.state === 'suspended') await audioCtx.resume();
   stopAll();
   const ac = new AbortController();
-  Object.assign(t, {ac, srcs: [], state: 'live'});
+  Object.assign(t, {ac, srcs: [], live: 0, state: 'live'});
   updateTake(t);
   const t0 = performance.now();
   t.tick = setInterval(() => {
@@ -645,10 +686,15 @@ async function runStream(t, body) {
       for (let i = 0; i < i16.length; i++) ch[i] = i16[i] / 32768;
       const src = audioCtx.createBufferSource();
       src.buffer = abuf;
-      src.connect(audioCtx.destination);
+      src.connect(sink || audioCtx.destination);
       const at = Math.max(audioCtx.currentTime, nextAt);   // seamless queue
       src.start(at);
       nextAt = at + abuf.duration;
+      // The element stays playing until the last buffer has actually been heard —
+      // the stream can run dry mid-sentence and pick up again, and that gap is not
+      // the end. Only "no buffers left AND nothing more coming" is.
+      t.live++;
+      src.onended = () => { if (--t.live === 0 && t.over) closeSink(); };
       t.srcs.push(src);
     }
     t.gen = performance.now() - t0;
@@ -665,6 +711,8 @@ async function runStream(t, body) {
 
 function finalizeStream(t, chunks, bytes, rate) {
   clearInterval(t.tick);
+  t.over = true;                       // nothing more is coming; the last buffer ends it
+  if (!t.live) closeSink();            // …or it already did
   if (!bytes) return failTake(t, 0, '200 but no audio arrived — the stream was empty');
   t.url = URL.createObjectURL(pcmToWav(chunks, rate));
   t.dur = bytes / 2 / rate;
@@ -676,6 +724,7 @@ function finalizeStream(t, chunks, bytes, rate) {
 function stopLive(t) {
   t.ac?.abort();
   for (const s of t.srcs || []) { try { s.stop(); } catch {} }
+  closeSink();
 }
 
 loadPhrases();
