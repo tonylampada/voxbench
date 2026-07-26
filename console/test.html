@@ -268,6 +268,17 @@ const LIKE = new Set((new URLSearchParams(location.search).get('like') || '')
   .split(',').map(s => s.trim()).filter(Boolean));
 const like = f => LIKE.has(f) || LIKE.has('all');
 
+/* ?like=anchor is the one name here that is not a difference to converge on —
+   it goes the other way. Every element this page owns is fed by a MediaStream,
+   and the reading is that iOS does not hand the lock screen to one of those: it
+   hands it to real media it can see playing. So `anchor` keeps a real one on the
+   page for as long as the stream runs — a WAV of zeros, looping, heard by
+   nobody, playing for no reason but to be something the media session can hold.
+   Combine it with `hidden` (?like=hidden,anchor) to ask whether it is enough, or
+   take it alone to ask whether it was ever needed. Deliberately NOT part of
+   `all`: the board has no anchor, that is the whole point. */
+const anchored = LIKE.has('anchor');
+
 /* ── phrases ─────────────────────────────────────────────────────────── */
 const phraseLabel = p => p.lang ? `${p.label} · ${p.lang}` : p.label;
 
@@ -659,6 +670,23 @@ function element() {
   return sinkEl;
 }
 
+// ?like=anchor — the real media element, held alongside the live one. One second
+// of zeros on a loop: an <audio> with no controls renders nothing and silence
+// sounds like nothing, so it is present to the OS and absent to everyone else.
+let anchorEl;
+function anchor(on) {
+  if (!anchored) return;
+  if (!anchorEl) {
+    anchorEl = document.createElement('audio');
+    anchorEl.playsInline = true;
+    anchorEl.loop = true;
+    anchorEl.src = URL.createObjectURL(pcmToWav([new Uint8Array(16000)], 8000));
+    document.body.appendChild(anchorEl);
+  }
+  if (on) anchorEl.play().catch(() => {});   // blocked → nothing gained, nothing lost
+  else anchorEl.pause();
+}
+
 /* The route to the speakers. Straight out of audioCtx.destination the sound dies
    the moment the screen locks — the OS suspends the page and the AudioContext
    with it. Sent into a MediaStream that the <audio> element is playing, it is
@@ -686,6 +714,7 @@ function primeSink() {
 
 function closeSink() {
   element().pause();
+  anchor(false);            // the speech is over — stop holding the lock screen open
   // ?like=srcobject — the board lets the stream go, so the phone stops showing
   // a player for speech that is over. This page only pauses.
   if (like('srcobject')) {
@@ -731,6 +760,7 @@ function playbackState(v) {
 // element first, so nothing is being pulled while the clock stops.
 function pauseLive() {
   if (sink) element().pause();
+  anchor(false);            // paused means paused — including the thing holding the screen
   audioCtx?.suspend();
   playbackState('paused');
 }
@@ -739,6 +769,7 @@ function pauseLive() {
 function resumeLive() {
   audioCtx?.resume();
   if (sink) element().play().catch(() => {});
+  anchor(true);
   playbackState('playing');
 }
 
@@ -751,6 +782,8 @@ async function runStream(t, body) {
   // tap only blesses the element and the real opening happens an await later.
   const late = like('ctx') || like('tap');
   stopAll();                // synchronous, and before openSink: it closes the sink
+  anchor(true);             // in the tap, like every other play() here — and after
+                            // stopAll, which just turned the previous one off
   if (late) primeSink();
   else {
     audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
