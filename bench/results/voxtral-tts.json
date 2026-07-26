@@ -1,0 +1,64 @@
+{
+  "engine": "voxtral-tts",
+  "port": 8894,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 1.34,
+        "audio_s": 6.72,
+        "realtime_x": 5.0,
+        "bytes": 322604
+      },
+      "long": {
+        "gen_s": 4.12,
+        "audio_s": 21.36,
+        "realtime_x": 5.18,
+        "bytes": 1025324
+      },
+      "stream": {
+        "ttfb_s": 0.13,
+        "total_s": 4.47,
+        "audio_s": 23.04,
+        "bytes": 1105920
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 1.24,
+        "audio_s": 6.16,
+        "realtime_x": 4.97,
+        "bytes": 295724
+      },
+      "long": {
+        "gen_s": 4.6,
+        "audio_s": 23.84,
+        "realtime_x": 5.18,
+        "bytes": 1144364
+      },
+      "stream": {
+        "ttfb_s": 0.12,
+        "total_s": 4.71,
+        "audio_s": 24.48,
+        "bytes": 1175040
+      }
+    }
+  },
+  "ram_idle_mib": 4926,
+  "vram_idle_mib": 20752,
+  "vram_busy_mib": 20776,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 18998
+    },
+    {
+      "name": "[Not Found]",
+      "mib": 1588
+    }
+  ],
+  "ram_peak_mib": 5011
+}

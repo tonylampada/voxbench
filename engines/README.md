@@ -1,6 +1,6 @@
 # TTS engine fleet
 
-Thirteen TTS engines, each in its own container, all speaking the **same HTTP
+Fourteen TTS engines, each in its own container, all speaking the **same HTTP
 contract** — so switching engines is switching a port. They exist to benchmark
 pt-BR (and en) synthesis against each other; each `engines/<name>/README.md`
 carries that engine's pins, measurements and warts.
@@ -58,22 +58,34 @@ Every engine serves, on container port 8877 (published on its host port below):
 | Endpoint | Method | Behaviour |
 |---|---|---|
 | `/` | GET | serves `engines/testpage.html` — a browser test page (type a sentence, hear it, see timings). Part of the contract: every engine ships it |
-| `/health` | GET | 200 `{"status": "ok", "engine": "<name>", ...}` once the model is loaded; 503 (or no answer) while loading |
-| `/voices` | GET | `{"voices": [...]}` — names accepted in the `voice` field |
-| `/tts` | POST | WAV binary (mono 16-bit; sample rate per engine, see its README) |
-| `/tts/stream` | POST | framed stream: repeated `[4-byte big-endian length][complete WAV]` |
+| `/health` | GET | 200 `{"status": "ok", "engine": "<name>"}` once the model is loaded; 503 while loading |
+| `/v1/voices` | GET | the voice catalogue, built from `voices/library/manifest.json` |
+| `/v1/params` | GET | this engine's tunable knobs, with type, range and a description each |
+| `/v1/audio/speech` | POST | synthesize — WAV body, or raw PCM when `stream: true` |
 
-Request body for `/tts` and `/tts/stream`:
+Anything else is 404, including the whole v1 surface (`/tts`, `/tts/stream`,
+`GET /voices`) — it was deleted, not deprecated.
+
+Request body:
 
 ```json
-{"text": "...", "lang": "en" | "pt", "voice": "optional-name", "chunk_size": 3}
+{"input": "...", "voice": "af_bella", "lang": "pt",
+ "response_format": "wav", "speed": 1.0, "stream": false, "params": {}}
 ```
 
-`voice` null/absent → the engine's default voice. `chunk_size` (stream only) =
-sentences per frame. Unsupported `lang` → 400. Some engines accept extra
-optional knobs (temperature, speed, …) — per-engine READMEs list them. Note:
-for most engines `/tts/stream` is sentence-chunked pseudo-streaming, not native
-(voxcpm2 is the exception).
+Only `input` is required. `voice` is an **opaque id** from `/v1/voices`, never a
+file path; absent → the engine's default for `lang`. `params` carries the
+engine's own knobs and every key must appear in `/v1/params`. Streaming is raw
+signed 16-bit LE mono PCM with the rate in `x-sample-rate` and no framing at
+all; an engine that cannot stream says so with a 400 instead of faking it by
+splitting sentences.
+
+Every client error is 400 with `{"detail": "<human sentence>"}` — no 422s.
+
+The normative version of all this, clause by clause, is `docs/contract.md`;
+`bench/conform.py <engine>` checks a live server against it. For handing to a
+coding agent that just needs to consume an engine, `docs/agent.md` is
+self-contained.
 
 ## The engines
 
@@ -83,20 +95,21 @@ Verdicts are from the bake-off measurements recorded in each engine's README.
 |---|---|---|---|
 | chatterbox-ptbr | 8881 | MIT | Dedicated pt-BR finetune, reported CER 0.35%; embeds a Perth watermark in every output |
 | qwen3-tts | 8882 | Apache-2.0 | No native Portuguese speaker; single "Portuguese" id risks pt-PT phonemes; ~0.7× realtime |
-| voxcpm2 | 8883 | Apache-2.0 | 48 kHz output, the only native streamer; ~6 GiB VRAM and minutes of torch.compile warmup at start |
+| voxcpm2 | 8883 | Apache-2.0 | 48 kHz output, first sound in 40 ms — the quickest streamer here; ~6 GiB VRAM and minutes of torch.compile warmup at start |
 | f5-tts-ptbr | 8884 | weights CC-BY-NC-4.0 | pt-BR quality yardstick only — non-commercial weights, cannot ship |
 | xtts-v2 | 8885 | CPML (non-commercial) | The frozen 2023 control; quality bar to judge the rest, nothing more |
 | gepard | 8886 | Apache-2.0 | Small (555M) and quick, but no pt-BR reference voice — pt comes out English-accented |
 | omnivoice-brpt | 8887 | conflicted (Apache tag on CC-BY-NC base) | Best measured pt-BR: WER 0.040 / CER 0.038; research-only until the licence conflict resolves |
 | piper | 8888 | GPL-3.0 engine, MIT voices | CPU-only and instant; no cloning; GPL applies if embedded in a product |
 | kokoro | 8889 | Apache-2.0 | 82M, ~100× realtime; Portuguese is pan-lusophone "D" grade, not Brazilian |
-| chatterbox-flash | 8890 | MIT | **English-only** (`lang: "pt"` → 400); marketed ~13× realtime, measured 5.4× with 0.42 s first audio — slower than the plain turbo path; if it wins, it wins on sound |
+| chatterbox-flash | 8890 | MIT | **English-only** (`lang: "pt"` → 400); marketed ~13× realtime, measured 5.0×; cannot stream; repeats itself past a ~30 s context window |
 | chatterbox-nano | 8891 | MIT | **English-only** (`lang: "pt"` → 400); 110M, 12× realtime on GPU and the only engine that both clones voices and runs acceptably on CPU (~1.8×, `up chatterbox-nano --cpu`) |
+| fish-s2-pro | 8892 | Apache-2.0 code, weights non-commercial | Slower than realtime (0.8×) on this card; cannot stream; runs as uid 1000, so it reads the HF cache from a separate `/hf` mount |
 | higgs-tts-3 | 8893 | Boson Research & Non-Commercial | 4B multilingual (102 languages, en and pt both top tier); served by SGLang-Omni, native PCM streaming; see `higgs-tts-3/README.md` for measurements |
-| voxtral-tts | 8894 | CC-BY-NC-4.0 (weights inherit the preset voices' licence) | Mistral's 4B, 9 languages, 20 presets; first streamed PCM at 148 ms AND RTF ≈ 0.20 — quick at both ends, unlike VoxCPM2; public checkpoint cannot clone (no encoder weights) |
+| voxtral-tts | 8894 | CC-BY-NC-4.0 (weights inherit the preset voices' licence) | Mistral's 4B, 9 languages, 20 presets; first streamed PCM at 130 ms AND ~5× realtime — quick at both ends, unlike VoxCPM2; public checkpoint cannot clone (no encoder weights) |
 
-Port 8892 is reserved in the registry for fish-s2-pro (merged but not yet
-registered).
+Every number above is measured, not quoted: `bench/results/*.json`, produced by
+`bench/measure.py`.
 
 ## The GPU workaround (pre-reboot)
 

@@ -200,19 +200,24 @@ cmd_say() {
     *) die "say: unknown flag '$1' (--lang en|pt, --voice V, --out FILE)" ;;
   esac; done
   out=${out:-/tmp/$e-$lang.wav}
-  local body="{\"text\":\"$(json_escape "$text")\",\"lang\":\"$lang\""
+  local body="{\"input\":\"$(json_escape "$text")\",\"lang\":\"$lang\""
   if [ -n "$voice" ]; then body="$body,\"voice\":\"$(json_escape "$voice")\""; fi
   body="$body}"
-  if ! curl -fsS -X POST "http://127.0.0.1:$PORT/tts" \
-       -H 'Content-Type: application/json' -d "$body" -o "$out"; then
-    die "synthesis failed — is the engine up? try: engines/tts up $e"
+  # A 400 here is an ANSWER (unknown voice, lang it cannot speak, ...) and its
+  # body is a human sentence — show it instead of curl's exit code.
+  local code
+  code=$(curl -sS -X POST "http://127.0.0.1:$PORT/v1/audio/speech" \
+         -H 'Content-Type: application/json' -d "$body" -o "$out" -w '%{http_code}') \
+    || die "no answer from $e on :$PORT — is it up? try: engines/tts up $e"
+  if [ "$code" != 200 ]; then
+    die "$e refused ($code): $(head -c 400 "$out")"
   fi
   echo "wrote $out ($(du -h "$out" | cut -f1))"
 }
 
 cmd_voices() {
   require "$1"
-  curl -fsS "http://127.0.0.1:$PORT/voices" || die "no answer — try: engines/tts up $1"
+  curl -fsS "http://127.0.0.1:$PORT/v1/voices" || die "no answer — try: engines/tts up $1"
   echo
 }
 
