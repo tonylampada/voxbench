@@ -660,14 +660,20 @@ function playbackState(v) {
   if (navigator.mediaSession) navigator.mediaSession.playbackState = v;
 }
 
+// BOTH halves stop. Suspending the context alone freezes the buffers but leaves
+// the element pulling on a MediaStream with nothing new in it, and it chews the
+// last fragment over and over — "lá lá lá" in the middle of a word. Pause the
+// element first, so nothing is being pulled while the clock stops.
 function pauseLive() {
+  if (sink) $('sink').pause();
   audioCtx?.suspend();
   playbackState('paused');
 }
 
+// Back in the same order, inside out: the clock first, then the element.
 function resumeLive() {
   audioCtx?.resume();
-  if (sink) $('sink').play().catch(() => {});   // the element outlives a freeze, but make sure
+  if (sink) $('sink').play().catch(() => {});
   playbackState('playing');
 }
 
