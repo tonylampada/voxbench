@@ -278,6 +278,9 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        # A query string belongs to the page, not to this server: /test reads one
+        # to switch its own behaviour, and no route here has ever wanted one.
+        self.path = self.path.split("?", 1)[0]
         if self.path == "/" or self.path == "/index.html":
             self.send_html("index.html")
         elif self.path == "/test":

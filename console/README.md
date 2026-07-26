@@ -22,6 +22,26 @@ it survives the screen going off, and the phrase and a stop button appear on
 the lock screen. If the element is not allowed to play, the buffers go to the
 speakers as before.
 
+`/test?like=<name>` is a temporary probe, and it is here to settle one question:
+Bridge Commander's board runs the same pause/resume code as this page and never
+comes back from a lock-screen play on the captain's iPhone, while this page
+does. Same iOS, same verbs — so the cause is in what surrounds them. Each name
+makes this page do what the board does for exactly ONE of the differences, so
+they can be walked until one of them breaks pause-then-resume here too:
+
+| name | what it copies from the board |
+|---|---|
+| `hidden` | nothing player-like on the take while streaming |
+| `ctx` | a fresh AudioContext per stream at the engine's rate, built after the response headers, closed when the stream ends |
+| `tap` | the element's `play()` and the lock-screen metadata happen after the headers instead of inside the captain's tap |
+| `srcobject` | closing drops `srcObject` and the metadata, not just pause |
+| `element` | the element is built by script, not written in the page |
+
+Several can be combined (`?like=ctx,tap`); `all` is the board. No query string
+is the bench as it has always been. Desktop Chrome resumes every one of them —
+only WebKit tells them apart. **This comes out the moment the difference has a
+name.**
+
 Runs on the host, outside docker, and drives containers by shelling out to
 `engines/tts` — that script stays the only registry of names, ports and
 GPU/CPU. `127.0.0.1` is always served, on purpose — local tools depend on it —
