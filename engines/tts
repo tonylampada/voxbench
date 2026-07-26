@@ -112,9 +112,9 @@ cmd_up() {
   fi
   if ! has_image "$e"; then
     case "$e" in xtts-v2|chatterbox-flash|chatterbox-nano)
-      if ! docker image inspect chatterbox-tts:gpu >/dev/null 2>&1; then
-        echo "building chatterbox-tts:gpu first ($e's image derives from it)"
-        docker build -t chatterbox-tts:gpu .
+      if ! docker image inspect tts-base:gpu >/dev/null 2>&1; then
+        echo "building tts-base:gpu first ($e's image derives from it)"
+        docker build -f engines/base/Dockerfile -t tts-base:gpu .
       fi ;;
     esac
     echo "image tts-$e:gpu missing — building (this can take many minutes)"

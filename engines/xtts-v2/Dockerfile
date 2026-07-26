@@ -1,8 +1,13 @@
-# Based on the repo's own chatterbox image (build it first from the repo root:
-# `docker build -t chatterbox-tts:gpu .`). Chosen over pytorch/pytorch because
-# this box's WiFi could not pull a 3 GB base with five engine builds running in
-# parallel — chatterbox-tts:gpu is already local and carries torch 2.6.0+cu124.
-FROM chatterbox-tts:gpu
+# Build from the REPO ROOT:
+#   docker build -f engines/xtts-v2/Dockerfile -t tts-xtts-v2:gpu .
+#
+# Based on the repo's shared dependency layer (build it first from the repo root:
+# `docker build -f engines/base/Dockerfile -t tts-base:gpu .`, or just let
+# `engines/tts up xtts-v2` do it). Chosen over pytorch/pytorch because this box's
+# WiFi could not pull a 3 GB base with five engine builds running in parallel —
+# tts-base:gpu carries torch 2.6.0+cu124 and is shared with the two chatterbox
+# engines.
+FROM tts-base:gpu
 
 # coqui-tts is the maintained idiap fork (github.com/idiap/coqui-ai-TTS); the
 # original `TTS` package is the dead upstream — do not install it. 0.25.2+

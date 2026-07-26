@@ -1,12 +1,13 @@
 # Build from the REPO ROOT:
 #   docker build -f engines/chatterbox-nano/Dockerfile -t tts-chatterbox-nano:gpu .
 #
-# Based on the repo's own chatterbox image (build it first from the repo root:
-# `docker build -t chatterbox-tts:gpu .`). Chosen over python:3.11-slim because
+# Based on the repo's shared dependency layer (build it first from the repo root:
+# `docker build -f engines/base/Dockerfile -t tts-base:gpu .`, or just let
+# `engines/tts up chatterbox-nano` do it). Chosen over python:3.11-slim because
 # this box's link was at ~50 KB/s with several engine builds pulling in
-# parallel — chatterbox-tts:gpu is already local and carries torch 2.6.0+cu124,
-# the whole chatterbox-tts 0.1.7 dependency tree, setuptools<81, and voices/.
-FROM chatterbox-tts:gpu
+# parallel — tts-base:gpu carries torch 2.6.0+cu124, the whole chatterbox-tts
+# 0.1.7 dependency tree, setuptools<81, and voices/.
+FROM tts-base:gpu
 
 # nano=True only exists on GitHub master — PyPI's chatterbox-tts 0.1.7
 # (2026-03-26) predates the Nano release; pin the "Update ChatterboxNano"
@@ -19,8 +20,8 @@ FROM chatterbox-tts:gpu
 RUN pip install --no-cache-dir --no-deps --force-reinstall \
     "chatterbox-tts @ https://github.com/resemble-ai/chatterbox/archive/5de7a54aa4e5.tar.gz"
 
-# The base bakes HF_HUB_OFFLINE=1 and an in-image HF_HOME; Nano's weights are
-# not baked, so point at the mounted host cache and allow the first download.
+# Nano's weights are not baked into any image here, so point at the host cache
+# that engines/tts mounts and allow the first download.
 ENV HF_HOME=/root/.cache/huggingface
 ENV HF_HUB_OFFLINE=0
 
