@@ -7,7 +7,9 @@ clips via the model's basic cloning mode (reference_wav_path).
 import io
 import json
 import os
+import queue
 import re
+import threading
 import wave
 from pathlib import Path
 from typing import Generator, Optional
@@ -55,6 +57,12 @@ app.add_middleware(
 )
 model = None
 SAMPLE_RATE = 48000  # overwritten from the loaded model at startup
+# One generation at a time. The endpoint is sync, so FastAPI runs each request in
+# its own threadpool thread, all on the same `model` — two concurrent decodes
+# share its kv_cache, corrupt each other, and at worst trip a device-side assert
+# that poisons the CUDA context for the life of the process (see latch()).
+# Latecomers wait; the contract has no "busy" answer.
+gen_lock = threading.Lock()
 FATAL = None  # set once the CUDA context is gone; see latch() — only a restart clears it
 
 
@@ -242,23 +250,44 @@ def speech(req: SpeechRequest):
             bad(f"response_format '{req.response_format}' with stream: streaming is raw PCM — omit it or say 'pcm'")
         # Each piece runs through generate_streaming(), and every chunk the model
         # natively yields goes out as raw int16 PCM.
+        #
+        # Decoding runs on a thread WE own, not on the response generator, for
+        # two reasons the lock cares about. It happens while the body is being
+        # consumed, so holding the lock only inside speech() would serialize
+        # nothing; and when a client hangs up mid-stream (the board aborts its
+        # fetch on every new message) Starlette abandons the response generator
+        # where it stands, without finalizing it — a `with gen_lock` in there is
+        # simply never exited and the engine wedges for good, which is a worse
+        # bug than the race. A thread always reaches its finally.
         def gen() -> Generator[bytes, None, None]:
-            try:
-                for piece in pieces:
-                    for audio in model.generate_streaming(
-                            text=piece, reference_wav_path=voice_path, **knobs):
-                        yield to_int16_bytes(audio)
-            except Exception as exc:  # the response already started — latch, then die
-                latch(exc)
-                raise
+            chunks = queue.Queue()  # `None` ends it, an exception re-raises here
+
+            def produce():
+                try:
+                    with gen_lock:
+                        for piece in pieces:
+                            for audio in model.generate_streaming(
+                                    text=piece, reference_wav_path=voice_path, **knobs):
+                                chunks.put(to_int16_bytes(audio))
+                    chunks.put(None)
+                except BaseException as exc:  # the response already started — latch, then die
+                    latch(exc)
+                    chunks.put(exc)
+
+            threading.Thread(target=produce, daemon=True).start()
+            while (item := chunks.get()) is not None:
+                if isinstance(item, BaseException):
+                    raise item
+                yield item
 
         return StreamingResponse(gen(), media_type="application/octet-stream",
                                  headers={"x-sample-rate": str(SAMPLE_RATE)})
     if (req.response_format or "wav") != "wav":
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
     try:
-        audio = np.concatenate([model.generate(text=p, reference_wav_path=voice_path, **knobs)
-                                for p in pieces])
+        with gen_lock:
+            audio = np.concatenate([model.generate(text=p, reference_wav_path=voice_path, **knobs)
+                                    for p in pieces])
     except Exception as exc:
         latch(exc)
         raise

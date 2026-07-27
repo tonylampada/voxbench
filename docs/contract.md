@@ -67,6 +67,22 @@ No per-chunk framing of any kind. The client concatenates chunks and has PCM.
 An engine that cannot stream does not fake it by splitting sentences; it
 returns 400 for `stream: true` with a sentence saying so.
 
+### Concurrency
+
+One synthesis at a time per engine. A request that arrives while another is
+generating **waits** for it and then runs — it is never refused and never
+truncated, and there is no "busy" status code. Concurrent decodes on one model
+corrupt each other's state; on a GPU engine that has ranged from a garbled
+utterance to a device-side assert that poisons the CUDA context for the life of
+the process (the `unusable` state below). The wait is the whole point: the
+client sees a slower answer instead of a broken engine.
+
+Serialization must cover the *generation*, not the handler — with `stream: true`
+the audio is produced while the body is being consumed, so an engine that
+releases its lock once the response object exists has serialized nothing. A
+client that disconnects mid-stream must leave the engine free for the next
+request.
+
 ## GET /v1/voices
 
 ```json

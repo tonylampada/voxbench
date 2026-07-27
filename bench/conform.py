@@ -10,9 +10,12 @@ exit non-zero on any violation. Stdlib only.
 import json
 import re
 import sys
+import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
+from http.client import HTTPConnection
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -177,6 +180,50 @@ def main():
             check("stream: honest cannot-stream 400", True, f'"{str(detail)[:90]}"')
         else:
             check("stream", False, f"got {e.code}: {body[:100]!r}")
+
+    # ── concurrency ──────────────────────────────────────────────────────
+    # Two decodes at once on one model corrupt each other; on a GPU engine that
+    # has reached a device-side assert that poisons the CUDA context for the
+    # life of the process. Both requests must still answer 200 — the contract
+    # has no "busy" — so the only visible proof is the clock: serialized, the
+    # pair costs two renders, not one.
+    # Long enough that one render outlasts scheduling jitter — a two-word input
+    # renders so fast on a light engine that "2x" is lost in the noise.
+    text = "Two of these at once must not run at once. " * 6
+    body = {"input": text, "voice": voice["id"], "lang": lang} if voice else {"input": text}
+    t0 = time.time()
+    http("POST", "/v1/audio/speech", body)
+    solo = time.time() - t0
+    out = {}
+    threads = [threading.Thread(target=lambda i=i: out.__setitem__(i, http("POST", "/v1/audio/speech", body)))
+               for i in range(2)]
+    t0 = time.time()
+    for th in threads:
+        th.start()
+    for th in threads:
+        th.join()
+    both = time.time() - t0
+    check("concurrent: both answered 200 with audio",
+          all(out[i][0] == 200 and is_wav(out[i][2]) for i in out),
+          ", ".join(f"{out[i][0]} {len(out[i][2])}b" for i in sorted(out)))
+    check("concurrent: serialized, not overlapped", both > solo * 1.6,
+          f"a pair took {both:.2f}s against {solo:.2f}s alone "
+          f"({both / solo:.1f}x) — expected ~2x")
+
+    # A client that hangs up mid-response must not leave the engine holding its
+    # lock: the board aborts its fetch on every new message, and an engine
+    # wedged that way is worse than the race the lock fixes.
+    u = urllib.parse.urlsplit(BASE)
+    conn = HTTPConnection(u.hostname, u.port or 80, timeout=300)
+    conn.request("POST", "/v1/audio/speech", json.dumps(body | {"stream": True}),
+                 {"Content-Type": "application/json"})
+    conn.getresponse().read(2048)   # take a little, then vanish
+    conn.close()
+    t0 = time.time()
+    st, _, raw = http("POST", "/v1/audio/speech", body)
+    check("concurrent: a client that hangs up frees the engine",
+          st == 200 and is_wav(raw) and time.time() - t0 < solo * 4,
+          f"the next request got {st} after {time.time() - t0:.2f}s (alone: {solo:.2f}s)")
 
     # ── CORS ─────────────────────────────────────────────────────────────
     # The console is a page on another origin; without these headers the
