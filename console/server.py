@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import socket
 import subprocess
 import threading
 import time
@@ -395,7 +396,15 @@ if __name__ == "__main__":
         # so the child processes inherit our own reach. Without this, an engine
         # restarted from the page comes back loopback-only and every phone on
         # the tailnet loses its voice.
+        # Reaching it is not enough: the engine's CORS allowlist defaults to
+        # loopback, so a board loaded from this address gets `400 Disallowed
+        # CORS origin` on every call and goes silent while looking healthy.
+        # Same address, both spellings a browser may use for it (the tailnet
+        # name is what the phone actually sends), any port. Explicit wins.
         os.environ["TTS_HOST"] = extra
+        os.environ.setdefault("TTS_CORS_ORIGINS", ",".join(
+            ["http://127.0.0.1:*", "http://localhost:*"]
+            + [f"http://{n}:*" for n in dict.fromkeys([extra, socket.getfqdn(extra)])]))
         second = ThreadingHTTPServer((extra, PORT), Handler)
         threading.Thread(target=second.serve_forever, daemon=True).start()
         print(f"console also on http://{extra}:{PORT}")
