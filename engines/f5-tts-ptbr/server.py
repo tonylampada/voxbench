@@ -10,6 +10,7 @@ import io
 import json
 import os
 import re
+import threading
 import wave
 from importlib.resources import files
 from pathlib import Path
@@ -54,6 +55,11 @@ LIBRARY_DIR = Path("/app/voices/library")
 _manifest_file = LIBRARY_DIR / "manifest.json"
 MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file.exists() else []
 REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
+
+# One generation at a time (docs/contract.md, "Concurrency"): the endpoint is
+# sync, so FastAPI runs each request in its own threadpool thread, all on the
+# same model. Latecomers wait.
+gen_lock = threading.Lock()
 
 app = FastAPI(title="F5-TTS pt-BR TTS Server")
 
@@ -202,7 +208,7 @@ async def params():
 
 
 @app.post("/v1/audio/speech")
-async def speech(req: SpeechRequest):
+def speech(req: SpeechRequest):
     if not req.input.strip():
         bad("input is required and must be non-empty")
     ref_file, ref_text, lang = resolve(req)
@@ -211,7 +217,8 @@ async def speech(req: SpeechRequest):
         bad("this engine cannot stream — F5-TTS has no incremental synthesis; use stream: false")
     if (req.response_format or "wav") != "wav":
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
-    audio, sr = generate_speech(req.input, lang, ref_file, ref_text, knobs)
+    with gen_lock:
+        audio, sr = generate_speech(req.input, lang, ref_file, ref_text, knobs)
     return Response(content=numpy_to_wav_bytes(audio, sr), media_type="audio/wav")
 
 

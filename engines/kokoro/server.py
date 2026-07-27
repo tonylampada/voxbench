@@ -6,7 +6,9 @@ localhost:8880 in the same container. Reference implementation for v2.
 """
 import json
 import os
+import queue
 import re
+import threading
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -180,8 +182,58 @@ async def params():
     return {"params": PARAMS}
 
 
+# One synthesis at a time (docs/contract.md, "Concurrency"). The generation
+# happens in the upstream process, which could take both at once — this engine
+# serializes anyway so every adapter answers the console the same way.
+gen_lock = threading.Lock()
+
+
+def locked_stream(open_upstream, read_size: int):
+    """Take gen_lock, open the upstream response, and relay it -> (resp, body).
+
+    The lock is held from before upstream starts generating until its last byte,
+    and it is released by the relay thread, which always reaches its finally.
+    That thread is the whole point: when a client hangs up mid-stream Starlette
+    abandons the response generator where it stands without finalizing it, so a
+    `with gen_lock` inside that generator would never be exited and the engine
+    would wedge for good. Draining upstream also leaves it clean for whoever is
+    next in line.
+    """
+    gen_lock.acquire()
+    try:
+        resp = open_upstream()
+    except BaseException:  # nothing to relay, so nothing would ever release it
+        gen_lock.release()
+        raise
+    # No maxsize, on purpose: a bounded put() would park the relay thread while
+    # it still holds gen_lock as soon as an abandoned client stopped draining —
+    # the exact deadlock this design avoids. The price is one utterance in memory.
+    chunks = queue.Queue()
+
+    def relay():
+        try:
+            with resp:
+                while chunk := resp.read(read_size):
+                    chunks.put(chunk)
+            chunks.put(None)
+        except BaseException as exc:
+            chunks.put(exc)
+        finally:
+            gen_lock.release()
+
+    threading.Thread(target=relay, daemon=True).start()
+
+    def body() -> Generator[bytes, None, None]:
+        while (item := chunks.get()) is not None:
+            if isinstance(item, BaseException):
+                raise item
+            yield item
+
+    return resp, body()
+
+
 @app.post("/v1/audio/speech")
-async def speech(req: SpeechRequest):
+def speech(req: SpeechRequest):
     if not req.input.strip():
         bad("input is required and must be non-empty")
     voice, _ = resolve(req)
@@ -189,18 +241,15 @@ async def speech(req: SpeechRequest):
     if req.stream:
         if req.response_format not in (None, "pcm"):
             bad(f"response_format '{req.response_format}' with stream: streaming is raw PCM — omit it or say 'pcm'")
-        r = upstream_speech({"model": "kokoro", "input": req.input, "voice": voice,
-                             "response_format": "pcm", "speed": speed, "stream": True})
-
-        def gen() -> Generator[bytes, None, None]:
-            with r:
-                while chunk := r.read(8192):
-                    yield chunk
-
-        return StreamingResponse(gen(), media_type="application/octet-stream",
+        _, body = locked_stream(
+            lambda: upstream_speech({"model": "kokoro", "input": req.input, "voice": voice,
+                                     "response_format": "pcm", "speed": speed, "stream": True}),
+            8192)
+        return StreamingResponse(body, media_type="application/octet-stream",
                                  headers={"x-sample-rate": str(SAMPLE_RATE)})
     if (req.response_format or "wav") != "wav":
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
-    with upstream_speech({"model": "kokoro", "input": req.input, "voice": voice,
-                          "response_format": "wav", "speed": speed, "stream": False}) as r:
+    with gen_lock, upstream_speech({"model": "kokoro", "input": req.input, "voice": voice,
+                                    "response_format": "wav", "speed": speed,
+                                    "stream": False}) as r:
         return Response(content=r.read(), media_type="audio/wav")

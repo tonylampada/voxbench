@@ -83,6 +83,21 @@ releases its lock once the response object exists has serialized nothing. A
 client that disconnects mid-stream must leave the engine free for the next
 request.
 
+Freeing the engine is not the same as stopping the work. **An abandoned
+generation runs to completion before the next request starts**, because there is
+no safe way to interrupt a decode mid-flight. So a client that hangs up and
+immediately posts again waits out the utterance it just abandoned — bounded, and
+far better than the alternative, but it is not free, and anyone measuring
+latency after an abort needs to expect it. This is what the board's abort-and-
+resend on every new message costs today.
+
+An engine whose generation happens in a *separate process* built for concurrent
+requests (the vLLM- and SGLang-backed adapters) has no in-process model to
+corrupt, and could safely let both through. It serializes anyway: the console
+and the bench treat all engines interchangeably, so they all owe the same
+answer to the same question. Nothing in this system issues concurrent
+synthesis, so the batching that gives up is throughput nobody was using.
+
 ## GET /v1/voices
 
 ```json

@@ -200,7 +200,13 @@ def speech(req: SpeechRequest):
         # simply never exited and the engine wedges for good, which is a worse
         # bug than the race. A thread always reaches its finally.
         def gen() -> Generator[bytes, None, None]:
-            chunks = queue.Queue()  # `None` ends it, an exception re-raises here
+            # `None` ends it, an exception re-raises here. NO maxsize, on
+            # purpose: a bounded queue would park the producer inside put()
+            # once an abandoned client stopped draining it — still holding
+            # gen_lock — which is the exact deadlock this thread exists to
+            # avoid. The price is one utterance buffered in memory, which the
+            # non-streaming path pays anyway.
+            chunks = queue.Queue()
 
             def produce():
                 try:

@@ -11,6 +11,7 @@ import io
 import json
 import os
 import re
+import threading
 import wave
 from pathlib import Path
 from typing import Optional
@@ -46,6 +47,11 @@ LIBRARY_DIR = Path("/app/voices/library")
 _manifest_file = LIBRARY_DIR / "manifest.json"
 MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file.exists() else []
 REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
+
+# One generation at a time (docs/contract.md, "Concurrency"): the endpoint is
+# sync, so FastAPI runs each request in its own threadpool thread, all on the
+# same model. Latecomers wait.
+gen_lock = threading.Lock()
 
 app = FastAPI(title="Gepard TTS Server")
 
@@ -176,7 +182,7 @@ async def params():
 
 
 @app.post("/v1/audio/speech")
-async def speech(req: SpeechRequest):
+def speech(req: SpeechRequest):
     if not req.input.strip():
         bad("input is required and must be non-empty")
     voice_path = resolve(req)
@@ -186,7 +192,8 @@ async def speech(req: SpeechRequest):
             "serving path, not the eager one used here; use stream: false")
     if (req.response_format or "wav") != "wav":
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
-    sample_rate, audio = session.synthesize(req.input, reference=voice_path, **knobs)
+    with gen_lock:
+        sample_rate, audio = session.synthesize(req.input, reference=voice_path, **knobs)
     return Response(content=numpy_to_wav_bytes(audio, sample_rate),
                     media_type="audio/wav")
 

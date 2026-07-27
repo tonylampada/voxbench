@@ -12,6 +12,7 @@ import base64
 import json
 import os
 import re
+import threading
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -19,6 +20,11 @@ from pathlib import Path
 
 UPSTREAM = "http://127.0.0.1:8080"
 ENGINE = "fish-s2-pro"
+# One synthesis at a time (docs/contract.md, "Concurrency"). ThreadingHTTPServer
+# gives every request its own thread, so without this two of them hit the one
+# fish-speech upstream at once. Latecomers wait; this engine cannot stream, so
+# the whole generation is inside the handler and a plain `with` covers it.
+gen_lock = threading.Lock()
 LANGS = ("en", "pt")  # both Tier 1/2 for s2-pro; the model infers language from text
 DEFAULT_LANG = "en"
 
@@ -184,7 +190,7 @@ class Handler(BaseHTTPRequestHandler):
                       "synthesis before sending — request stream: false and play the WAV")
         if fmt not in (None, "wav"):
             raise Bad(f"response_format '{fmt}' not supported — this engine serves wav")
-        with upstream_tts(upstream_body(text, ref, knobs)) as r:
+        with gen_lock, upstream_tts(upstream_body(text, ref, knobs)) as r:
             wav = r.read()
         self.send_response(200)
         self.send_header("Content-Type", "audio/wav")
