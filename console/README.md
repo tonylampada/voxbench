@@ -80,8 +80,12 @@ and `--host <addr>` ADDS a second listener on that address (same semantics as
 `engines/tts --host`); `0.0.0.0` is refused. That address is handed down to the
 engines this console starts (as `TTS_HOST`), so an engine brought up from the
 page is published exactly where the console itself is reachable — not loopback
-only. The engines have no auth and neither does this: the network boundary is
-the auth boundary.
+only. Reachable is not enough for a browser, so it goes down as
+`TTS_CORS_ORIGINS` too (loopback plus that address, by IP and by its DNS name,
+any port); without it a page loaded from there gets `400 Disallowed CORS
+origin` and goes silent while the engine looks healthy. Set
+`TTS_CORS_ORIGINS` yourself and yours is used untouched. The engines have no
+auth and neither does this: the network boundary is the auth boundary.
 
 Stdlib only, no dependencies, no build step. `CONSOLE_PORT` overrides the port.
 
