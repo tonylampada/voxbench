@@ -4,7 +4,9 @@ Serves the bench contract (docs/contract.md)."""
 import io
 import json
 import os
+import queue
 import re
+import threading
 import wave
 from pathlib import Path
 from typing import Generator, Optional
@@ -45,6 +47,9 @@ MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file else []
 REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 
 voices = {}
+# One synthesis at a time: the endpoint is sync, so FastAPI runs each request in
+# its own threadpool thread, all sharing one PiperVoice per id. Latecomers wait.
+gen_lock = threading.Lock()
 
 app = FastAPI(title="Piper TTS Adapter")
 
@@ -185,15 +190,44 @@ def speech(req: SpeechRequest):
 
         # Native incremental synthesis: PiperVoice.synthesize yields audio
         # chunks as the ONNX model produces them, one per sentence.
+        #
+        # Synthesis runs on a thread WE own, not on the response generator, for
+        # two reasons the lock cares about. It happens while the body is being
+        # consumed, so holding the lock only inside speech() would serialize
+        # nothing; and when a client hangs up mid-stream (the board aborts its
+        # fetch on every new message) Starlette abandons the response generator
+        # where it stands, without finalizing it — a `with gen_lock` in there is
+        # simply never exited and the engine wedges for good, which is a worse
+        # bug than the race. A thread always reaches its finally.
         def gen() -> Generator[bytes, None, None]:
-            for chunk in voice.synthesize(req.input, syn_config=cfg):
-                yield chunk.audio_int16_bytes
+            # `None` ends it, an exception re-raises here. NO maxsize, on
+            # purpose: a bounded queue would park the producer inside put()
+            # once an abandoned client stopped draining it — still holding
+            # gen_lock — which is the exact deadlock this thread exists to
+            # avoid. The price is one utterance buffered in memory, which the
+            # non-streaming path pays anyway.
+            chunks = queue.Queue()
+
+            def produce():
+                try:
+                    with gen_lock:
+                        for chunk in voice.synthesize(req.input, syn_config=cfg):
+                            chunks.put(chunk.audio_int16_bytes)
+                    chunks.put(None)
+                except BaseException as exc:
+                    chunks.put(exc)
+
+            threading.Thread(target=produce, daemon=True).start()
+            while (item := chunks.get()) is not None:
+                if isinstance(item, BaseException):
+                    raise item
+                yield item
 
         return StreamingResponse(gen(), media_type="application/octet-stream",
                                  headers={"x-sample-rate": str(voice.config.sample_rate)})
     if (req.response_format or "wav") != "wav":
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
     buf = io.BytesIO()
-    with wave.open(buf, "wb") as wf:
+    with gen_lock, wave.open(buf, "wb") as wf:
         voice.synthesize_wav(req.input, wf, syn_config=cfg)
     return Response(content=buf.getvalue(), media_type="audio/wav")

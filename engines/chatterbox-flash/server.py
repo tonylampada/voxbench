@@ -10,6 +10,7 @@ import io
 import json
 import os
 import re
+import threading
 import wave
 from pathlib import Path
 from typing import Optional
@@ -43,6 +44,11 @@ LIBRARY_DIR = Path("/app/voices/library")
 _manifest_file = LIBRARY_DIR / "manifest.json"
 MANIFEST = json.loads(_manifest_file.read_text()) if _manifest_file.exists() else []
 REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
+
+# One generation at a time: the endpoint is sync, so FastAPI runs each request
+# in its own threadpool thread, all on the same model — concurrent decodes
+# corrupt each other's state on the GPU. Latecomers wait.
+gen_lock = threading.Lock()
 
 app = FastAPI(title="Chatterbox Flash TTS Engine")
 
@@ -191,7 +197,8 @@ def speech(req: SpeechRequest):
         bad("this engine cannot stream — chatterbox-flash synthesizes the whole utterance at once; use stream: false")
     if (req.response_format or "wav") != "wav":
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
-    audio = generate_speech(req.input, voice_path, knobs)
+    with gen_lock:
+        audio = generate_speech(req.input, voice_path, knobs)
     return Response(content=numpy_to_wav_bytes(audio), media_type="audio/wav")
 
 

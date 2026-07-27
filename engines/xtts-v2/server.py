@@ -5,6 +5,7 @@ import io
 import json
 import os
 import re
+import threading
 import unicodedata
 import wave
 from pathlib import Path
@@ -42,6 +43,11 @@ REFERENCES = {e["file"][:-4]: e for e in MANIFEST if e.get("file")}
 model = None
 SPEAKERS: dict[str, str] = {}  # slug id -> XTTS speaker name
 LANGS: set[str] = set()        # ISO 639-1 codes the model speaks
+
+# One generation at a time: the endpoint is sync, so FastAPI runs each request
+# in its own threadpool thread, all on the same model — concurrent decodes
+# corrupt each other's state on the GPU. Latecomers wait.
+gen_lock = threading.Lock()
 
 app = FastAPI(title="XTTS-v2 TTS Server")
 
@@ -192,5 +198,6 @@ def speech(req: SpeechRequest):
             "coqui TTS api; use stream: false")
     if (req.response_format or "wav") != "wav":
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
-    return Response(content=synth_wav(req.input, xtts_lang, voice_kwargs, knobs),
-                    media_type="audio/wav")
+    with gen_lock:
+        wav = synth_wav(req.input, xtts_lang, voice_kwargs, knobs)
+    return Response(content=wav, media_type="audio/wav")
