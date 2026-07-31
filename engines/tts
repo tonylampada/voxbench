@@ -59,10 +59,15 @@ health_word() {
 # (580.173.02) are mismatched, so `--gpus all` dies — nvidia-container-toolkit
 # tries to mount /run/nvidia-persistenced/socket, which doesn't exist. Instead
 # we pass the device nodes explicitly and mount libs matching the kernel module.
-# After the reboot aligns them, run with TTS_GPU_MODE=gpus-all; this function is
-# the only thing to change (make gpus-all the default, or delete the nvdrv arm).
+# It was the DEFAULT until 2026-07-31, and leaving it that way cost an
+# afternoon: after the reboot it mounts 580.159.03 libs over a 580.173.02
+# module, CUDA fails to initialise inside the container, and the engine falls
+# back to CPU SILENTLY — one ignorable torch.compile warning is the only sign.
+# VoxCPM2 ran at 16s a sentence instead of 0.8s and nothing said why. If an
+# engine seems slow, check this before anything else:
+#     docker exec <container> python -c "import torch; print(torch.cuda.is_available())"
 gpu_run_args() {  # appends to RUN_ARGS
-  case "${TTS_GPU_MODE:-nvdrv}" in
+  case "${TTS_GPU_MODE:-gpus-all}" in
     gpus-all) RUN_ARGS+=(--gpus all) ;;
     nvdrv) RUN_ARGS+=(
       --device /dev/nvidia0 --device /dev/nvidiactl
@@ -245,7 +250,7 @@ usage: engines/tts <command> [args]
   say <engine> "text" [--lang en|pt] [--voice V] [--out FILE]
                           synthesize a WAV (default /tmp/<engine>-<lang>.wav)
   voices <engine>         list its voices
-env: TTS_GPU_MODE=nvdrv|gpus-all (default nvdrv until the reboot), TTS_UP_TIMEOUT=secs,
+env: TTS_GPU_MODE=gpus-all|nvdrv (default gpus-all; nvdrv is the pre-reboot workaround), TTS_UP_TIMEOUT=secs,
      TTS_HOST=addr (same as --host, set once per session)
 EOF
   exit 1
