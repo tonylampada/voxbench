@@ -5,6 +5,11 @@ No GPU, no model: `voxcpm` is stubbed and the ASGI app is driven directly, so
 http.disconnect can be delivered at the exact moment the first chunk lands.
 
     pip install fastapi numpy && python engines/voxcpm2/test_stop.py
+
+This is the cheap regression guard, NOT the proof: it hands Starlette a
+synthetic disconnect and a fake model that yields every 50 ms. The proof that
+uvicorn delivers a real TCP hangup and that the real model yields often enough
+is `bench/abort-latency.py <engine>`, against a live container.
 """
 import asyncio
 import json

@@ -106,6 +106,7 @@ console/          the control plane and the test bench (host-side, stdlib, no de
 voices/library/   221 reference clips + manifest.json (language, gender, duration)
 bench/conform.py  judges a live engine against docs/contract.md
 bench/measure.py  produces the measurements in bench/results/
+bench/abort-latency.py  proves a hung-up stream frees the engine, over real HTTP
 docs/contract.md  the API, normatively
 docs/agent.md     the API, packaged for an agent's context
 ```
