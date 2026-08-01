@@ -4,6 +4,7 @@ VoxCPM2 TTS engine adapter — serves the bench contract (docs/contract.md).
 Loads openbmb/VoxCPM2 (48 kHz output) and clones voices from library reference
 clips via the model's basic cloning mode (reference_wav_path).
 """
+import asyncio
 import io
 import json
 import os
@@ -12,7 +13,7 @@ import re
 import threading
 import wave
 from pathlib import Path
-from typing import Generator, Optional
+from typing import AsyncGenerator, Optional
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
@@ -259,7 +260,13 @@ def speech(req: SpeechRequest):
         # where it stands, without finalizing it — a `with gen_lock` in there is
         # simply never exited and the engine wedges for good, which is a worse
         # bug than the race. A thread always reaches its finally.
-        def gen() -> Generator[bytes, None, None]:
+        #
+        # The generator is async so the hangup is *heard*: an abandoned async
+        # generator has its task cancelled, so its finally DOES run (that is
+        # what the sync one, driven from a threadpool, never gets). It sets
+        # `gone`, produce() sees it between chunks and stops generating, and
+        # gen_lock is free within a chunk instead of a whole utterance.
+        async def gen() -> AsyncGenerator[bytes, None]:
             # `None` ends it, an exception re-raises here. NO maxsize, on
             # purpose: a bounded queue would park the producer inside put()
             # once an abandoned client stopped draining it — still holding
@@ -267,24 +274,34 @@ def speech(req: SpeechRequest):
             # avoid. The price is one utterance buffered in memory, which the
             # non-streaming path pays anyway.
             chunks = queue.Queue()
+            gone = threading.Event()  # the client hung up; stop decoding for nobody
 
             def produce():
                 try:
                     with gen_lock:
                         for piece in pieces:
+                            if gone.is_set():
+                                break
                             for audio in model.generate_streaming(
                                     text=piece, reference_wav_path=voice_path, **knobs):
                                 chunks.put(to_int16_bytes(audio))
+                                if gone.is_set():
+                                    break
                     chunks.put(None)
                 except BaseException as exc:  # the response already started — latch, then die
                     latch(exc)
                     chunks.put(exc)
 
             threading.Thread(target=produce, daemon=True).start()
-            while (item := chunks.get()) is not None:
-                if isinstance(item, BaseException):
-                    raise item
-                yield item
+            try:
+                # to_thread, not chunks.get(): a blocking get would stall the
+                # whole event loop, disconnects included.
+                while (item := await asyncio.to_thread(chunks.get)) is not None:
+                    if isinstance(item, BaseException):
+                        raise item
+                    yield item
+            finally:
+                gone.set()  # every exit — done, error, or hangup
 
         return StreamingResponse(gen(), media_type="application/octet-stream",
                                  headers={"x-sample-rate": str(SAMPLE_RATE)})
