@@ -58,7 +58,14 @@ downloads them into the cache.
   is framed as `[4-byte BE length][complete WAV]` — so frames are smaller and more
   frequent than one-per-sentence-chunk.
 - Optional extra knobs on `/tts` and `/tts/stream`: `cfg_value` (guidance, default 2.0),
-  `inference_timesteps` (diffusion steps, default 10).
+  `inference_timesteps` (diffusion steps, default 10), `seed` (default 42).
+- `seed` is spent on torch's global RNG right before each decode, because voxcpm takes
+  neither a seed nor a generator and its samplers (the flow-matching head's initial noise,
+  the vocoder's noise blocks) draw from the global one. Unlike the other two knobs the
+  default is applied by the server, not by voxcpm: unseeded means fresh randomness per
+  request, so the chunks of one message drift in pitch and energy at the seams. Reseeded
+  per piece, not per request, so a paragraph the engine splits itself sounds like the same
+  paragraph a client split and sent chunk by chunk.
 
 ## Observed
 
