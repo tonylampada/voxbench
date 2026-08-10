@@ -21,6 +21,8 @@ from pathlib import Path
 import numpy as np
 
 sys.modules["voxcpm"] = types.SimpleNamespace(VoxCPM=None)  # never loaded: no startup, no GPU
+sys.modules.setdefault(  # server.py seeds torch's RNG; there is no model here to seed
+    "torch", types.SimpleNamespace(manual_seed=lambda seed: None))
 sys.path.insert(0, str(Path(__file__).parent))
 import server  # noqa: E402
 

@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import AsyncGenerator, Optional
 
 import numpy as np
+import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,6 +35,8 @@ PARAMS = {
                   "description": "guidance scale on the diffusion head; higher = closer to the reference, may degrade quality"},
     "inference_timesteps": {"type": "integer", "min": 4, "max": 50, "default": 10,
                             "description": "diffusion sampling steps; more = cleaner audio, fewer = faster"},
+    "seed": {"type": "integer", "min": 0, "max": 2147483647, "default": 42,
+             "description": "random seed; same text + same knobs + same seed reproduces the same take"},
 }
 
 # No builtins: VoxCPM2 has no fixed factory voices — with no reference it
@@ -103,7 +106,10 @@ def resolve(req: SpeechRequest) -> Optional[str]:
     bad(f"unknown voice '{v}' — see /v1/voices")
 
 
-def effective_params(req: SpeechRequest) -> dict:
+def effective_params(req: SpeechRequest) -> tuple[dict, int]:
+    """-> (kwargs for model.generate, seed). The seed is not one of them:
+    voxcpm has no seed argument, so it is spent on torch's global RNG instead
+    (see seed_rng), which is what its samplers draw from."""
     if not isinstance(req.params, dict):
         bad("params must be an object")
     knobs = {}
@@ -119,7 +125,12 @@ def effective_params(req: SpeechRequest) -> dict:
         knobs[k] = v
     if req.speed is not None and req.speed != 1.0:
         bad("this engine has no speed knob — only the no-op speed 1.0 is accepted")
-    return knobs
+    # The other two knobs let voxcpm apply its own defaults; the seed cannot,
+    # because "no seed" means fresh randomness and that is the bug. Defaulted
+    # here, every request draws the same sampling noise, so the chunks of one
+    # message stop being independent takes.
+    seed = knobs.pop("seed", PARAMS["seed"]["default"])
+    return knobs, seed
 
 
 # How much text goes into ONE decode. Measured on this model: a decode stays
@@ -222,6 +233,19 @@ async def params():
     return {"params": PARAMS}
 
 
+def seed_rng(seed: int) -> None:
+    """Point the samplers at a known RNG state. voxcpm takes no seed and no
+    generator: the flow-matching head draws its initial noise with a bare
+    torch.randn (modules/locdit/unified_cfm.py) and the vocoder's noise blocks
+    do the same, so the global generator IS the sampler's RNG. Safe because
+    gen_lock already serializes generation — nobody else is drawing.
+
+    Called once per PIECE, not once per request, so a paragraph the engine
+    split itself sounds exactly like the same paragraph the client split and
+    sent chunk by chunk. Either way, every chunk starts from the same noise."""
+    torch.manual_seed(seed)
+
+
 def latch(exc: BaseException) -> None:
     """A device-side assert poisons the CUDA context for the life of the process:
     every later call fails, forever. There is no in-process recovery, so record it
@@ -241,7 +265,7 @@ def speech(req: SpeechRequest):
     if not req.input.strip():
         bad("input is required and must be non-empty")
     voice_path = resolve(req)
-    knobs = effective_params(req)
+    knobs, seed = effective_params(req)
     # ONE decode gets at most MAX_CHUNK_CHARS characters, on both paths. Streaming
     # bounds how the audio comes out; this bounds how much text goes in, and only
     # the second one keeps the model from running away.
@@ -282,6 +306,7 @@ def speech(req: SpeechRequest):
                         for piece in pieces:
                             if gone.is_set():
                                 break
+                            seed_rng(seed)
                             for audio in model.generate_streaming(
                                     text=piece, reference_wav_path=voice_path, **knobs):
                                 chunks.put(to_int16_bytes(audio))
@@ -309,8 +334,11 @@ def speech(req: SpeechRequest):
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
     try:
         with gen_lock:
-            audio = np.concatenate([model.generate(text=p, reference_wav_path=voice_path, **knobs)
-                                    for p in pieces])
+            parts = []
+            for piece in pieces:
+                seed_rng(seed)
+                parts.append(model.generate(text=piece, reference_wav_path=voice_path, **knobs))
+            audio = np.concatenate(parts)
     except Exception as exc:
         latch(exc)
         raise
