@@ -380,6 +380,10 @@ async function probeStream(name) {
 function renderVoices(c) {
   const sel = $('voice');
   sel.replaceChildren();
+  // ...unless the engine can be *told* a voice in words, in which case the take
+  // does name its voice — in the voice_prompt box — and picking a catalogue
+  // voice as well is the one thing such an engine refuses.
+  if (c.params?.voice_prompt) sel.append(new Option('no voice — describe one in voice_prompt', ''));
   if (!c.voices.length) sel.append(new Option('this engine lists no voices', ''));
   const kinds = [['builtin', 'builtin voices'], ['reference', 'cloned references']];
   for (const [kind, label] of kinds) {
@@ -561,7 +565,7 @@ function run(stream) {
   const p = phrases.find(x => x.id == $('phrase').value);
   if (!p) return;
   const vid = $('voice').value;
-  const body = {input: p.text, voice: vid, stream};
+  const body = {input: p.text, stream, ...(vid ? {voice: vid} : {})};
   if (Object.keys(c.values).length) body.params = {...c.values};
   const t = addTake({engine: name, phrase: phraseLabel(p), mode: stream ? 'stream' : 'take',
                      voice: c.voices.find(v => v.id === vid)?.name || vid || 'no voice'});

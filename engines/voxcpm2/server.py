@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
 VoxCPM2 TTS engine adapter — serves the bench contract (docs/contract.md).
-Loads openbmb/VoxCPM2 (48 kHz output) and clones voices from library reference
-clips via the model's basic cloning mode (reference_wav_path).
+Loads openbmb/VoxCPM2 (48 kHz output) and gets its voice one of two ways: cloned
+from a library reference clip via the model's basic cloning mode
+(reference_wav_path), or invented from a written description via its voice-design
+mode (params.voice_prompt).
 """
 import asyncio
 import io
@@ -37,7 +39,15 @@ PARAMS = {
                             "description": "diffusion sampling steps; more = cleaner audio, fewer = faster"},
     "seed": {"type": "integer", "min": 0, "max": 2147483647, "default": 42,
              "description": "random seed; same text + same knobs + same seed reproduces the same take"},
+    "voice_prompt": {"type": "string", "default": "",
+                     "description": "describe a voice in words and the model invents one to match ('a tired old man, speaking slowly'); empty means clone the library voice instead, and it cannot be combined with one"},
 }
+
+# The model's voice-design mode is a text convention, not an argument: voxcpm's
+# own CLI (`voxcpm design --control "..."`) just writes the description into a
+# leading parenthesis of the text it decodes, and the model reads it as an
+# instruction instead of speaking it. See build_final_text() in voxcpm/cli.py.
+MAX_VOICE_PROMPT = 300
 
 # No builtins: VoxCPM2 has no fixed factory voices — with no reference it
 # invents an arbitrary voice per request. The catalogue is the library.
@@ -106,10 +116,12 @@ def resolve(req: SpeechRequest) -> Optional[str]:
     bad(f"unknown voice '{v}' — see /v1/voices")
 
 
-def effective_params(req: SpeechRequest) -> tuple[dict, int]:
-    """-> (kwargs for model.generate, seed). The seed is not one of them:
-    voxcpm has no seed argument, so it is spent on torch's global RNG instead
-    (see seed_rng), which is what its samplers draw from."""
+def effective_params(req: SpeechRequest) -> tuple[dict, int, str]:
+    """-> (kwargs for model.generate, seed, voice description). Neither the seed
+    nor the description is a generate kwarg: voxcpm has no seed argument, so it
+    is spent on torch's global RNG instead (see seed_rng), which is what its
+    samplers draw from, and the description is prefixed onto the text
+    (see designed)."""
     if not isinstance(req.params, dict):
         bad("params must be an object")
     knobs = {}
@@ -117,6 +129,11 @@ def effective_params(req: SpeechRequest) -> tuple[dict, int]:
         if k not in PARAMS:
             bad(f"unknown param '{k}' — this engine has {sorted(PARAMS)} (see /v1/params)")
         p = PARAMS[k]
+        if p["type"] == "string":
+            if not isinstance(v, str):
+                bad(f"params.{k} must be a string")
+            knobs[k] = v
+            continue
         if isinstance(v, bool) or not isinstance(v, (int, float)) or \
                 (p["type"] == "integer" and not isinstance(v, int)):
             bad(f"params.{k} must be a {p['type']}")
@@ -130,7 +147,19 @@ def effective_params(req: SpeechRequest) -> tuple[dict, int]:
     # here, every request draws the same sampling noise, so the chunks of one
     # message stop being independent takes.
     seed = knobs.pop("seed", PARAMS["seed"]["default"])
-    return knobs, seed
+    voice_prompt = knobs.pop("voice_prompt", "").strip()
+    if voice_prompt:
+        if req.voice is not None:
+            bad(f"voice '{req.voice}' and params.voice_prompt are two voice sources for one "
+                "request — a library clip clones a voice, a description invents one; pass one")
+        # The description rides in a parenthesis of the text, so a parenthesis
+        # of its own would end it early and the rest would be spoken aloud.
+        if "(" in voice_prompt or ")" in voice_prompt:
+            bad("params.voice_prompt must not contain parentheses")
+        if len(voice_prompt) > MAX_VOICE_PROMPT:
+            bad(f"params.voice_prompt is {len(voice_prompt)} characters — "
+                f"at most {MAX_VOICE_PROMPT}; it describes a voice, it is not the text")
+    return knobs, seed, voice_prompt
 
 
 # How much text goes into ONE decode. Measured on this model: a decode stays
@@ -178,6 +207,12 @@ def chunk_text(text: str, limit: int = MAX_CHUNK_CHARS) -> list[str]:
     if cur:
         chunks.append(cur)
     return chunks
+
+
+def designed(text: str, voice_prompt: str) -> str:
+    """One piece of text, with the voice description the model reads as an
+    instruction instead of speaking. Unchanged when there is no description."""
+    return f"({voice_prompt}){text}" if voice_prompt else text
 
 
 def to_int16_bytes(audio: np.ndarray) -> bytes:
@@ -265,11 +300,16 @@ def speech(req: SpeechRequest):
     if not req.input.strip():
         bad("input is required and must be non-empty")
     voice_path = resolve(req)
-    knobs, seed = effective_params(req)
+    knobs, seed, voice_prompt = effective_params(req)
     # ONE decode gets at most MAX_CHUNK_CHARS characters, on both paths. Streaming
     # bounds how the audio comes out; this bounds how much text goes in, and only
-    # the second one keeps the model from running away.
-    pieces = chunk_text(req.input) or [req.input]
+    # the second one keeps the model from running away. The description counts
+    # against the same budget — the model decodes it too — and goes on EVERY
+    # piece, because each piece is its own decode with no memory of the last: a
+    # described voice the first chunk alone carried would be an arbitrary voice
+    # from the second chunk on.
+    limit = MAX_CHUNK_CHARS - len(designed("", voice_prompt))
+    pieces = [designed(p, voice_prompt) for p in chunk_text(req.input, limit) or [req.input]]
     if req.stream:
         if req.response_format not in (None, "pcm"):
             bad(f"response_format '{req.response_format}' with stream: streaming is raw PCM — omit it or say 'pcm'")
