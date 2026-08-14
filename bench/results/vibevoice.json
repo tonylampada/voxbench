@@ -1,0 +1,68 @@
+{
+  "engine": "vibevoice",
+  "port": 8895,
+  "method": {
+    "texts": "bake-off v1 sentences, verbatim",
+    "warmup": "one discarded short synth per language after load"
+  },
+  "langs": {
+    "en": {
+      "short": {
+        "gen_s": 1.2,
+        "audio_s": 5.6,
+        "realtime_x": 4.66,
+        "bytes": 268844
+      },
+      "long": {
+        "gen_s": 4.28,
+        "audio_s": 19.33,
+        "realtime_x": 4.52,
+        "bytes": 928044
+      },
+      "stream": {
+        "ttfb_s": 0.04,
+        "total_s": 4.15,
+        "audio_s": 19.33,
+        "bytes": 928000
+      }
+    },
+    "pt": {
+      "short": {
+        "gen_s": 1.53,
+        "audio_s": 6.53,
+        "realtime_x": 4.28,
+        "bytes": 313644
+      },
+      "long": {
+        "gen_s": 6.29,
+        "audio_s": 29.07,
+        "realtime_x": 4.62,
+        "bytes": 1395244
+      },
+      "stream": {
+        "ttfb_s": 0.04,
+        "total_s": 6.04,
+        "audio_s": 29.07,
+        "bytes": 1395200
+      }
+    }
+  },
+  "ram_idle_mib": 598,
+  "vram_idle_mib": 14736,
+  "vram_busy_mib": 14942,
+  "vram_apps": [
+    {
+      "name": "[Not Found]",
+      "mib": 9114
+    },
+    {
+      "name": "[Not Found]",
+      "mib": 2516
+    },
+    {
+      "name": "[Not Found]",
+      "mib": 3214
+    }
+  ],
+  "ram_peak_mib": 1311
+}

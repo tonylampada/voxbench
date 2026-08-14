@@ -1,6 +1,6 @@
 # voxbench
 
-Fourteen text-to-speech engines, each in its own container, all answering the **same
+Fifteen text-to-speech engines, each in its own container, all answering the **same
 HTTP API**. Switching engines is switching a port.
 
 It exists to answer a question no benchmark table can: *which of these actually sounds
@@ -70,8 +70,9 @@ Raw numbers in `bench/results/*.json`, reproducible with `bench/measure.py`.
 | fish-s2-pro | 8892 | en pt | 0.8× | — | Slower than realtime |
 | higgs-tts-3 | 8893 | en pt | 3.9× | 1.71 s | Non-commercial |
 | voxtral-tts | 8894 | en pt | 5.0× | **130 ms** | Cannot clone; non-commercial |
+| vibevoice | 8895 | en pt | 4.7× | **40 ms** | Cannot clone; garbles the first clause of short pt |
 
-Five engines stream for real. The rest answer `stream: true` with an honest 400 saying
+Six engines stream for real. The rest answer `stream: true` with an honest 400 saying
 why — none of them fakes it by cutting the text into sentences.
 
 Licences, version pins, warts and per-engine measurements live in

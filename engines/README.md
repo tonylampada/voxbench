@@ -1,6 +1,6 @@
 # TTS engine fleet
 
-Fourteen TTS engines, each in its own container, all speaking the **same HTTP
+Fifteen TTS engines, each in its own container, all speaking the **same HTTP
 contract** — so switching engines is switching a port. They exist to benchmark
 pt-BR (and en) synthesis against each other; each `engines/<name>/README.md`
 carries that engine's pins, measurements and warts.
@@ -109,6 +109,7 @@ Verdicts are from the bake-off measurements recorded in each engine's README.
 | fish-s2-pro | 8892 | Apache-2.0 code, weights non-commercial | Slower than realtime (0.8×) on this card; cannot stream; runs as uid 1000, so it reads the HF cache from a separate `/hf` mount |
 | higgs-tts-3 | 8893 | Boson Research & Non-Commercial | 4B multilingual (102 languages, en and pt both top tier); served by SGLang-Omni, native PCM streaming; see `higgs-tts-3/README.md` for measurements |
 | voxtral-tts | 8894 | CC-BY-NC-4.0 (weights inherit the preset voices' licence) | Mistral's 4B, 9 languages, 20 presets; first streamed PCM at 130 ms AND ~5× realtime — quick at both ends, unlike VoxCPM2; public checkpoint cannot clone (no encoder weights) |
+| vibevoice | 8895 | MIT (card says research-use only) | Microsoft's 0.5B realtime; 40 ms to first PCM byte AND 4.5× realtime, the quickest at both ends; 3.2 GiB; cannot clone (encoder withheld); pt is vendor-experimental and mangles the opening clause of short utterances |
 
 Every number above is measured, not quoted: `bench/results/*.json`, produced by
 `bench/measure.py`.
