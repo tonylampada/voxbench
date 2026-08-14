@@ -110,6 +110,7 @@ Verdicts are from the bake-off measurements recorded in each engine's README.
 | higgs-tts-3 | 8893 | Boson Research & Non-Commercial | 4B multilingual (102 languages, en and pt both top tier); served by SGLang-Omni, native PCM streaming; see `higgs-tts-3/README.md` for measurements |
 | voxtral-tts | 8894 | CC-BY-NC-4.0 (weights inherit the preset voices' licence) | Mistral's 4B, 9 languages, 20 presets; first streamed PCM at 130 ms AND ~5× realtime — quick at both ends, unlike VoxCPM2; public checkpoint cannot clone (no encoder weights) |
 | vibevoice | 8895 | MIT (card says research-use only) | Microsoft's 0.5B realtime; 40 ms to first PCM byte AND 4.5× realtime, the quickest at both ends; 3.2 GiB; cannot clone (encoder withheld); pt is vendor-experimental and mangles the opening clause of short utterances |
+| vibevoice-15b | 8896 | MIT (card says research-use only) | the 0.5B's big sibling and the one that **clones** — 6.1 GiB, 1.8 GB lighter than voxcpm2 at the same 2.9× realtime; 100 ms to first PCM byte; an aborted stream really stops; 9 presets and every library clip; pt quality tracks the reference clip you give it (0.000 WER on a clean one) |
 
 Every number above is measured, not quoted: `bench/results/*.json`, produced by
 `bench/measure.py`.

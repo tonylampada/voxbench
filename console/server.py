@@ -16,7 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TTS = os.path.join(ROOT, "engines", "tts")
-PORT = int(os.environ.get("CONSOLE_PORT", "9000"))  # well clear of the engine block 8881-8895
+PORT = int(os.environ.get("CONSOLE_PORT", "9000"))  # well clear of the engine block 8881-8896
 
 # Host path of the driver libs that match the kernel module — engines/tts
 # mounts this into every GPU container (see gpu_run_args there). Pulled out of

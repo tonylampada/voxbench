@@ -1,0 +1,72 @@
+[
+  {
+    "lang": "en",
+    "kind": "short",
+    "voice": "en-Carter_man",
+    "gen_s": 1.89,
+    "audio_s": 5.2,
+    "realtime_x": 2.76,
+    "wer": 0.0,
+    "heard": "Captain, the deploy is green. Two pull requests merged, one waiting on your review."
+  },
+  {
+    "lang": "en",
+    "kind": "long",
+    "voice": "en-Carter_man",
+    "gen_s": 6.83,
+    "audio_s": 19.73,
+    "realtime_x": 2.89,
+    "wer": 0.049,
+    "heard": "Captain, here is the state of the fleet. The audio artifact work is merged and live, so a voice sample now plays inside the card viewer, instead of only offering a download. Nine text-to-speech engines are being wrapped in containers tonight, each behind the same interface, so the comparison is honest. Nothing is blocked, and nothing is on fire."
+  },
+  {
+    "lang": "pt",
+    "kind": "short",
+    "voice": "en-Carter_man",
+    "gen_s": 2.25,
+    "audio_s": 6.27,
+    "realtime_x": 2.78,
+    "wer": 0.385,
+    "heard": "Capitão ou Deploy Pessoa, dois pull-requests mergidos, um esperando a sua revisão."
+  },
+  {
+    "lang": "pt",
+    "kind": "long",
+    "voice": "en-Carter_man",
+    "gen_s": 9.12,
+    "audio_s": 26.53,
+    "realtime_x": 2.91,
+    "wer": 0.016,
+    "heard": "Capitão, segue o estado da frota. O trabalho de áudio nos artefatos está mergeado e no ar. Então uma amostra de voz agora toca dentro do visualizador do card, em vez de só oferecer download. Nove motores de síntese de voz estão sendo empacotados em containers esta noite, cada uma atrás da mesma interface. Para a comparação ser honesta, nada travado, nada pegando fogo."
+  },
+  {
+    "lang": "pt",
+    "kind": "short",
+    "voice": "voxtral-tts-pt-male-pt",
+    "gen_s": 2.25,
+    "audio_s": 6.53,
+    "realtime_x": 2.91,
+    "wer": 0.538,
+    "heard": "Capitamo dublou e passou, dois pulo-quistos merdeados, homem esperando a sua revisão."
+  },
+  {
+    "lang": "pt",
+    "kind": "long",
+    "voice": "voxtral-tts-pt-male-pt",
+    "gen_s": 8.4,
+    "audio_s": 24.8,
+    "realtime_x": 2.95,
+    "wer": 0.094,
+    "heard": "Capitão, sigo a estado da frota. O trabalho de áudio nos artefatos está marjado em Noir. Então uma amostra de voz agora toca dentro do visualizador do card, em vez de só oferecer download. Nove motores de síntese de voz estão sendo empacotados em containers esta noite. Cada um atrás da mesma interface. Para a comparação ser honesta. Nada travado, nada pegando fogo."
+  },
+  {
+    "lang": "pt",
+    "kind": "short",
+    "voice": "kokoro-pm-alex-pt",
+    "gen_s": 2.11,
+    "audio_s": 6.13,
+    "realtime_x": 2.91,
+    "wer": 0.077,
+    "heard": "Capitão, o deploy passou. Dois pull requests mergeados, uma esperando a sua revisão."
+  }
+]

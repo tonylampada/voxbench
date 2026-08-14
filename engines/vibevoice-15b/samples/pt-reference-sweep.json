@@ -1,0 +1,67 @@
+{
+  "text": "Capitão, o deploy passou. Dois pull requests mergeados, um esperando a sua revisão.",
+  "note": "same sentence, seed 42, cloned from each pt clip in voices/library; whisper large-v3-turbo transcribes it back",
+  "median_wer": 0.115,
+  "rows": [
+    {
+      "reference": "kokoro-pf-dora-pt",
+      "wer": 0.0,
+      "heard": "Capitão, o deploy passou. Dois pull requests mergeados, um esperando a sua revisão."
+    },
+    {
+      "reference": "kokoro-pm-alex-pt",
+      "wer": 0.077,
+      "heard": "Capitão, o deploy passou. Dois pull requests mergeados, uma esperando a sua revisão."
+    },
+    {
+      "reference": "kokoro-pm-santa-pt",
+      "wer": 0.154,
+      "heard": "Cavetamo o deploy passou. Dois pull requests mergeados, am esperando a sua revisão."
+    },
+    {
+      "reference": "piper-pt-br-cadu-medium-pt",
+      "wer": 0.231,
+      "heard": "Capitão, ou deploy, passou. Dois pull requests mordeados, esperando a sua revisão."
+    },
+    {
+      "reference": "piper-pt-br-edresson-low-pt",
+      "wer": 0.308,
+      "heard": "Capitão, o deploy passou. Dois públicos mergados ou esperando a sua revisão."
+    },
+    {
+      "reference": "piper-pt-br-faber-medium-pt",
+      "wer": 0.154,
+      "heard": "Capotamo, o deploy passou. Dois pull requests mordeados. Um esperando a sua revisão."
+    },
+    {
+      "reference": "piper-pt-br-jeff-medium-pt",
+      "wer": 0.385,
+      "heard": "Capitão, o depois passou, dois publicos desmerjados, homens esperando a sua revisão."
+    },
+    {
+      "reference": "qwen3-tts-aiden-pt",
+      "wer": 0.077,
+      "heard": "Capitão, o deploy passou. Dois pull requests mergeados. Homem esperando a sua revisão."
+    },
+    {
+      "reference": "qwen3-tts-dylan-pt",
+      "wer": 0.077,
+      "heard": "Capitão, o deploy passou. Dois pull requests mergeados. Homem esperando a sua revisão."
+    },
+    {
+      "reference": "qwen3-tts-eric-pt",
+      "wer": 0.0,
+      "heard": "Capitão, o deploy passou. Dois pull requests mergeados. Um esperando a sua revisão."
+    },
+    {
+      "reference": "qwen3-tts-ono-anna-pt",
+      "wer": 0.077,
+      "heard": "Capitão, o deploy passou. Dois pull requests marchados. Um esperando a sua revisão."
+    },
+    {
+      "reference": "qwen3-tts-ryan-pt",
+      "wer": 0.231,
+      "heard": "Capitão, o deploy passou a dois pull requests marjados, um esperando a sua visão."
+    }
+  ]
+}
