@@ -12,6 +12,7 @@ import json
 import os
 import queue
 import re
+import tempfile
 import threading
 import wave
 from pathlib import Path
@@ -41,6 +42,8 @@ PARAMS = {
              "description": "random seed; same text + same knobs + same seed reproduces the same take"},
     "voice_prompt": {"type": "string", "default": "",
                      "description": "describe a voice in words and the model invents one to match ('a tired old man, speaking slowly'); empty means clone the library voice instead, and it cannot be combined with one"},
+    "continuity": {"type": "boolean", "default": True,
+                   "description": "carry the voice across the pieces of one message instead of restarting it at every seam; off reproduces the old take, which drifts into a different person over a long paragraph"},
 }
 
 # The model's voice-design mode is a text convention, not an argument: voxcpm's
@@ -101,27 +104,31 @@ def bad(msg: str):
     raise HTTPException(status_code=400, detail=msg)
 
 
-def resolve(req: SpeechRequest) -> Optional[str]:
-    """-> reference clip path, or None for the model's own (arbitrary) voice."""
+def resolve(req: SpeechRequest) -> tuple[Optional[str], Optional[str]]:
+    """-> (reference clip path, what that clip says), or (None, None) for the
+    model's own (arbitrary) voice. The transcript comes from the manifest
+    (bench/transcribelib.py put it there) and is what makes the model's
+    ref-audio-plus-transcript mode reachable — a clip alone says who is
+    speaking, a clip with its words also says how they speak them."""
     if req.lang is not None and req.lang not in LANGS:
         bad(f"lang '{req.lang}' not supported — this engine speaks {sorted(LANGS)}")
     if req.voice is None:
-        return None
+        return None, None
     v = req.voice
     if v in REFERENCES:  # cloning engine: any library clip works
         e = REFERENCES[v]
         if req.lang is not None and req.lang != e["lang"]:
             bad(f"voice '{v}' speaks '{e['lang']}', not '{req.lang}'")
-        return str(LIBRARY_DIR / e["file"])
+        return str(LIBRARY_DIR / e["file"]), (e.get("text") or "").strip() or None
     bad(f"unknown voice '{v}' — see /v1/voices")
 
 
-def effective_params(req: SpeechRequest) -> tuple[dict, int, str]:
-    """-> (kwargs for model.generate, seed, voice description). Neither the seed
-    nor the description is a generate kwarg: voxcpm has no seed argument, so it
-    is spent on torch's global RNG instead (see seed_rng), which is what its
-    samplers draw from, and the description is prefixed onto the text
-    (see designed)."""
+def effective_params(req: SpeechRequest) -> tuple[dict, int, str, bool]:
+    """-> (kwargs for the decoder, seed, voice description, continuity). Only the
+    first is a generate kwarg: voxcpm has no seed argument, so the seed is spent
+    on torch's global RNG instead (see seed_rng), which is what its samplers draw
+    from; the description is prefixed onto the text (see designed); and
+    continuity is about how the pieces are conditioned, not about one decode."""
     if not isinstance(req.params, dict):
         bad("params must be an object")
     knobs = {}
@@ -132,6 +139,11 @@ def effective_params(req: SpeechRequest) -> tuple[dict, int, str]:
         if p["type"] == "string":
             if not isinstance(v, str):
                 bad(f"params.{k} must be a string")
+            knobs[k] = v
+            continue
+        if p["type"] == "boolean":
+            if not isinstance(v, bool):
+                bad(f"params.{k} must be a boolean")
             knobs[k] = v
             continue
         if isinstance(v, bool) or not isinstance(v, (int, float)) or \
@@ -147,6 +159,7 @@ def effective_params(req: SpeechRequest) -> tuple[dict, int, str]:
     # here, every request draws the same sampling noise, so the chunks of one
     # message stop being independent takes.
     seed = knobs.pop("seed", PARAMS["seed"]["default"])
+    continuity = knobs.pop("continuity", PARAMS["continuity"]["default"])
     voice_prompt = knobs.pop("voice_prompt", "").strip()
     if voice_prompt:
         if req.voice is not None:
@@ -159,7 +172,7 @@ def effective_params(req: SpeechRequest) -> tuple[dict, int, str]:
         if len(voice_prompt) > MAX_VOICE_PROMPT:
             bad(f"params.voice_prompt is {len(voice_prompt)} characters — "
                 f"at most {MAX_VOICE_PROMPT}; it describes a voice, it is not the text")
-    return knobs, seed, voice_prompt
+    return knobs, seed, voice_prompt, continuity
 
 
 # How much text goes into ONE decode. Measured on this model: a decode stays
@@ -213,6 +226,57 @@ def designed(text: str, voice_prompt: str) -> str:
     """One piece of text, with the voice description the model reads as an
     instruction instead of speaking. Unchanged when there is no description."""
     return f"({voice_prompt}){text}" if voice_prompt else text
+
+
+# ── keeping one message one person ───────────────────────────────────────────
+# A piece is its own decode with no memory of the last one, so what each piece
+# is conditioned on IS the voice. Measured over a seven-piece paragraph
+# (engines/voxcpm2/continuity.py, the artifact on MNC-102), on a scale where the
+# same voice twice scores 0.977 and two different library voices score 0.492:
+#
+#                                        worst   vs its own   speaking-rate
+#                                         seam      opening         spread
+#   reference clip alone, every piece     0.948        0.946            15%
+#   clip + its transcript, every piece    0.982        0.985            11%
+#   each piece continuing the last one    0.970        0.916            28%
+#   both                                  0.962        0.818            16%
+#
+# The transcript is the fix and continuation is a trap. Feeding a piece the
+# previous piece's audio does smooth the seam — and the take accelerates from
+# 14.8 to 20.0 characters a second while it does, because each piece inherits
+# the last one's drift and adds its own. Without the clip to hold it, 26.1.
+# An anchor works precisely because it is the SAME anchor every time.
+
+
+def clean(text: str) -> str:
+    """What VoxCPM.generate() does to text before decoding it. We call the model
+    one level down from generate() — it cannot be told to reuse a prompt cache —
+    so its text handling comes with us."""
+    return re.sub(r"\s+", " ", text.replace("\n", " "))
+
+
+def anchor(voice_path: str, voice_text: Optional[str]):
+    """The conditioning every piece of this request gets: the reference clip,
+    and its own words when the manifest knows them (bench/transcribelib.py put
+    them there). A clip alone says who is speaking; a clip with its transcript
+    also says how that person speaks — which is the half that was drifting."""
+    return model.tts_model.build_prompt_cache(
+        reference_wav_path=voice_path,
+        prompt_wav_path=voice_path if voice_text else None,
+        prompt_text=voice_text)
+
+
+def anchor_from(audio: np.ndarray):
+    """A described voice has no clip to be anchored to, which is why it drifted
+    furthest of all — 0.651 at its worst seam, most of the way to being somebody
+    else. So the first piece becomes the clip: it is a real recording of the
+    voice the description invented, and every piece after it clones that."""
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+        f.write(numpy_to_wav_bytes(audio, SAMPLE_RATE))
+    try:
+        return model.tts_model.build_prompt_cache(reference_wav_path=f.name)
+    finally:
+        os.unlink(f.name)
 
 
 def to_int16_bytes(audio: np.ndarray) -> bytes:
@@ -299,21 +363,31 @@ def speech(req: SpeechRequest):
         raise HTTPException(status_code=503, detail=FATAL)
     if not req.input.strip():
         bad("input is required and must be non-empty")
-    voice_path = resolve(req)
-    knobs, seed, voice_prompt = effective_params(req)
+    voice_path, voice_text = resolve(req)
+    knobs, seed, voice_prompt, continuity = effective_params(req)
     # ONE decode gets at most MAX_CHUNK_CHARS characters, on both paths. Streaming
     # bounds how the audio comes out; this bounds how much text goes in, and only
     # the second one keeps the model from running away. The description counts
     # against the same budget — the model decodes it too — and goes on EVERY
     # piece, because each piece is its own decode with no memory of the last: a
     # described voice the first chunk alone carried would be an arbitrary voice
-    # from the second chunk on.
+    # from the second chunk on — unless continuity is on, and then the first
+    # piece's own audio is the anchor from there, so the description has done
+    # its job once and would only eat decode budget after that.
     limit = MAX_CHUNK_CHARS - len(designed("", voice_prompt))
-    pieces = [designed(p, voice_prompt) for p in chunk_text(req.input, limit) or [req.input]]
+    plain = [clean(p) for p in chunk_text(req.input, limit) or [req.input]]
+    pieces = [designed(plain[0], voice_prompt)] + (
+        plain[1:] if continuity else [designed(p, voice_prompt) for p in plain[1:]])
+    # Encoding the clip is GPU work like any other, so it happens under
+    # gen_lock, not here. The transcript half of the anchor is what continuity
+    # buys a cloned voice; off, the clip goes in on its own, as it used to.
+    def build_base():
+        return None if voice_path is None else anchor(
+            voice_path, voice_text if continuity else None)
     if req.stream:
         if req.response_format not in (None, "pcm"):
             bad(f"response_format '{req.response_format}' with stream: streaming is raw PCM — omit it or say 'pcm'")
-        # Each piece runs through generate_streaming(), and every chunk the model
+        # Each piece runs through the model's streaming decode, and every chunk it
         # natively yields goes out as raw int16 PCM.
         #
         # Decoding runs on a thread WE own, not on the response generator, for
@@ -343,15 +417,24 @@ def speech(req: SpeechRequest):
             def produce():
                 try:
                     with gen_lock:
+                        cache = build_base()
                         for piece in pieces:
                             if gone.is_set():
                                 break
                             seed_rng(seed)
-                            for audio in model.generate_streaming(
-                                    text=piece, reference_wav_path=voice_path, **knobs):
-                                chunks.put(to_int16_bytes(audio))
+                            # A described voice keeps its first piece, to become
+                            # the clip the rest of the message clones.
+                            keep = [] if cache is None and continuity else None
+                            for audio, _, _ in model.tts_model.generate_with_prompt_cache_streaming(
+                                    target_text=piece, prompt_cache=cache, **knobs):
+                                a = audio.squeeze(0).cpu().numpy()
+                                if keep is not None:
+                                    keep.append(a)
+                                chunks.put(to_int16_bytes(a))
                                 if gone.is_set():
                                     break
+                            if keep:
+                                cache = anchor_from(np.concatenate(keep))
                     chunks.put(None)
                 except BaseException as exc:  # the response already started — latch, then die
                     latch(exc)
@@ -374,10 +457,16 @@ def speech(req: SpeechRequest):
         bad(f"response_format '{req.response_format}' not supported — this engine serves wav")
     try:
         with gen_lock:
-            parts = []
+            cache, parts = build_base(), []
             for piece in pieces:
                 seed_rng(seed)
-                parts.append(model.generate(text=piece, reference_wav_path=voice_path, **knobs))
+                wav, _, _ = model.tts_model.generate_with_prompt_cache(
+                    target_text=piece, prompt_cache=cache,
+                    retry_badcase=True,  # what VoxCPM.generate() does; streaming cannot
+                    **knobs)
+                parts.append(wav.squeeze(0).cpu().numpy())
+                if cache is None and continuity:  # described: the first take is the clip now
+                    cache = anchor_from(parts[0])
             audio = np.concatenate(parts)
     except Exception as exc:
         latch(exc)

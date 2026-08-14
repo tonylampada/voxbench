@@ -5,7 +5,8 @@
   "voice": "af_alloy",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.27
+  "seconds": 8.27,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-aoede-en.wav",
@@ -13,7 +14,8 @@
   "voice": "af_aoede",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.72
+  "seconds": 8.72,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-bella-en.wav",
@@ -21,7 +23,8 @@
   "voice": "af_bella",
   "lang": "en",
   "gender": "female",
-  "seconds": 9.25
+  "seconds": 9.25,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-heart-en.wav",
@@ -29,7 +32,8 @@
   "voice": "af_heart",
   "lang": "en",
   "gender": "female",
-  "seconds": 9.07
+  "seconds": 9.07,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-jadzia-en.wav",
@@ -37,7 +41,8 @@
   "voice": "af_jadzia",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.5
+  "seconds": 8.5,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-jessica-en.wav",
@@ -45,7 +50,8 @@
   "voice": "af_jessica",
   "lang": "en",
   "gender": "female",
-  "seconds": 7.81
+  "seconds": 7.81,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-kore-en.wav",
@@ -53,7 +59,8 @@
   "voice": "af_kore",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.87
+  "seconds": 8.87,
+  "text": "The harbour was quiet that morning and the light came in sideways across the water, nothing much happened which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-nicole-en.wav",
@@ -61,7 +68,8 @@
   "voice": "af_nicole",
   "lang": "en",
   "gender": "female",
-  "seconds": 13.53
+  "seconds": 13.53,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-nova-en.wav",
@@ -69,7 +77,8 @@
   "voice": "af_nova",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.1
+  "seconds": 8.1,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-river-en.wav",
@@ -77,7 +86,8 @@
   "voice": "af_river",
   "lang": "en",
   "gender": "female",
-  "seconds": 7.71
+  "seconds": 7.71,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-sarah-en.wav",
@@ -85,7 +95,8 @@
   "voice": "af_sarah",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.94
+  "seconds": 8.94,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-sky-en.wav",
@@ -93,7 +104,8 @@
   "voice": "af_sky",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.64
+  "seconds": 8.64,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-v0-en.wav",
@@ -101,7 +113,8 @@
   "voice": "af_v0",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.54
+  "seconds": 8.54,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-v0bella-en.wav",
@@ -109,7 +122,8 @@
   "voice": "af_v0bella",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.92
+  "seconds": 8.92,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-v0irulan-en.wav",
@@ -117,7 +131,8 @@
   "voice": "af_v0irulan",
   "lang": "en",
   "gender": "female",
-  "seconds": 7.9
+  "seconds": 7.9,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-v0nicole-en.wav",
@@ -125,7 +140,8 @@
   "voice": "af_v0nicole",
   "lang": "en",
   "gender": "female",
-  "seconds": 13.4
+  "seconds": 13.4,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-v0sarah-en.wav",
@@ -133,7 +149,8 @@
   "voice": "af_v0sarah",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.31
+  "seconds": 8.31,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-af-v0sky-en.wav",
@@ -141,7 +158,8 @@
   "voice": "af_v0sky",
   "lang": "en",
   "gender": "female",
-  "seconds": 7.89
+  "seconds": 7.89,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-adam-en.wav",
@@ -149,7 +167,8 @@
   "voice": "am_adam",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.67
+  "seconds": 8.67,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-echo-en.wav",
@@ -157,7 +176,8 @@
   "voice": "am_echo",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.28
+  "seconds": 8.28,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-eric-en.wav",
@@ -165,7 +185,8 @@
   "voice": "am_eric",
   "lang": "en",
   "gender": "male",
-  "seconds": 7.74
+  "seconds": 7.74,
+  "text": "The harbor was quiet that morning and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-fenrir-en.wav",
@@ -173,7 +194,8 @@
   "voice": "am_fenrir",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.87
+  "seconds": 8.87,
+  "text": "The harbor was quiet that morning and the light came in sideways across the water. Nothing much happened which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-liam-en.wav",
@@ -181,7 +203,8 @@
   "voice": "am_liam",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.13
+  "seconds": 8.13,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-michael-en.wav",
@@ -189,7 +212,8 @@
   "voice": "am_michael",
   "lang": "en",
   "gender": "male",
-  "seconds": 9.89
+  "seconds": 9.89,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-onyx-en.wav",
@@ -197,7 +221,8 @@
   "voice": "am_onyx",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.2
+  "seconds": 8.2,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-puck-en.wav",
@@ -205,7 +230,8 @@
   "voice": "am_puck",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.51
+  "seconds": 8.51,
+  "text": "The harbour was quiet that morning and the light came in sideways across the water, nothing much happened which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-santa-en.wav",
@@ -213,7 +239,8 @@
   "voice": "am_santa",
   "lang": "en",
   "gender": "male",
-  "seconds": 9.4
+  "seconds": 9.4,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-v0adam-en.wav",
@@ -221,7 +248,8 @@
   "voice": "am_v0adam",
   "lang": "en",
   "gender": "male",
-  "seconds": 7.75
+  "seconds": 7.75,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-v0gurney-en.wav",
@@ -229,7 +257,8 @@
   "voice": "am_v0gurney",
   "lang": "en",
   "gender": "male",
-  "seconds": 10.14
+  "seconds": 10.14,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-am-v0michael-en.wav",
@@ -237,7 +266,8 @@
   "voice": "am_v0michael",
   "lang": "en",
   "gender": "male",
-  "seconds": 9.49
+  "seconds": 9.49,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bf-alice-en.wav",
@@ -245,7 +275,8 @@
   "voice": "bf_alice",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.56
+  "seconds": 8.56,
+  "text": "The harbour was quiet that morning and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bf-emma-en.wav",
@@ -253,7 +284,8 @@
   "voice": "bf_emma",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.45
+  "seconds": 8.45,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bf-lily-en.wav",
@@ -261,7 +293,8 @@
   "voice": "bf_lily",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.5
+  "seconds": 8.5,
+  "text": "The harbour was quiet that morning and the light came in sideways across the water. Nothing much happened which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bf-v0emma-en.wav",
@@ -269,7 +302,8 @@
   "voice": "bf_v0emma",
   "lang": "en",
   "gender": "female",
-  "seconds": 7.32
+  "seconds": 7.32,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bf-v0isabella-en.wav",
@@ -277,7 +311,8 @@
   "voice": "bf_v0isabella",
   "lang": "en",
   "gender": "female",
-  "seconds": 7.87
+  "seconds": 7.87,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bm-daniel-en.wav",
@@ -285,7 +320,8 @@
   "voice": "bm_daniel",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.08
+  "seconds": 8.08,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bm-fable-en.wav",
@@ -293,7 +329,8 @@
   "voice": "bm_fable",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.31
+  "seconds": 8.31,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bm-george-en.wav",
@@ -301,7 +338,8 @@
   "voice": "bm_george",
   "lang": "en",
   "gender": "male",
-  "seconds": 9.53
+  "seconds": 9.53,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bm-lewis-en.wav",
@@ -309,7 +347,8 @@
   "voice": "bm_lewis",
   "lang": "en",
   "gender": "male",
-  "seconds": 9.48
+  "seconds": 9.48,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bm-v0george-en.wav",
@@ -317,7 +356,8 @@
   "voice": "bm_v0george",
   "lang": "en",
   "gender": "male",
-  "seconds": 9.59
+  "seconds": 9.59,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-bm-v0lewis-en.wav",
@@ -325,7 +365,8 @@
   "voice": "bm_v0lewis",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.94
+  "seconds": 8.94,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "kokoro-ef-dora-es.wav",
@@ -333,7 +374,8 @@
   "voice": "ef_dora",
   "lang": "es",
   "gender": "female",
-  "seconds": 8.29
+  "seconds": 8.29,
+  "text": "El puerto estaba tranquilo aquella mañana y la luz entraba de lado sobre el agua. No pasó gran cosa, que era exactamente lo que todos esperaban."
  },
  {
   "file": "kokoro-em-alex-es.wav",
@@ -341,7 +383,8 @@
   "voice": "em_alex",
   "lang": "es",
   "gender": "male",
-  "seconds": 8.34
+  "seconds": 8.34,
+  "text": "El puerto estaba tranquilo aquella mañana y la luz entraba de lado sobre el agua. No pasó gran cosa, que era exactamente lo que todos esperaban."
  },
  {
   "file": "kokoro-em-santa-es.wav",
@@ -349,7 +392,8 @@
   "voice": "em_santa",
   "lang": "es",
   "gender": "male",
-  "seconds": 8.52
+  "seconds": 8.52,
+  "text": "El puerto estaba tranquilo aquella mañana y la luz entraba de lado sobre el agua. No pasó gran cosa, que era exactamente lo que todos esperaban."
  },
  {
   "file": "kokoro-ff-siwis-fr.wav",
@@ -357,7 +401,8 @@
   "voice": "ff_siwis",
   "lang": "fr",
   "gender": "female",
-  "seconds": 9.23
+  "seconds": 9.23,
+  "text": "Le port était calme ce matin-là et la lumière arrivait de biais sur l'eau. Il ne s'est pas passé grand-chose, ce qui était exactement ce que tout le monde espérait."
  },
  {
   "file": "kokoro-hf-alpha-hi.wav",
@@ -365,7 +410,8 @@
   "voice": "hf_alpha",
   "lang": "hi",
   "gender": "female",
-  "seconds": 8.3
+  "seconds": 8.3,
+  "text": "उस सुबह बंदरगाह शांत था और रोशनी पानी पर तिर्ची आ रही थी कुछ खास नहीं हुआ और यही तो सब चाहते थे।"
  },
  {
   "file": "kokoro-hf-beta-hi.wav",
@@ -373,7 +419,8 @@
   "voice": "hf_beta",
   "lang": "hi",
   "gender": "female",
-  "seconds": 7.45
+  "seconds": 7.45,
+  "text": "उस सुबह बंदरगाह शांत था और रोशनी पानी पर तिर्ची आ रही थी कुछ खास नहीं हुआ और यही तो सब चाहते थे."
  },
  {
   "file": "kokoro-hm-omega-hi.wav",
@@ -381,7 +428,8 @@
   "voice": "hm_omega",
   "lang": "hi",
   "gender": "male",
-  "seconds": 8.69
+  "seconds": 8.69,
+  "text": "उस सुभह बंदरगाह शांत था और रोशनी पानी पर तिर्ची आ रही थी कुछ खास नहीं हुआ और यही तो सब चाहते थे।"
  },
  {
   "file": "kokoro-hm-psi-hi.wav",
@@ -389,7 +437,8 @@
   "voice": "hm_psi",
   "lang": "hi",
   "gender": "male",
-  "seconds": 9.08
+  "seconds": 9.08,
+  "text": "उस सुभह बंदरगाह शांत था और रोशनी पानी पर तिर्ची आ रही थी कुछ खास नहीं हुआ और यही तो सब चाहते थे."
  },
  {
   "file": "kokoro-if-sara-it.wav",
@@ -397,7 +446,8 @@
   "voice": "if_sara",
   "lang": "it",
   "gender": "female",
-  "seconds": 8.63
+  "seconds": 8.63,
+  "text": "Il porto era tranquillo quella mattina e la luce arrivava di lato sull'acqua. Non successe granché ed era esattamente quello che tutti speravano."
  },
  {
   "file": "kokoro-im-nicola-it.wav",
@@ -405,7 +455,8 @@
   "voice": "im_nicola",
   "lang": "it",
   "gender": "male",
-  "seconds": 9.46
+  "seconds": 9.46,
+  "text": "Il porto era tranquillo quella mattina e la luce arrivava di lato sull'acqua. Non successe granché ed era esattamente quello che tutti speravano."
  },
  {
   "file": null,
@@ -453,7 +504,8 @@
   "voice": "pf_dora",
   "lang": "pt",
   "gender": "female",
-  "seconds": 8.42
+  "seconds": 8.42,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "kokoro-pm-alex-pt.wav",
@@ -461,7 +513,8 @@
   "voice": "pm_alex",
   "lang": "pt",
   "gender": "male",
-  "seconds": 8.57
+  "seconds": 8.57,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "kokoro-pm-santa-pt.wav",
@@ -469,7 +522,8 @@
   "voice": "pm_santa",
   "lang": "pt",
   "gender": "male",
-  "seconds": 8.69
+  "seconds": 8.69,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "kokoro-zf-xiaobei-zh.wav",
@@ -477,7 +531,8 @@
   "voice": "zf_xiaobei",
   "lang": "zh",
   "gender": "female",
-  "seconds": 10.0
+  "seconds": 10.0,
+  "text": "那天早晨,港口很安静,光线斜斜地照在水面上 没有发生什么大事,而这正是大家所希望的"
  },
  {
   "file": "kokoro-zf-xiaoni-zh.wav",
@@ -485,7 +540,8 @@
   "voice": "zf_xiaoni",
   "lang": "zh",
   "gender": "female",
-  "seconds": 8.57
+  "seconds": 8.57,
+  "text": "那天造沉 杠扣恨安静 广鲜斜斜低招在睡眠上 没有发生什么搭失 而这真是搭假缩喜汪迪"
  },
  {
   "file": "kokoro-zf-xiaoxiao-zh.wav",
@@ -493,7 +549,8 @@
   "voice": "zf_xiaoxiao",
   "lang": "zh",
   "gender": "female",
-  "seconds": 8.38
+  "seconds": 8.38,
+  "text": "那天早晨,港口很安静,光线斜斜地罩在水面上 没有发生什么大事,而这正是大家所希望的"
  },
  {
   "file": "kokoro-zf-xiaoyi-zh.wav",
@@ -501,7 +558,8 @@
   "voice": "zf_xiaoyi",
   "lang": "zh",
   "gender": "female",
-  "seconds": 8.05
+  "seconds": 8.05,
+  "text": "那天早晨,港口很安静,光线斜斜地照在水面上 没有发生什么大事,而这正是大家所希望的"
  },
  {
   "file": "kokoro-zm-yunjian-zh.wav",
@@ -509,7 +567,8 @@
   "voice": "zm_yunjian",
   "lang": "zh",
   "gender": "male",
-  "seconds": 8.22
+  "seconds": 8.22,
+  "text": "那天早晨港口很安静,光线斜斜地照在水面上,没有发生什么大事,而这正是大家所希望的。"
  },
  {
   "file": "kokoro-zm-yunxi-zh.wav",
@@ -517,7 +576,8 @@
   "voice": "zm_yunxi",
   "lang": "zh",
   "gender": "male",
-  "seconds": 7.67
+  "seconds": 7.67,
+  "text": "那天早晨,港口很安静,光线斜斜地照在水面上,没有发生什么大事,而这正是大家所希望的。"
  },
  {
   "file": "kokoro-zm-yunxia-zh.wav",
@@ -525,7 +585,8 @@
   "voice": "zm_yunxia",
   "lang": "zh",
   "gender": "male",
-  "seconds": 8.62
+  "seconds": 8.62,
+  "text": "那天早晨,港口很安静,光线斜斜地照在水面上,没有发生什么大事,而这正是大家所希望的。"
  },
  {
   "file": "kokoro-zm-yunyang-zh.wav",
@@ -533,7 +594,8 @@
   "voice": "zm_yunyang",
   "lang": "zh",
   "gender": "male",
-  "seconds": 7.53
+  "seconds": 7.53,
+  "text": "那天早晨港口很安静,攻陷斜斜地照在水面上,没有发生什么大事,而这正是大家所希望的。"
  },
  {
   "file": "piper-en-us-lessac-medium-en.wav",
@@ -541,7 +603,8 @@
   "voice": "en_US-lessac-medium",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.24
+  "seconds": 8.24,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "piper-pt-br-cadu-medium-pt.wav",
@@ -549,7 +612,8 @@
   "voice": "pt_BR-cadu-medium",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.05
+  "seconds": 10.05,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que é exatamente o que todo mundo esperava."
  },
  {
   "file": "piper-pt-br-edresson-low-pt.wav",
@@ -557,7 +621,8 @@
   "voice": "pt_BR-edresson-low",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.08
+  "seconds": 12.08,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "piper-pt-br-faber-medium-pt.wav",
@@ -565,7 +630,8 @@
   "voice": "pt_BR-faber-medium",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 7.83
+  "seconds": 7.83,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sob a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "piper-pt-br-jeff-medium-pt.wav",
@@ -573,7 +639,8 @@
   "voice": "pt_BR-jeff-medium",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.15
+  "seconds": 10.15,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande de coisa. Ter exatamente o que todo mundo esperava."
  },
  {
   "file": "qwen3-tts-aiden-en.wav",
@@ -581,7 +648,8 @@
   "voice": "aiden",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.36
+  "seconds": 9.36,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "qwen3-tts-aiden-pt.wav",
@@ -589,7 +657,8 @@
   "voice": "aiden",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.52
+  "seconds": 11.52,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "qwen3-tts-dylan-en.wav",
@@ -597,7 +666,8 @@
   "voice": "dylan",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 12.08
+  "seconds": 12.08,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "qwen3-tts-dylan-pt.wav",
@@ -605,7 +675,8 @@
   "voice": "dylan",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 9.36
+  "seconds": 9.36,
+  "text": "O perto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "qwen3-tts-eric-en.wav",
@@ -613,7 +684,8 @@
   "voice": "eric",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.92
+  "seconds": 9.92,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "qwen3-tts-eric-pt.wav",
@@ -621,7 +693,8 @@
   "voice": "eric",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.88
+  "seconds": 12.88,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa que era exatamente o que todo mundo esperava."
  },
  {
   "file": "qwen3-tts-ono-anna-en.wav",
@@ -629,7 +702,8 @@
   "voice": "ono_anna",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.4
+  "seconds": 10.4,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "qwen3-tts-ono-anna-pt.wav",
@@ -637,7 +711,8 @@
   "voice": "ono_anna",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.0
+  "seconds": 12.0,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "qwen3-tts-ryan-en.wav",
@@ -645,7 +720,8 @@
   "voice": "ryan",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.4
+  "seconds": 10.4,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "qwen3-tts-ryan-pt.wav",
@@ -653,7 +729,8 @@
   "voice": "ryan",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.36
+  "seconds": 11.36,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa que era exatamente o que todo mundo esperava."
  },
  {
   "file": "qwen3-tts-serena-en.wav",
@@ -661,7 +738,8 @@
   "voice": "serena",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 12.32
+  "seconds": 12.32,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "qwen3-tts-serena-pt.wav",
@@ -669,7 +747,8 @@
   "voice": "serena",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.08
+  "seconds": 10.08,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "qwen3-tts-sohee-en.wav",
@@ -677,7 +756,8 @@
   "voice": "sohee",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.36
+  "seconds": 9.36,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "qwen3-tts-sohee-pt.wav",
@@ -685,7 +765,8 @@
   "voice": "sohee",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 9.68
+  "seconds": 9.68,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "qwen3-tts-uncle-fu-en.wav",
@@ -693,7 +774,8 @@
   "voice": "uncle_fu",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.88
+  "seconds": 10.88,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "qwen3-tts-uncle-fu-pt.wav",
@@ -701,7 +783,8 @@
   "voice": "uncle_fu",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 9.92
+  "seconds": 9.92,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "qwen3-tts-vivian-en.wav",
@@ -709,7 +792,8 @@
   "voice": "vivian",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 11.2
+  "seconds": 11.2,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "qwen3-tts-vivian-pt.wav",
@@ -717,7 +801,8 @@
   "voice": "vivian",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.32
+  "seconds": 12.32,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "voxtral-tts-ar-male-ar.wav",
@@ -725,7 +810,8 @@
   "voice": "ar_male",
   "lang": "ar",
   "gender": "male",
-  "seconds": 9.04
+  "seconds": 9.04,
+  "text": "كان الميناء هادئا في ذلك الصباح وكان الضوء يأتي مائلا فوق الماء لم يحدث شيء يذكر وهذا بالضبط ما كان يتمناه الجميع"
  },
  {
   "file": "voxtral-tts-casual-female-en.wav",
@@ -733,7 +819,8 @@
   "voice": "casual_female",
   "lang": "en",
   "gender": "female",
-  "seconds": 8.72
+  "seconds": 8.72,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "voxtral-tts-casual-male-en.wav",
@@ -741,7 +828,8 @@
   "voice": "casual_male",
   "lang": "en",
   "gender": "male",
-  "seconds": 7.92
+  "seconds": 7.92,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "voxtral-tts-cheerful-female-en.wav",
@@ -749,7 +837,8 @@
   "voice": "cheerful_female",
   "lang": "en",
   "gender": "female",
-  "seconds": 12.24
+  "seconds": 12.24,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "voxtral-tts-de-female-de.wav",
@@ -757,7 +846,8 @@
   "voice": "de_female",
   "lang": "de",
   "gender": "female",
-  "seconds": 8.08
+  "seconds": 8.08,
+  "text": "der hafen war still an jenem morgen und das licht fiel schräg über das wasser es geschah nicht viel und genau das hatten alle gehofft"
  },
  {
   "file": "voxtral-tts-de-male-de.wav",
@@ -765,7 +855,8 @@
   "voice": "de_male",
   "lang": "de",
   "gender": "male",
-  "seconds": 8.32
+  "seconds": 8.32,
+  "text": "Der Hafen war still an jenem Morgen und das Licht fiel schräg über das Wasser. Es geschah nicht viel und genau das hatten alle gehofft."
  },
  {
   "file": "voxtral-tts-es-female-es.wav",
@@ -773,7 +864,8 @@
   "voice": "es_female",
   "lang": "es",
   "gender": "female",
-  "seconds": 11.04
+  "seconds": 11.04,
+  "text": "El puerto estaba tranquilo aquella mañana, y la luz entraba del lado sobre el agua. No pasó gran cosa, que era exactamente lo que todos esperaban."
  },
  {
   "file": "voxtral-tts-es-male-es.wav",
@@ -781,7 +873,8 @@
   "voice": "es_male",
   "lang": "es",
   "gender": "male",
-  "seconds": 8.48
+  "seconds": 8.48,
+  "text": "El puerto estaba tranquilo aquella mañana y la luz entraba de lado sobre el agua. No pasó gran cosa, que era exactamente lo que todos esperaban."
  },
  {
   "file": "voxtral-tts-fr-female-fr.wav",
@@ -789,7 +882,8 @@
   "voice": "fr_female",
   "lang": "fr",
   "gender": "female",
-  "seconds": 8.96
+  "seconds": 8.96,
+  "text": "Le port était calme ce matin-là et la lumière arrivait de biais sur l'eau. Il ne s'est pas passé grand-chose, ce qui était exactement ce que tout le monde espérait."
  },
  {
   "file": "voxtral-tts-fr-male-fr.wav",
@@ -797,7 +891,8 @@
   "voice": "fr_male",
   "lang": "fr",
   "gender": "male",
-  "seconds": 10.4
+  "seconds": 10.4,
+  "text": "Le port était calme ce matin-là, et la lumière arrivait de biais sur l'eau. Il ne s'est pas passé grand-chose, ce qui était exactement ce que tout le monde espérait."
  },
  {
   "file": "voxtral-tts-hi-female-hi.wav",
@@ -805,7 +900,8 @@
   "voice": "hi_female",
   "lang": "hi",
   "gender": "female",
-  "seconds": 8.64
+  "seconds": 8.64,
+  "text": "उस सुबह बंदरगाह शान था और रोशनी पानी पर तिर्ची आ रही थी। कुछ खास नहीं हुआ और यहीं तो सब चाहते थे।"
  },
  {
   "file": "voxtral-tts-hi-male-hi.wav",
@@ -813,7 +909,8 @@
   "voice": "hi_male",
   "lang": "hi",
   "gender": "male",
-  "seconds": 10.88
+  "seconds": 10.88,
+  "text": "उस सुबह बंदरगाह शांत था और रोशनी पानी पर तिर्ची आ रही थी। कुछ खास नहीं हुआ और यही तो सब चाहते थे।"
  },
  {
   "file": "voxtral-tts-it-female-it.wav",
@@ -821,7 +918,8 @@
   "voice": "it_female",
   "lang": "it",
   "gender": "female",
-  "seconds": 11.04
+  "seconds": 11.04,
+  "text": "Il porto era tranquillo quella mattina, e la luce arrivava di lato sull'acqua. Non successe granché, ed era esattamente quello che tutti speravano."
  },
  {
   "file": "voxtral-tts-it-male-it.wav",
@@ -829,7 +927,8 @@
   "voice": "it_male",
   "lang": "it",
   "gender": "male",
-  "seconds": 9.04
+  "seconds": 9.04,
+  "text": "Il porto era tranquillo quella mattina e la luce arrivava di lato sull'acqua. Non successe granché ed era esattamente quello che tutti speravano."
  },
  {
   "file": "voxtral-tts-neutral-female-en.wav",
@@ -837,7 +936,8 @@
   "voice": "neutral_female",
   "lang": "en",
   "gender": "female",
-  "seconds": 10.32
+  "seconds": 10.32,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "voxtral-tts-neutral-male-en.wav",
@@ -845,7 +945,8 @@
   "voice": "neutral_male",
   "lang": "en",
   "gender": "male",
-  "seconds": 8.32
+  "seconds": 8.32,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "voxtral-tts-nl-female-nl.wav",
@@ -853,7 +954,8 @@
   "voice": "nl_female",
   "lang": "nl",
   "gender": "female",
-  "seconds": 8.08
+  "seconds": 8.08,
+  "text": "De haven was stil die ochtend en het licht viel schuin over het water. Er gebeurde niet veel en dat was precies waar iedereen op had gehoopt."
  },
  {
   "file": "voxtral-tts-nl-male-nl.wav",
@@ -861,7 +963,8 @@
   "voice": "nl_male",
   "lang": "nl",
   "gender": "male",
-  "seconds": 9.52
+  "seconds": 9.52,
+  "text": "De haven was stil die ochtend en het licht viel schuin over het water. Er gebeurde niet veel en dat was precies waar iedereen op had gehoopt."
  },
  {
   "file": "voxtral-tts-pt-female-pt.wav",
@@ -869,7 +972,8 @@
   "voice": "pt_female",
   "lang": "pt",
   "gender": "female",
-  "seconds": 9.2
+  "seconds": 9.2,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "voxtral-tts-pt-male-pt.wav",
@@ -877,7 +981,8 @@
   "voice": "pt_male",
   "lang": "pt",
   "gender": "male",
-  "seconds": 9.36
+  "seconds": 9.36,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-aaron-dreschner-en.wav",
@@ -885,7 +990,8 @@
   "voice": "Aaron Dreschner",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.0
+  "seconds": 9.0,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-aaron-dreschner-pt.wav",
@@ -893,7 +999,8 @@
   "voice": "Aaron Dreschner",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.66
+  "seconds": 12.66,
+  "text": "O porto estava quieto naquela manhã. E a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa. Que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-abrahan-mack-en.wav",
@@ -901,7 +1008,8 @@
   "voice": "Abrahan Mack",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.78
+  "seconds": 9.78,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-abrahan-mack-pt.wav",
@@ -909,7 +1017,8 @@
   "voice": "Abrahan Mack",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.9
+  "seconds": 12.9,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-adde-michal-en.wav",
@@ -917,7 +1026,8 @@
   "voice": "Adde Michal",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.51
+  "seconds": 9.51,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-adde-michal-pt.wav",
@@ -925,7 +1035,8 @@
   "voice": "Adde Michal",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.63
+  "seconds": 10.63,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-alexandra-hisakawa-en.wav",
@@ -933,7 +1044,8 @@
   "voice": "Alexandra Hisakawa",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.56
+  "seconds": 9.56,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-alexandra-hisakawa-pt.wav",
@@ -941,7 +1053,8 @@
   "voice": "Alexandra Hisakawa",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.01
+  "seconds": 12.01,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, pontos. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-alison-dietlinde-en.wav",
@@ -949,7 +1062,8 @@
   "voice": "Alison Dietlinde",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.19
+  "seconds": 9.19,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-alison-dietlinde-pt.wav",
@@ -957,7 +1071,8 @@
   "voice": "Alison Dietlinde",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.08
+  "seconds": 11.08,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-alma-maria-en.wav",
@@ -965,7 +1080,8 @@
   "voice": "Alma María",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.6
+  "seconds": 9.6,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-alma-maria-pt.wav",
@@ -973,7 +1089,8 @@
   "voice": "Alma María",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.76
+  "seconds": 10.76,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-ana-florence-en.wav",
@@ -981,7 +1098,8 @@
   "voice": "Ana Florence",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.67
+  "seconds": 8.67,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-ana-florence-pt.wav",
@@ -989,7 +1107,8 @@
   "voice": "Ana Florence",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.83
+  "seconds": 11.83,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-andrew-chipper-en.wav",
@@ -997,7 +1116,8 @@
   "voice": "Andrew Chipper",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.69
+  "seconds": 9.69,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-andrew-chipper-pt.wav",
@@ -1005,7 +1125,8 @@
   "voice": "Andrew Chipper",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.86
+  "seconds": 10.86,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água pontuinha. Não aconteceu grande coisa, e era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-annmarie-nele-en.wav",
@@ -1013,7 +1134,8 @@
   "voice": "Annmarie Nele",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.97
+  "seconds": 9.97,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-annmarie-nele-pt.wav",
@@ -1021,7 +1143,8 @@
   "voice": "Annmarie Nele",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.61
+  "seconds": 10.61,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa. Que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-asya-anara-en.wav",
@@ -1029,7 +1152,8 @@
   "voice": "Asya Anara",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.79
+  "seconds": 9.79,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-asya-anara-pt.wav",
@@ -1037,7 +1161,8 @@
   "voice": "Asya Anara",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.76
+  "seconds": 10.76,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-badr-odhiambo-en.wav",
@@ -1045,7 +1170,8 @@
   "voice": "Badr Odhiambo",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.97
+  "seconds": 9.97,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened. Which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-badr-odhiambo-pt.wav",
@@ -1053,7 +1179,8 @@
   "voice": "Badr Odhiambo",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.11
+  "seconds": 12.11,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-baldur-sanjin-en.wav",
@@ -1061,7 +1188,8 @@
   "voice": "Baldur Sanjin",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.51
+  "seconds": 9.51,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-baldur-sanjin-pt.wav",
@@ -1069,7 +1197,8 @@
   "voice": "Baldur Sanjin",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 13.55
+  "seconds": 13.55,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, ponto e não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-barbora-maclean-en.wav",
@@ -1077,7 +1206,8 @@
   "voice": "Barbora MacLean",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.69
+  "seconds": 9.69,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-barbora-maclean-pt.wav",
@@ -1085,7 +1215,8 @@
   "voice": "Barbora MacLean",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.99
+  "seconds": 10.99,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-brenda-stern-en.wav",
@@ -1093,7 +1224,8 @@
   "voice": "Brenda Stern",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.35
+  "seconds": 8.35,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-brenda-stern-pt.wav",
@@ -1101,7 +1233,8 @@
   "voice": "Brenda Stern",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.25
+  "seconds": 10.25,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-camilla-holmstrom-en.wav",
@@ -1109,7 +1242,8 @@
   "voice": "Camilla Holmström",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.58
+  "seconds": 8.58,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-camilla-holmstrom-pt.wav",
@@ -1117,7 +1251,8 @@
   "voice": "Camilla Holmström",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 9.55
+  "seconds": 9.55,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-chandra-macfarland-en.wav",
@@ -1125,7 +1260,8 @@
   "voice": "Chandra MacFarland",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.92
+  "seconds": 9.92,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. M- Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-chandra-macfarland-pt.wav",
@@ -1133,7 +1269,8 @@
   "voice": "Chandra MacFarland",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.22
+  "seconds": 11.22,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-claribel-dervla-en.wav",
@@ -1141,7 +1278,8 @@
   "voice": "Claribel Dervla",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.25
+  "seconds": 8.25,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-claribel-dervla-pt.wav",
@@ -1149,7 +1287,8 @@
   "voice": "Claribel Dervla",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.0
+  "seconds": 11.0,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-craig-gutsy-en.wav",
@@ -1157,7 +1296,8 @@
   "voice": "Craig Gutsy",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.95
+  "seconds": 8.95,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-craig-gutsy-pt.wav",
@@ -1165,7 +1305,8 @@
   "voice": "Craig Gutsy",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.29
+  "seconds": 10.29,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-daisy-studious-en.wav",
@@ -1173,7 +1314,8 @@
   "voice": "Daisy Studious",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.85
+  "seconds": 8.85,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-daisy-studious-pt.wav",
@@ -1181,7 +1323,8 @@
   "voice": "Daisy Studious",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.72
+  "seconds": 10.72,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, ponto chico. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-damien-black-en.wav",
@@ -1189,7 +1332,8 @@
   "voice": "Damien Black",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.13
+  "seconds": 9.13,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-damien-black-pt.wav",
@@ -1197,7 +1341,8 @@
   "voice": "Damien Black",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.97
+  "seconds": 11.97,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Ponto I. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-damjan-chapman-en.wav",
@@ -1205,7 +1350,8 @@
   "voice": "Damjan Chapman",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.99
+  "seconds": 8.99,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-damjan-chapman-pt.wav",
@@ -1213,7 +1359,8 @@
   "voice": "Damjan Chapman",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.53
+  "seconds": 10.53,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-dionisio-schuyler-en.wav",
@@ -1221,7 +1368,8 @@
   "voice": "Dionisio Schuyler",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.28
+  "seconds": 9.28,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-dionisio-schuyler-pt.wav",
@@ -1229,7 +1377,8 @@
   "voice": "Dionisio Schuyler",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.15
+  "seconds": 12.15,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava. Ponto."
  },
  {
   "file": "xtts-v2-eugenio-matarac-en.wav",
@@ -1237,7 +1386,8 @@
   "voice": "Eugenio Mataracı",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 12.61
+  "seconds": 12.61,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for. Do. We shall. I'll."
  },
  {
   "file": "xtts-v2-eugenio-matarac-pt.wav",
@@ -1245,7 +1395,8 @@
   "voice": "Eugenio Mataracı",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.32
+  "seconds": 11.32,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-ferran-simen-en.wav",
@@ -1253,7 +1404,8 @@
   "voice": "Ferran Simen",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 12.33
+  "seconds": 12.33,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-ferran-simen-pt.wav",
@@ -1261,7 +1413,8 @@
   "voice": "Ferran Simen",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.04
+  "seconds": 11.04,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água, ponto ele. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-filip-traverse-en.wav",
@@ -1269,7 +1422,8 @@
   "voice": "Filip Traverse",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.97
+  "seconds": 9.97,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-filip-traverse-pt.wav",
@@ -1277,7 +1431,8 @@
   "voice": "Filip Traverse",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.15
+  "seconds": 12.15,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-gilberto-mathias-en.wav",
@@ -1285,7 +1440,8 @@
   "voice": "Gilberto Mathias",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.09
+  "seconds": 9.09,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-gilberto-mathias-pt.wav",
@@ -1293,7 +1449,8 @@
   "voice": "Gilberto Mathias",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.2
+  "seconds": 10.2,
+  "text": "O porto estava quieto naquela manhã. E a luz entrava de lado sobre a água. Não aconteceu grande coisa que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-gitta-nikolina-en.wav",
@@ -1301,7 +1458,8 @@
   "voice": "Gitta Nikolina",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.02
+  "seconds": 10.02,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-gitta-nikolina-pt.wav",
@@ -1309,7 +1467,8 @@
   "voice": "Gitta Nikolina",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.53
+  "seconds": 10.53,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-gracie-wise-en.wav",
@@ -1317,7 +1476,8 @@
   "voice": "Gracie Wise",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.57
+  "seconds": 10.57,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-gracie-wise-pt.wav",
@@ -1325,7 +1485,8 @@
   "voice": "Gracie Wise",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.11
+  "seconds": 12.11,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-henriette-usha-en.wav",
@@ -1333,7 +1494,8 @@
   "voice": "Henriette Usha",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.42
+  "seconds": 9.42,
+  "text": "The harbour was quiet that morning and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-henriette-usha-pt.wav",
@@ -1341,7 +1503,8 @@
   "voice": "Henriette Usha",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.71
+  "seconds": 10.71,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-ige-behringer-en.wav",
@@ -1349,7 +1512,8 @@
   "voice": "Ige Behringer",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.88
+  "seconds": 9.88,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-ige-behringer-pt.wav",
@@ -1357,7 +1521,8 @@
   "voice": "Ige Behringer",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.07
+  "seconds": 10.07,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-ilkin-urbano-en.wav",
@@ -1365,7 +1530,8 @@
   "voice": "Ilkin Urbano",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.34
+  "seconds": 8.34,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-ilkin-urbano-pt.wav",
@@ -1373,7 +1539,8 @@
   "voice": "Ilkin Urbano",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.4
+  "seconds": 11.4,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava. Ponto."
  },
  {
   "file": "xtts-v2-kazuhiko-atallah-en.wav",
@@ -1381,7 +1548,8 @@
   "voice": "Kazuhiko Atallah",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.04
+  "seconds": 9.04,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-kazuhiko-atallah-pt.wav",
@@ -1389,7 +1557,8 @@
   "voice": "Kazuhiko Atallah",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.9
+  "seconds": 10.9,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-kumar-dahl-en.wav",
@@ -1397,7 +1566,8 @@
   "voice": "Kumar Dahl",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 11.22
+  "seconds": 11.22,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-kumar-dahl-pt.wav",
@@ -1405,7 +1575,8 @@
   "voice": "Kumar Dahl",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.57
+  "seconds": 10.57,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-lidiya-szekeres-en.wav",
@@ -1413,7 +1584,8 @@
   "voice": "Lidiya Szekeres",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.78
+  "seconds": 9.78,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-lidiya-szekeres-pt.wav",
@@ -1421,7 +1593,8 @@
   "voice": "Lidiya Szekeres",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.57
+  "seconds": 10.57,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado, sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-lilya-stainthorpe-en.wav",
@@ -1429,7 +1602,8 @@
   "voice": "Lilya Stainthorpe",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.76
+  "seconds": 8.76,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-lilya-stainthorpe-pt.wav",
@@ -1437,7 +1611,8 @@
   "voice": "Lilya Stainthorpe",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 9.6
+  "seconds": 9.6,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-ludvig-milivoj-en.wav",
@@ -1445,7 +1620,8 @@
   "voice": "Ludvig Milivoj",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.58
+  "seconds": 8.58,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-ludvig-milivoj-pt.wav",
@@ -1453,7 +1629,8 @@
   "voice": "Ludvig Milivoj",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.16
+  "seconds": 10.16,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, pontos. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-luis-moray-en.wav",
@@ -1461,7 +1638,8 @@
   "voice": "Luis Moray",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.09
+  "seconds": 9.09,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-luis-moray-pt.wav",
@@ -1469,7 +1647,8 @@
   "voice": "Luis Moray",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.63
+  "seconds": 10.63,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-maja-ruoho-en.wav",
@@ -1477,7 +1656,8 @@
   "voice": "Maja Ruoho",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.51
+  "seconds": 9.51,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-maja-ruoho-pt.wav",
@@ -1485,7 +1665,8 @@
   "voice": "Maja Ruoho",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.69
+  "seconds": 11.69,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água, ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-marcos-rudaski-en.wav",
@@ -1493,7 +1674,8 @@
   "voice": "Marcos Rudaski",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.6
+  "seconds": 9.6,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-marcos-rudaski-pt.wav",
@@ -1501,7 +1683,8 @@
   "voice": "Marcos Rudaski",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.29
+  "seconds": 12.29,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água pontos. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-narelle-moon-en.wav",
@@ -1509,7 +1692,8 @@
   "voice": "Narelle Moon",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.67
+  "seconds": 10.67,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. It had nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-narelle-moon-pt.wav",
@@ -1517,7 +1701,8 @@
   "voice": "Narelle Moon",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.01
+  "seconds": 12.01,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-nova-hogarth-en.wav",
@@ -1525,7 +1710,8 @@
   "voice": "Nova Hogarth",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.1
+  "seconds": 10.1,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-nova-hogarth-pt.wav",
@@ -1533,7 +1719,8 @@
   "voice": "Nova Hogarth",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.13
+  "seconds": 11.13,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, pontos. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-rosemary-okafor-en.wav",
@@ -1541,7 +1728,8 @@
   "voice": "Rosemary Okafor",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.16
+  "seconds": 10.16,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-rosemary-okafor-pt.wav",
@@ -1549,7 +1737,8 @@
   "voice": "Rosemary Okafor",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.51
+  "seconds": 11.51,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-royston-min-en.wav",
@@ -1557,7 +1746,8 @@
   "voice": "Royston Min",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.67
+  "seconds": 8.67,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-royston-min-pt.wav",
@@ -1565,7 +1755,8 @@
   "voice": "Royston Min",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.63
+  "seconds": 10.63,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-sofia-hellen-en.wav",
@@ -1573,7 +1764,8 @@
   "voice": "Sofia Hellen",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.09
+  "seconds": 9.09,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-sofia-hellen-pt.wav",
@@ -1581,7 +1773,8 @@
   "voice": "Sofia Hellen",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.44
+  "seconds": 10.44,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado, sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-suad-qasim-en.wav",
@@ -1589,7 +1782,8 @@
   "voice": "Suad Qasim",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.29
+  "seconds": 10.29,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-suad-qasim-pt.wav",
@@ -1597,7 +1791,8 @@
   "voice": "Suad Qasim",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 13.51
+  "seconds": 13.51,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado, sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-szofi-granger-en.wav",
@@ -1605,7 +1800,8 @@
   "voice": "Szofi Granger",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.88
+  "seconds": 9.88,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-szofi-granger-pt.wav",
@@ -1613,7 +1809,8 @@
   "voice": "Szofi Granger",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.92
+  "seconds": 11.92,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água. Ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-tammie-ema-en.wav",
@@ -1621,7 +1818,8 @@
   "voice": "Tammie Ema",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.48
+  "seconds": 8.48,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-tammie-ema-pt.wav",
@@ -1629,7 +1827,8 @@
   "voice": "Tammie Ema",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 9.93
+  "seconds": 9.93,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-tammy-grit-en.wav",
@@ -1637,7 +1836,8 @@
   "voice": "Tammy Grit",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.25
+  "seconds": 8.25,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-tammy-grit-pt.wav",
@@ -1645,7 +1845,8 @@
   "voice": "Tammy Grit",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 9.6
+  "seconds": 9.6,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-tanja-adelina-en.wav",
@@ -1653,7 +1854,8 @@
   "voice": "Tanja Adelina",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.95
+  "seconds": 8.95,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-tanja-adelina-pt.wav",
@@ -1661,7 +1863,8 @@
   "voice": "Tanja Adelina",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.16
+  "seconds": 10.16,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-torcull-diarmuid-en.wav",
@@ -1669,7 +1872,8 @@
   "voice": "Torcull Diarmuid",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.93
+  "seconds": 9.93,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-torcull-diarmuid-pt.wav",
@@ -1677,7 +1881,8 @@
   "voice": "Torcull Diarmuid",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.01
+  "seconds": 12.01,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Ponto que ele disse-a. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-uta-obando-en.wav",
@@ -1685,7 +1890,8 @@
   "voice": "Uta Obando",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.02
+  "seconds": 10.02,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-uta-obando-pt.wav",
@@ -1693,7 +1899,8 @@
   "voice": "Uta Obando",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.22
+  "seconds": 11.22,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-viktor-eka-en.wav",
@@ -1701,7 +1908,8 @@
   "voice": "Viktor Eka",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.42
+  "seconds": 9.42,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-viktor-eka-pt.wav",
@@ -1709,7 +1917,8 @@
   "voice": "Viktor Eka",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.6
+  "seconds": 11.6,
+  "text": "O porto estava quieto naquela manhã e a luz entrava de lado sobre a água, ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-viktor-menelaos-en.wav",
@@ -1717,7 +1926,8 @@
   "voice": "Viktor Menelaos",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 8.58
+  "seconds": 8.58,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-viktor-menelaos-pt.wav",
@@ -1725,7 +1935,8 @@
   "voice": "Viktor Menelaos",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.49
+  "seconds": 10.49,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-vjollca-johnnie-en.wav",
@@ -1733,7 +1944,8 @@
   "voice": "Vjollca Johnnie",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.93
+  "seconds": 9.93,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-vjollca-johnnie-pt.wav",
@@ -1741,7 +1953,8 @@
   "voice": "Vjollca Johnnie",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.36
+  "seconds": 11.36,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-wulf-carlevaro-en.wav",
@@ -1749,7 +1962,8 @@
   "voice": "Wulf Carlevaro",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.56
+  "seconds": 9.56,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-wulf-carlevaro-pt.wav",
@@ -1757,7 +1971,8 @@
   "voice": "Wulf Carlevaro",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.83
+  "seconds": 11.83,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água, ponto. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava, ponto."
  },
  {
   "file": "xtts-v2-xavier-hayasaka-en.wav",
@@ -1765,7 +1980,8 @@
   "voice": "Xavier Hayasaka",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 9.97
+  "seconds": 9.97,
+  "text": "The harbor was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-xavier-hayasaka-pt.wav",
@@ -1773,7 +1989,8 @@
   "voice": "Xavier Hayasaka",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 11.28
+  "seconds": 11.28,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água pontua. Não aconteceu grande coisa. Que era exatamente o que todo mundo esperava. Ponto."
  },
  {
   "file": "xtts-v2-zacharie-aimilios-en.wav",
@@ -1781,7 +1998,8 @@
   "voice": "Zacharie Aimilios",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.29
+  "seconds": 10.29,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for."
  },
  {
   "file": "xtts-v2-zacharie-aimilios-pt.wav",
@@ -1789,7 +2007,8 @@
   "voice": "Zacharie Aimilios",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 10.95
+  "seconds": 10.95,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  },
  {
   "file": "xtts-v2-zofija-kendrick-en.wav",
@@ -1797,7 +2016,8 @@
   "voice": "Zofija Kendrick",
   "lang": "en",
   "gender": "unknown",
-  "seconds": 10.95
+  "seconds": 10.95,
+  "text": "The harbour was quiet that morning, and the light came in sideways across the water. Nothing much happened, which was exactly what everyone had hoped for. Mucha kaheg."
  },
  {
   "file": "xtts-v2-zofija-kendrick-pt.wav",
@@ -1805,6 +2025,7 @@
   "voice": "Zofija Kendrick",
   "lang": "pt",
   "gender": "unknown",
-  "seconds": 12.19
+  "seconds": 12.19,
+  "text": "O porto estava quieto naquela manhã, e a luz entrava de lado sobre a água. Não aconteceu grande coisa, que era exatamente o que todo mundo esperava."
  }
 ]

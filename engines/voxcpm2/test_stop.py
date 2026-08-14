@@ -29,20 +29,37 @@ import server  # noqa: E402
 CHUNK = 0.05  # seconds per fake chunk
 
 
+class FakeWav:
+    """Stands in for the model's audio tensor, which the server squeezes."""
+
+    def squeeze(self, _dim):
+        return self
+
+    def cpu(self):
+        return self
+
+    def numpy(self):
+        return np.zeros(480, dtype=np.float32)
+
+
 class FakeModel:
     """One chunk per CHUNK seconds; remembers whether it is still decoding."""
 
     def __init__(self):
         self.busy = False
         self.yielded = 0  # chunks the GPU actually paid for, not chunks a client read
+        self.tts_model = self
 
-    def generate_streaming(self, text, reference_wav_path=None, **kw):
+    def build_prompt_cache(self, **kw):
+        return dict(kw)
+
+    def generate_with_prompt_cache_streaming(self, target_text, prompt_cache=None, **kw):
         self.busy = True
         try:
-            for _ in range(int(len(text) / 4)):
+            for _ in range(int(len(target_text) / 4)):
                 time.sleep(CHUNK)
                 self.yielded += 1
-                yield np.zeros(480, dtype=np.float32)
+                yield FakeWav(), None, None
         finally:
             self.busy = False
 

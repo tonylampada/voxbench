@@ -1,0 +1,7 @@
+# The engine image plus the one thing the continuity measurement needs that
+# serving does not: a speaker-verification encoder. Kept out of the serving
+# image on purpose — nothing on the request path uses it.
+#   docker build -t tts-voxcpm2:gpu -f engines/voxcpm2/Dockerfile .
+#   docker build -t voxcpm2-lab:gpu -f engines/voxcpm2/Dockerfile.lab .
+FROM tts-voxcpm2:gpu
+RUN pip install --no-cache-dir resemblyzer webrtcvad
