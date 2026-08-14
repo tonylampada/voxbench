@@ -14,9 +14,9 @@ by exactly one thing. Writes the wavs and a metrics.json the page is built from.
 The metric is a speaker embedding (resemblyzer d-vector) per piece. Cosine
 similarity between consecutive pieces is the number that matters: it is how
 much the same take changes character at a seam. It is only meaningful against
-its own scale, so the run also measures two anchors — two takes of the same
-text that ARE the same voice (the ceiling) and two different library voices
-(the floor).
+its own scale, so the run also measures two anchors, both from library clips and
+neither of them synthesised: one person's two recordings (the ceiling) and two
+different library voices (the floor). See anchor_clips().
 """
 import json
 import re
@@ -36,6 +36,7 @@ from server import chunk_text, designed  # noqa: E402  the shipped splitter, ver
 
 LIB = Path("/app/voices/library")
 REF = LIB / "xtts-v2-nova-hogarth-pt.wav"      # a voice the board actually speaks with
+REF_EN = LIB / "xtts-v2-nova-hogarth-en.wav"   # the same person, a second recording
 OTHER = LIB / "xtts-v2-damien-black-pt.wav"    # a different person, for the floor
 # Every library clip reads the same seed sentence per language (bench/mkvoicelib.py),
 # but not always faithfully — this one speaks its own full stops out loud ("pontos"),
@@ -47,50 +48,60 @@ REF_TEXT = ("O porto estava quieto naquela manhã, e a luz entrava de lado sobre
             "esperava, ponto.")
 
 SEED = 42
-DESC = "uma mulher jovem, voz clara e animada, falando rápido"
-DESC_B = "um homem muito velho, voz rouca e lenta, quase sem fôlego"
+# The description is text the model reads in front of the passage, so it is in
+# the passage's language. A Portuguese instruction in front of English words is
+# a second variable, and this run has one.
+DESC = "a young woman, clear and lively voice, speaking fast"
+DESC_B = "a very old man, hoarse and slow voice, almost out of breath"
 
-# ~3k characters: long enough that the shipped 400-char splitter cuts it into
-# eight pieces. Length is the whole point — the drift is cumulative, so a take
-# short enough to stay together proves nothing.
+# ~2.5k characters, in English, because English is what the captain hears and he
+# judges this by ear. The reference clip stays the Portuguese one: board.json
+# speaks with xtts-v2-nova-hogarth-pt today, so a Portuguese clip reading English
+# IS the live path, not a compromise.
+#
+# Length is the whole point — the drift is cumulative, so a take short enough to
+# stay together proves nothing. This one is seven pieces at the shipped 400-char
+# limit, same as the passage it replaces.
 PASSAGE = (
-    "Capitão, o relatório da noite. A frota rodou limpa: todos os motores subiram "
-    "na primeira tentativa e o harness de conformidade não encontrou nada novo. "
-    "O parágrafo longo aguentou quarenta e dois segundos sem uma emenda audível, "
-    "o que já é mais do que conseguimos na semana passada. "
-    "Dois pull requests foram integrados e um terceiro está esperando a sua revisão "
-    "desde ontem à tarde. O card que estava travado desde terça voltou a andar; "
-    "as frases de referência que faltavam eram um erro de digitação no manifesto, "
-    "e não um problema com o modelo, como tínhamos suposto no começo. "
-    "A placa está com folga, os discos têm espaço, e o consumo de memória ficou "
-    "estável durante toda a madrugada, mesmo com o motor grande carregado. "
-    "Houve um susto por volta das três da manhã, quando um cliente desligou no meio "
-    "de uma síntese e o servidor demorou meio segundo a mais para responder, mas "
-    "nada quebrou e o próximo pedido foi atendido normalmente. "
-    "Anotei três coisas que valem a sua atenção quando o senhor acordar. "
-    "A primeira é que a biblioteca de vozes cresceu para duzentos e vinte e seis "
-    "clipes e o manifesto ainda cabe em um arquivo só. "
-    "A segunda é que o console continua servindo a página de testes pelo mesmo "
-    "endereço de sempre, e ninguém precisou mexer nele. "
-    "A terceira é que ainda não temos uma medida honesta de quanto uma voz muda "
-    "ao longo de uma fala comprida, e é exatamente isso que eu fui atrás hoje. "
-    "Sobre o motor de voz, tenho uma coisa mais longa para contar, e peço um "
-    "minuto porque ela só faz sentido inteira. "
-    "O texto que o senhor manda não vira áudio de uma vez: ele é cortado em "
-    "pedaços de quatrocentos caracteres, e cada pedaço é uma síntese separada, "
-    "que não se lembra do pedaço anterior. "
-    "Cada um deles é ancorado no mesmo clipe de referência, o que resolve metade "
-    "do problema e deixa a outra metade solta, porque a referência diz quem está "
-    "falando e não diz como a frase anterior terminou. "
-    "O resultado é que a voz vai escorregando devagar ao longo da fala, e num "
-    "parágrafo comprido como este ela chega no fim sendo uma pessoa um pouco "
-    "diferente da que começou. "
-    "Não é um salto, é um deslize, e é justamente por ser devagar que o ouvido "
-    "demora a nomear o que está estranho e mesmo assim recusa o que ouviu. "
-    "Medi isso hoje com uma distância de identidade entre pedaços consecutivos, "
-    "e o número acompanha exatamente o que se escuta. "
-    "Fora isso, nada está pegando fogo. O quadro está parado, a fila está vazia, "
-    "e eu fico aqui esperando até o senhor dizer o contrário."
+    "Captain, the night report. The fleet ran clean: every engine came up on the "
+    "first try and the conformance harness found nothing new. "
+    "The long paragraph held for forty-two seconds without an audible seam, which "
+    "is already more than we managed last week. "
+    "Two pull requests landed and a third has been waiting on your review since "
+    "yesterday afternoon. The card that was stuck since Tuesday is moving again; "
+    "the reference sentences that were missing turned out to be a typo in the "
+    "manifest, on the Hogarth clip of all things, and not a fault in the model, "
+    "the way we assumed at the start. "
+    "The graphics card has headroom, the disks have room, and memory stayed flat "
+    "all night, even with the big engine loaded. "
+    "There was a scare around three in the morning, when a client hung up in the "
+    "middle of a synthesis and the server took half a second longer to answer, but "
+    "nothing broke and the next request was served normally. "
+    "I wrote down three things worth your attention when you wake up. "
+    "The first is that the voice library grew to two hundred and twenty-six clips "
+    "and the manifest still fits in a single file. "
+    "The second is that the console still serves the test page at the same address "
+    "as always, and nobody had to touch it. "
+    "The third is that we still have no honest measure of how much a voice changes "
+    "over a long speech, and that is exactly what I went after today. "
+    "About the voice engine, I have something longer to tell you, and I am asking "
+    "for a minute because it only makes sense whole. Do you want the short version, "
+    "or all of it? "
+    "The text you send does not become audio in one go: it is cut into pieces of "
+    "four hundred characters, and each piece is a separate synthesis, which does "
+    "not remember the piece before it. "
+    "Every one of them is anchored on the same reference clip, which solves half "
+    "the problem and leaves the other half loose, because the reference says who is "
+    "speaking and does not say how the previous sentence ended. "
+    "The result is that the voice slides slowly along the speech, and in a long "
+    "paragraph like this one it arrives at the end as a slightly different person "
+    "from the one who started. "
+    "It is not a jump, it is a slip, and it is precisely because it is slow that "
+    "the ear takes a while to name what is wrong and still refuses what it heard. "
+    "I measured that today as an identity distance between consecutive pieces, and "
+    "the number tracks exactly what you hear. "
+    "Other than that, nothing is on fire. The board is quiet, the queue is empty, "
+    "and I am here waiting until you say otherwise."
 )
 
 MAX_CHUNK_CHARS = 400  # the shipped limit
@@ -152,6 +163,37 @@ def score(pieces: list[dict]) -> dict:
         "to_first": [round(f, 3) for f in firsts],
         "pitch_spread_hz": round(max(pitches) - min(pitches), 1) if pitches else 0.0,
     }
+
+
+# ── the scale ────────────────────────────────────────────────────────────────
+def anchor_clips(out: Path) -> dict:
+    """The metric's ceiling and floor, from library clips only — nothing the
+    page tests can move them.
+
+    Ceiling: the reference voice's two recordings, the same xtts speaker reading
+    two different passages. Floor: two different library voices. An earlier run
+    took the ceiling from two GENERATED pieces conditioned the shipped way,
+    which is circular — that pair is the baseline's own first seam, and when the
+    baseline drifts the ceiling drops with it (0.800 here, against 0.946 for the
+    same person on tape).
+    """
+    def clip(p: Path):
+        x, sr = sf.read(str(p))
+        if x.ndim > 1:
+            x = x[:, 0]
+        return x.astype(np.float32), sr
+
+    wavs = {"anchor_same_a.wav": REF, "anchor_same_b.wav": REF_EN,
+            "anchor_other.wav": OTHER}
+    e = {}
+    for name, src in wavs.items():
+        x, sr = clip(src)
+        sf.write(out / name, x, sr)
+        e[name] = embed(x, sr)
+    a = {"same_voice": round(cos(e["anchor_same_a.wav"], e["anchor_same_b.wav"]), 3),
+         "different_voice": round(cos(e["anchor_same_a.wav"], e["anchor_other.wav"]), 3)}
+    say(f"  same={a['same_voice']} different={a['different_voice']}")
+    return a
 
 
 # ── the strategies ───────────────────────────────────────────────────────────
@@ -244,22 +286,8 @@ def main(outdir: str):
                             "failed": f"{type(exc).__name__}: {str(exc)[:300]}"})
         save()
 
-    # ── anchors: what the metric's own scale is ──────────────────────────────
-    # Ceiling: the same reference, two different sentences — same person, so
-    # this is as high as an honest seam gets. Floor: two different library
-    # voices, which is what "became someone else" scores.
     say("anchors")
-    a, b = pieces_400[0], pieces_400[1]
-    lab.seed(); wa, _ = lab.gen(a, ref_cache)
-    lab.seed(); wb, _ = lab.gen(b, ref_cache)
-    lab.seed(); wc, _ = lab.gen(b, lab._cache(ref=OTHER))
-    ea, eb, ec = embed(wa, lab.sr), embed(wb, lab.sr), embed(wc, lab.sr)
-    sf.write(out / "anchor_same_a.wav", wa, lab.sr)
-    sf.write(out / "anchor_same_b.wav", wb, lab.sr)
-    sf.write(out / "anchor_other.wav", wc, lab.sr)
-    anchors = {"same_voice": round(cos(ea, eb), 3), "different_voice": round(cos(eb, ec), 3)}
-    say(f"  same={anchors['same_voice']} different={anchors['different_voice']}")
-    report["anchors"] = anchors
+    report["anchors"] = anchor_clips(out)
     save()
 
     # ── v0: what ships today ────────────────────────────────────────────────

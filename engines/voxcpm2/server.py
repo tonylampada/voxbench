@@ -231,21 +231,23 @@ def designed(text: str, voice_prompt: str) -> str:
 # ── keeping one message one person ───────────────────────────────────────────
 # A piece is its own decode with no memory of the last one, so what each piece
 # is conditioned on IS the voice. Measured over a seven-piece paragraph
-# (engines/voxcpm2/continuity.py, the artifact on MNC-102), on a scale where the
-# same voice twice scores 0.977 and two different library voices score 0.492:
+# (engines/voxcpm2/continuity.py, the artifact on MNC-102), on a scale where one
+# person's two library recordings score 0.946 and two different library voices
+# score 0.495:
 #
 #                                        worst   vs its own   speaking-rate
 #                                         seam      opening         spread
-#   reference clip alone, every piece     0.948        0.946            15%
-#   clip + its transcript, every piece    0.982        0.985            11%
-#   each piece continuing the last one    0.970        0.916            28%
-#   both                                  0.962        0.818            16%
+#   reference clip alone, every piece     0.800        0.800            35%
+#   clip + its transcript, every piece    0.963        0.967            17%
+#   each piece continuing the last one    0.967        0.913            18%
+#   both                                  0.964        0.823            29%
 #
 # The transcript is the fix and continuation is a trap. Feeding a piece the
-# previous piece's audio does smooth the seam — and the take accelerates from
-# 14.8 to 20.0 characters a second while it does, because each piece inherits
-# the last one's drift and adds its own. Without the clip to hold it, 26.1.
-# An anchor works precisely because it is the SAME anchor every time.
+# previous piece's audio wins the seam column outright — and the take
+# accelerates from 18.6 to 22.2 characters a second while it does, because each
+# piece inherits the last one's drift and adds its own. Without the clip to hold
+# it, 22.6, and it ends up further from its own opening than the transcript take
+# does. An anchor works precisely because it is the SAME anchor every time.
 
 
 def clean(text: str) -> str:

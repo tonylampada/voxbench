@@ -195,13 +195,17 @@ def page(m: dict, verdict: str) -> str:
     same_seed = [v for v in (pair("A42", "B42"), pair("A7", "B7")) if v is not None]
     sepverdict = ""
     if same_desc and same_seed:
+        d, s = sum(same_desc) / len(same_desc), sum(same_seed) / len(same_seed)
+        # The two numbers, and what their ORDER means — hardcoding "two people"
+        # and "nearly one person" was a claim about one run's figures, and the
+        # figures move.
+        reading = ("the words are worth no more than the roll" if s >= d else
+                   "the words do steer it, by " f"{d - s:.3f}")
         sepverdict = (
             f'<div class="panel scale"><div>same description, two seeds &rarr; '
-            f'<b>{sum(same_desc) / len(same_desc):.3f}</b> '
-            f'<span class="dim">two people</span></div>'
-            f'<div>two opposite descriptions, same seed &rarr; '
-            f'<b>{sum(same_seed) / len(same_seed):.3f}</b> '
-            f'<span class="dim">nearly one person</span></div></div>')
+            f'<b>{d:.3f}</b></div>'
+            f'<div>two opposite descriptions, same seed &rarr; <b>{s:.3f}</b></div>'
+            f'<div><span class="dim">{reading}</span></div></div>')
     return f"""<title>Voice continuity — voxcpm2</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
@@ -306,23 +310,26 @@ exactly one thing: what each piece of the take was conditioned on.</p>
 <h2>The passage</h2>
 {passage_panel(m["passage"])}
 <p class="note">Reference clip <code>{html.escape(m["reference"])}</code>, seed {m["seed"]},
-cut by the shipped 400-character splitter unless a take says otherwise.</p>
+cut by the shipped 400-character splitter unless a take says otherwise. That clip is the
+one <code>board.json</code> speaks with, reading English — the live path, accent included.</p>
 
 <h2>The number, and its scale</h2>
 <div class="panel scale">
   <div>Speaker-embedding cosine similarity between consecutive pieces (resemblyzer d-vector).</div>
 </div>
 <div class="panel scale">
-  <div>same person, two takes &rarr; <b>{ceil:.3f}</b>
+  <div>same person, two recordings &rarr; <b>{ceil:.3f}</b>
     <span class="dim">the ceiling</span></div>
   <div>two different library voices &rarr; <b>{floor:.3f}</b>
     <span class="dim">the floor</span></div>
 </div>
 <p class="note">A seam near the ceiling is one person talking. A seam down near the floor
-is the moment the captain hears somebody else. Anchors are on this page too:
+is the moment the captain hears somebody else. Both anchors are library clips, not
+synthesis — nothing on this page can move them:
 <audio controls preload="none" src="anchor_same_a.wav" style="width:11rem"></audio>
 <audio controls preload="none" src="anchor_same_b.wav" style="width:11rem"></audio> are the
-same voice; <audio controls preload="none" src="anchor_other.wav" style="width:11rem"></audio>
+same voice on two recordings;
+<audio controls preload="none" src="anchor_other.wav" style="width:11rem"></audio>
 is the other one.</p>
 
 <h2>Back to back</h2>
