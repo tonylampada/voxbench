@@ -41,12 +41,11 @@ GPU engine while one is running — there is one 24 GB card — unless you pass
 `--force`.
 
 Everything publishes on `127.0.0.1`, always — local tools depend on it. To
-also reach an engine from another tailnet device — the
-captain's phone — `--host` adds a second publish on this box's tailnet
-address, same port:
+also reach an engine from another tailnet device — a phone, another machine —
+`--host` adds a second publish on this box's tailnet address, same port:
 
 ```
-engines/tts up piper --host 100.114.197.65   # or: export TTS_HOST=100.114.197.65
+engines/tts up piper --host "$(tailscale ip -4)"   # or: export TTS_HOST=<tailnet ip>
 ```
 
 `0.0.0.0` is refused outright: these engines have no authentication of any
@@ -115,20 +114,47 @@ Verdicts are from the bake-off measurements recorded in each engine's README.
 Every number above is measured, not quoted: `bench/results/*.json`, produced by
 `bench/measure.py`.
 
-## The GPU workaround (pre-reboot)
+## Host paths and environment
 
-This box's NVIDIA kernel module (580.159.03) and host userspace libs
-(580.173.02) are mismatched until the next reboot, so `--gpus all` fails:
-nvidia-container-toolkit tries to mount `/run/nvidia-persistenced/socket`,
-which does not exist. The script instead passes the device nodes explicitly and
-mounts driver libs that match the kernel module (see `gpu_run_args` in
-`engines/tts` — the **only** place the recipe lives).
+`engines/tts` mounts these host paths; override any of them by environment:
 
-After the reboot the versions align and plain `--gpus all` works again:
+| Variable | Default | What |
+|---|---|---|
+| `HF_CACHE` | `~/.cache/huggingface` | shared Hugging Face cache; every engine downloads its weights here on first `up` |
+| `TTS_CACHE` | `~/.local/share/tts` | coqui model cache (xtts-v2 only) |
+| `HF_TOKEN` | — | passed into the container when set. Every model here is public and ungated, so it only lifts download rate limits |
+| `TTS_HOST` | `127.0.0.1` | same as `--host` |
+| `TTS_UP_TIMEOUT` | `900` | seconds `up` waits for `/health` |
+| `TTS_GPU_MODE` | `gpus-all` | `nvdrv` = the workaround below |
+| `TTS_NVDRV_DIR` | `~/.local/share/nvdrv` | driver libs for `TTS_GPU_MODE=nvdrv` |
+| `TTS_CORS_ORIGINS` | — | browser CORS allowlist passed to the engine (`docs/contract.md`) |
+
+## GPU: driver/library mismatch
+
+The default is plain `docker run --gpus all`, which needs the NVIDIA driver and
+[nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
+Check the stack before blaming an engine:
 
 ```
-TTS_GPU_MODE=gpus-all engines/tts up <engine>
+docker run --rm --gpus all ubuntu nvidia-smi
 ```
 
-…and once that's confirmed, flip the default inside `gpu_run_args` and delete
-the workaround arm.
+**Gotcha:** after a driver upgrade without a reboot, the kernel module and the
+host userspace libs are different versions. `nvidia-smi` then fails with
+`Failed to initialize NVML: Driver/library version mismatch`, and
+`--gpus all` fails because nvidia-container-toolkit tries to mount
+`/run/nvidia-persistenced/socket`, which does not exist. **Reboot** — that is
+the fix.
+
+If you cannot reboot yet, `TTS_GPU_MODE=nvdrv` passes the device nodes
+explicitly and mounts driver libs that match the *kernel module* from
+`$TTS_NVDRV_DIR` (you fill that directory with the libs of the module's
+version). The recipe lives only in `gpu_run_args` in `engines/tts`.
+
+Never leave `nvdrv` on after the reboot: it mounts old libs over a new module,
+CUDA fails inside the container and the engine **silently falls back to CPU**
+(VoxCPM2 went from 0.8 s to 16 s a sentence). If an engine seems slow:
+
+```
+docker exec tts-<engine> python -c "import torch; print(torch.cuda.is_available())"
+```

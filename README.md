@@ -10,15 +10,31 @@ sentence and listen.
 
 ## What you need
 
-- Docker.
-- An NVIDIA GPU for most engines — one 24 GB card fits one big model at a time.
-  `piper` is CPU-only, and `chatterbox-nano` can run on CPU too.
+- Linux, Docker, `curl`.
+- An NVIDIA GPU for most engines, with the driver and
+  [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+  so `docker run --gpus all` works. **One 24 GB card holds one big model at a time** —
+  `engines/tts up` refuses a second GPU engine while one runs. `piper` is CPU-only, and
+  `chatterbox-nano` can run on CPU too.
+- Disk: each image is several GB, and first `up` downloads the weights (voxcpm2: ~5 GB)
+  into the Hugging Face cache, `~/.cache/huggingface` (`HF_CACHE` overrides). No HF token
+  needed — every model is public and ungated; `HF_TOKEN`, if set, is passed through.
 - `python3` for the console. No dependencies, no build step, nothing to install.
+
+Check the GPU stack first — this has to print your card:
+
+```bash
+docker run --rm --gpus all ubuntu nvidia-smi
+```
+
+If it says `Driver/library version mismatch`, the driver was upgraded without a reboot:
+reboot. The details, and a workaround for when you can't, are in
+[`engines/README.md`](engines/README.md#gpu-driverlibrary-mismatch).
 
 ## Your first sixty seconds
 
 ```bash
-git clone git@github.com:tonylampada/voxbench.git
+git clone https://github.com/tonylampada/voxbench.git
 cd voxbench
 
 engines/tts up piper                                   # builds the image, starts it, waits until healthy
@@ -28,6 +44,20 @@ engines/tts say piper "O deploy está verde, capitão." --lang pt --out /tmp/ok.
 `piper` is CPU-only and small, so this works on any machine and proves the install
 without touching the GPU. Every other engine is the same two commands with a different
 name — and the first `up` of a big one downloads weights, so give it minutes.
+
+The whole script:
+
+```
+engines/tts up <engine> [--host <addr>] [--force]   # build if missing, start, wait for /health
+engines/tts down <engine>                           # stop it
+engines/tts ls                                      # port / image / container / health, every engine
+engines/tts say <engine> "text" [--lang en|pt] [--voice V] [--out FILE]
+engines/tts voices <engine>                         # its voice ids
+engines/tts logs <engine> [-f]
+```
+
+Host paths and knobs (`HF_CACHE`, `HF_TOKEN`, `TTS_UP_TIMEOUT`, …) are in
+[`engines/README.md`](engines/README.md#host-paths-and-environment).
 
 ## Then open the console
 
@@ -45,9 +75,21 @@ After this point you do not need the terminal:
   Stream plays as it arrives — the point is to *feel* the latency, not read it. Each
   take lands in a session tape with time-to-first-sound against total time.
 
-The voices are already there: `voices/library/` holds 221 rendered clips with a manifest
-carrying language, gender and duration, and every engine serves the whole catalogue at
-`GET /v1/voices`.
+## Voices
+
+`voices/library/` holds 221 rendered reference clips with a `manifest.json` carrying
+language, gender and duration, and every engine serves that catalogue at `GET /v1/voices`
+— a voice id is the clip name without `.wav`, and a cloning engine clones it. Absent
+`voice`, each engine picks its own default for the language. See
+[`voices/library/README.md`](voices/library/README.md) for how they were made.
+
+**Drop your own reference clips in `voices/private/`.** It is gitignored, so a clip you
+have no right to redistribute stays on your machine. Nothing reads it automatically; it
+is the place to keep them out of commits.
+
+`voices/<lang>_<gender>.flac` are the 23 reference prompts from Resemble AI's Chatterbox
+multilingual demo. Some library clips come from non-commercial models — see
+[`NOTICE`](NOTICE) before you ship anything made with them.
 
 ## The engines
 
@@ -77,6 +119,27 @@ why — none of them fakes it by cutting the text into sentences.
 
 Licences, version pins, warts and per-engine measurements live in
 `engines/<name>/README.md`.
+
+## Using it with Bridge Commander
+
+[Bridge Commander](https://github.com/tonylampada/bridge-commander) speaks through
+**voxcpm2 on port 8883**: first sound in ~40 ms, clones, sounds right in pt-BR. Its
+`tts` config key points at the engine:
+
+```bash
+engines/tts up voxcpm2       # first run: image build + ~5 GB weights + minutes of torch.compile warmup
+engines/tts say voxcpm2 "O deploy está verde, capitão." --lang pt --out /tmp/ok.wav
+```
+
+```json
+"tts": {"url": "http://127.0.0.1:8883", "lang": "pt", "voice": null,
+        "params": {"cfg_value": 3, "inference_timesteps": 14}}
+```
+
+The board's server proxies the engine, so loopback is enough when both run on the same
+machine. Run the board on another machine and the engine needs `--host <tailnet ip>`
+(below). The full voice setup, STT and call mode included, is Bridge Commander's
+`docs/voice.md`.
 
 ## Using an engine from your own code
 
@@ -122,8 +185,14 @@ To also reach them from another device on your tailnet, name that address —
 `127.0.0.1` keeps working either way, both add a listener rather than move one:
 
 ```bash
-engines/tts up piper --host 100.x.y.z
-python3 console/server.py --host 100.x.y.z
+engines/tts up piper --host "$(tailscale ip -4)"
+python3 console/server.py --host "$(tailscale ip -4)"
 ```
 
 `0.0.0.0` is refused outright, by both.
+
+## Licence
+
+The code is MIT ([`LICENSE`](LICENSE)). Model weights, engine code pulled into the images
+and the voice clips each carry their own licence — several are non-commercial. The
+per-engine READMEs say which; [`NOTICE`](NOTICE) covers the clips shipped in `voices/`.

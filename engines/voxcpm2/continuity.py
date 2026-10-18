@@ -7,7 +7,7 @@ by exactly one thing. Writes the wavs and a metrics.json the page is built from.
 
     docker build -t voxcpm2-lab:gpu -f engines/voxcpm2/Dockerfile.lab .
     docker run --rm --gpus all -v $PWD/voices:/app/voices:ro \
-        -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
+        -v "${HF_CACHE:-$HOME/.cache/huggingface}":/root/.cache/huggingface \
         -v $PWD/engines/voxcpm2:/lab -v $OUT:/out voxcpm2-lab:gpu \
         python /lab/continuity.py /out
 

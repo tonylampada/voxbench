@@ -1,0 +1,34 @@
+voxbench
+Copyright (c) 2026 Tony Lampada. The code is MIT-licensed (see LICENSE).
+
+The MIT licence covers the code in this repository. It does not cover the
+third-party audio below, the model weights the engines download, or the
+upstream engine code the Dockerfiles install; each keeps its own terms.
+
+voices/<lang>_<gender>.flac (22 files) and voices/ja_sample.flac
+-----------------------------------------------------------------
+Reference prompts from Resemble AI's Chatterbox multilingual demo, byte-identical
+to https://storage.googleapis.com/chatterbox-demo-samples/mtl_prompts/
+(as used by https://huggingface.co/spaces/ResembleAI/Chatterbox-Multilingual-TTS).
+No licence is stated at the source. Copyright Resemble AI or the original speakers.
+
+voices/library/ (221 clips, see manifest.json for engine and voice per clip)
+--------------------------------------------------------------------------
+Synthesised with each engine's built-in voices. The output inherits the model's
+terms:
+
+  kokoro-*   (62)  Kokoro-82M, Apache-2.0
+  piper-*    (5)   Piper voices, MIT (engine GPL-3.0)
+  qwen3-*    (18)  Qwen3-TTS, Apache-2.0
+  xtts-*     (116) XTTS-v2, Coqui Public Model License — NON-COMMERCIAL
+  voxtral-*  (20)  Voxtral TTS, CC-BY-NC-4.0 — NON-COMMERCIAL
+
+Do not use the xtts-* or voxtral-* clips, or anything cloned from them, in a
+commercial product.
+
+voices/private/
+---------------
+Gitignored. Your own reference clips live there and never ship with the repo.
+
+Sample audio under engines/*/samples/ was synthesised by these engines and
+inherits the terms of the engine and of any reference clip it was cloned from.
