@@ -17,14 +17,16 @@ tts-base:gpu .`) rather than a fresh `python:3.11-slim` — this box's link coul
 re-pull the multi-GB torch wheels, and the base already carries torch 2.6.0+cu124,
 chatterbox-tts 0.1.7, setuptools<81 and `voices/`. Same trick as `engines/xtts-v2/`.
 
-## Run (broken-driver-stack recipe for this box)
+## Run
+
+`engines/tts up chatterbox-flash` does this for you. By hand, with the mismatched-driver recipe (`TTS_GPU_MODE=nvdrv`):
 
 ```
 docker run -d --name tts-chatterbox-flash \
   --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
   -e LD_LIBRARY_PATH=/opt/nvdrv \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
+  -v "$TTS_NVDRV_DIR":/opt/nvdrv:ro \
+  -v "$HF_CACHE":/root/.cache/huggingface \
   -p 127.0.0.1:8890:8877 tts-chatterbox-flash:gpu
 ```
 

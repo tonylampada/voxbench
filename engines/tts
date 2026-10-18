@@ -35,6 +35,11 @@ vibevoice        8895  gpu  .  voices
 vibevoice-15b    8896  gpu  .  voices
 '
 
+# Host paths mounted into the containers. Override to taste.
+HF_CACHE=${HF_CACHE:-$HOME/.cache/huggingface}     # shared Hugging Face weight cache
+TTS_CACHE=${TTS_CACHE:-$HOME/.local/share/tts}     # coqui model cache (xtts-v2)
+NVDRV_DIR=${TTS_NVDRV_DIR:-$HOME/.local/share/nvdrv}  # driver libs for TTS_GPU_MODE=nvdrv
+
 die() { echo "tts: $*" >&2; exit 1; }
 engines() { echo "$REGISTRY" | awk 'NF && $1 !~ /^#/ {print $1}'; }
 field() { echo "$REGISTRY" | awk -v e="$1" -v f="$2" '$1 == e {print $f}'; }
@@ -57,10 +62,13 @@ health_word() {
 }
 
 # ── The GPU recipe, in ONE place ─────────────────────────────────────────────
-# Pre-reboot workaround: this box's kernel module (580.159.03) and host libs
-# (580.173.02) are mismatched, so `--gpus all` dies — nvidia-container-toolkit
+# Default: plain `--gpus all` (needs nvidia-container-toolkit).
+# TTS_GPU_MODE=nvdrv is the escape hatch for a box whose kernel module and host
+# userspace libs are mismatched (a driver upgraded without a reboot). Seen with
+# module 580.159.03 vs libs 580.173.02: `--gpus all` dies — nvidia-container-toolkit
 # tries to mount /run/nvidia-persistenced/socket, which doesn't exist. Instead
-# we pass the device nodes explicitly and mount libs matching the kernel module.
+# we pass the device nodes explicitly and mount libs matching the kernel module
+# from $TTS_NVDRV_DIR (a directory you fill with that driver version's libs).
 # It was the DEFAULT until 2026-07-31, and leaving it that way cost an
 # afternoon: after the reboot it mounts 580.159.03 libs over a 580.173.02
 # module, CUDA fails to initialise inside the container, and the engine falls
@@ -75,7 +83,7 @@ gpu_run_args() {  # appends to RUN_ARGS
       --device /dev/nvidia0 --device /dev/nvidiactl
       --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
       -e LD_LIBRARY_PATH=/opt/nvdrv
-      -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro) ;;
+      -v "$NVDRV_DIR:/opt/nvdrv:ro") ;;
     *) die "TTS_GPU_MODE must be 'nvdrv' or 'gpus-all'" ;;
   esac
 }
@@ -141,22 +149,24 @@ cmd_up() {
   if [ -n "${TTS_CORS_ORIGINS:-}" ]; then RUN_ARGS+=(-e "TTS_CORS_ORIGINS=$TTS_CORS_ORIGINS"); fi
   if [ "$GPU" = gpu ]; then
     gpu_run_args
-    RUN_ARGS+=(-v /home/ai/.cache/huggingface:/root/.cache/huggingface)
+    RUN_ARGS+=(-v "$HF_CACHE":/root/.cache/huggingface)
   fi
   if [ -n "$cpu" ]; then
     # nano on CPU: no device flags, but it still pulls weights from the host HF cache
-    RUN_ARGS+=(-e NANO_DEVICE=cpu -v /home/ai/.cache/huggingface:/root/.cache/huggingface)
+    RUN_ARGS+=(-e NANO_DEVICE=cpu -v "$HF_CACHE":/root/.cache/huggingface)
   fi
   # nano's first-run weight pull crawls at ~0.2 MB/s under hf_xet; plain LFS is 20x faster
   if [ "$e" = chatterbox-nano ]; then RUN_ARGS+=(-e HF_HUB_DISABLE_XET=1); fi
+  # Every model here is public and ungated; a token only lifts HF rate limits.
+  if [ -n "${HF_TOKEN:-}" ]; then RUN_ARGS+=(-e HF_TOKEN); fi
   # EXTRA is a comma-separated list: an engine can need more than one mount
   # (xtts-v2 wants the coqui cache AND the live voices dir).
   local x; IFS=, read -ra __extra <<< "$EXTRA"
   for x in "${__extra[@]}"; do case "$x" in
     voices)   RUN_ARGS+=(-v "$PWD/voices:/app/voices:ro") ;;
     voicesroot) RUN_ARGS+=(-v "$PWD/voices:/voices:ro") ;;  # xtts-v2 resolves clips at /voices
-    ttscache) RUN_ARGS+=(-v /home/ai/.local/share/tts:/root/.local/share/tts) ;;
-    hf)       RUN_ARGS+=(-v /home/ai/.cache/huggingface:/hf:ro) ;;
+    ttscache) RUN_ARGS+=(-v "$TTS_CACHE:/root/.local/share/tts") ;;
+    hf)       RUN_ARGS+=(-v "$HF_CACHE":/hf:ro) ;;
     # SGLang-based engines want a big /dev/shm (vendor docs say 32g); the
     # 64 MB default starves torch's IPC.
     shm)      RUN_ARGS+=(--shm-size 32g) ;;

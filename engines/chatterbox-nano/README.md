@@ -21,14 +21,14 @@ already carries torch
 
 ## Run
 
-GPU (broken-driver-stack recipe for this box):
+GPU, by hand, with the mismatched-driver recipe (`TTS_GPU_MODE=nvdrv`; `engines/tts up` normally does all of this with `--gpus all`):
 
 ```
 docker run -d --name tts-chatterbox-nano \
   --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
   -e LD_LIBRARY_PATH=/opt/nvdrv -e HF_HUB_DISABLE_XET=1 \
-  -v /home/ai/.local/share/nvdrv-580.159.03:/opt/nvdrv:ro \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
+  -v "$TTS_NVDRV_DIR":/opt/nvdrv:ro \
+  -v "$HF_CACHE":/root/.cache/huggingface \
   -p 127.0.0.1:8891:8877 tts-chatterbox-nano:gpu
 ```
 
@@ -38,7 +38,7 @@ claim ~3x realtime on 8 cores):
 ```
 docker run -d --name tts-chatterbox-nano \
   -e NANO_DEVICE=cpu -e HF_HUB_DISABLE_XET=1 \
-  -v /home/ai/.cache/huggingface:/root/.cache/huggingface \
+  -v "$HF_CACHE":/root/.cache/huggingface \
   -p 127.0.0.1:8891:8877 tts-chatterbox-nano:gpu
 ```
 

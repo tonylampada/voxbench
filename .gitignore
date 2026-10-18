@@ -48,3 +48,6 @@ checkpoints/
 
 # test-bench phrase library (user data, seeds live in console/server.py)
 console/phrases.json
+
+# Your own reference clips (not redistributable) — see README "Voices"
+voices/private/
