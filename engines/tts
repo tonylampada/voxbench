@@ -89,13 +89,14 @@ gpu_run_args() {  # appends to RUN_ARGS
 }
 
 cmd_up() {
-  local e=$1 force='' host=${TTS_HOST:-127.0.0.1} cpu=''; shift
+  local e=$1 force='' host=${TTS_HOST:-127.0.0.1} cpu='' keep=''; shift
   while [ $# -gt 0 ]; do case $1 in
     --force) force=1; shift ;;
     --cpu) cpu=1; shift ;;
     --host) host=${2:?--host needs an address}; shift 2 ;;
+    --keep) keep=1; shift ;;
     '') shift ;;
-    *) die "up: unknown flag '$1' (--force, --cpu, --host <addr>)" ;;
+    *) die "up: unknown flag '$1' (--force, --cpu, --host <addr>, --keep)" ;;
   esac; done
   # No engine has any authentication — the network boundary IS the auth
   # boundary. A specific address (loopback, a tailnet IP) is a deliberate,
@@ -145,6 +146,10 @@ cmd_up() {
   # harness) talks to 127.0.0.1. --host ADDS a second publish on the same port.
   RUN_ARGS=(-d --name "tts-$e" -p "127.0.0.1:$PORT:8877")
   if [ "$host" != 127.0.0.1 ]; then RUN_ARGS+=(-p "$host:$PORT:8877"); fi
+  # --keep: come back after a reboot. OFF by default on purpose — there is one
+  # 24 GB card, and every engine ever benched restarting at boot would fight
+  # over it. It is for the engine that is actually serving something.
+  if [ -n "$keep" ]; then RUN_ARGS+=(--restart unless-stopped); fi
   # Browser CORS allowlist (docs/contract.md); unset = the engine's loopback default
   if [ -n "${TTS_CORS_ORIGINS:-}" ]; then RUN_ARGS+=(-e "TTS_CORS_ORIGINS=$TTS_CORS_ORIGINS"); fi
   if [ "$GPU" = gpu ]; then
@@ -251,11 +256,13 @@ cmd_voices() {
 usage() {
   cat <<'EOF'
 usage: engines/tts <command> [args]
-  up <engine> [--force] [--cpu] [--host <addr>]
+  up <engine> [--force] [--cpu] [--host <addr>] [--keep]
                           build image if missing, start, wait until healthy;
                           --cpu runs the model on CPU (chatterbox-nano only);
                           --host publishes on <addr> IN ADDITION to 127.0.0.1
-                          (0.0.0.0 is refused: no auth on these engines)
+                          (0.0.0.0 is refused: no auth on these engines);
+                          --keep restarts it after a reboot (for the engine
+                          that is serving, not for one being benched)
   down <engine>           stop it
   ls                      dashboard: port / image / container / health
   logs <engine> [-f]      tail its logs
